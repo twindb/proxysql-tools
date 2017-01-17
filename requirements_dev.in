@@ -8,4 +8,7 @@ coverage
 Sphinx
 cryptography
 PyYAML
-pytest
+pytest>=2.9.0
+docker
+backoff
+unittest2
