@@ -3,12 +3,14 @@ bumpversion
 wheel
 watchdog
 flake8
+pytest>=2.9.0
+pytest-flakes
+pytest-mock
 tox
 coverage
 Sphinx
 cryptography
 PyYAML
-pytest>=2.9.0
 docker
 backoff
 unittest2
