@@ -7,7 +7,7 @@ from pymysql.cursors import DictCursor
 
 
 class ProxySQLManager(object):
-    def __init__(self, host, port, user, password):
+    def __init__(self, host, port, user, password, socket=None):
         """Initializes the ProxySQL manager.
 
         :param str host: The ProxySQL host to operate against.
@@ -15,10 +15,11 @@ class ProxySQLManager(object):
         :param str user: The ProxySQL admin username.
         :param str password: The ProxySQL admin password.
         """
-        self._host = host
-        self._port = port
-        self._user = user
-        self._password = password
+        self.host = host
+        self.port = int(port)
+        self.user = user
+        self.password = password
+        self.socket = socket
 
     def register_mysql_backend(self, hostgroup_id, hostname, port):
         """Register a MySQL backend with ProxySQL.
@@ -33,7 +34,7 @@ class ProxySQLManager(object):
         backend.hostname = hostname
         backend.port = port
 
-        with self.get_connection(self._host, self._port, '', self._user, self._password) as proxy_conn:
+        with self.get_connection() as proxy_conn:
             if self.is_mysql_backend_registered(backend, proxy_conn):
                 return True
 
@@ -54,7 +55,7 @@ class ProxySQLManager(object):
         backend.port = port
         backend.status = status
 
-        with self.get_connection(self._host, self._port, '', self._user, self._password) as proxy_conn:
+        with self.get_connection() as proxy_conn:
             if not self.is_mysql_backend_registered(backend, proxy_conn):
                 raise ProxySQLMySQLBackendUnregistered('MySQL backend %s:%s is not registered' %
                                                        (backend.hostname, backend.port))
@@ -80,29 +81,29 @@ class ProxySQLManager(object):
         pass
 
     @contextmanager
-    def get_connection(self, host, port, mysql_sock, user, password):
+    def get_connection(self):
         db = None
         try:
-            if mysql_sock != '':
+            if self.socket is not None:
                 db = pymysql.connect(
-                    unix_socket=mysql_sock,
-                    user=user,
-                    passwd=password,
+                    unix_socket=self.socket,
+                    user=self.user,
+                    passwd=self.password,
                     cursorclass=DictCursor
                 )
-            elif port:
+            elif self.port:
                 db = pymysql.connect(
-                    host=host,
-                    port=int(port),
-                    user=user,
-                    passwd=password,
+                    host=self.host,
+                    port=self.port,
+                    user=self.user,
+                    passwd=self.password,
                     cursorclass=DictCursor
                 )
             else:
                 db = pymysql.connect(
-                    host=host,
-                    user=user,
-                    passwd=password,
+                    host=self.host,
+                    user=self.user,
+                    passwd=self.password,
                     cursorclass=DictCursor
                 )
 
