@@ -12,5 +12,4 @@ Sphinx
 cryptography
 PyYAML
 docker
-backoff
 unittest2
