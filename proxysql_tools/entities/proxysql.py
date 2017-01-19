@@ -1,6 +1,11 @@
 from schematics.models import Model
 from schematics.types import StringType, IntType
 
+BACKEND_STATUS_ONLINE = 'ONLINE'
+BACKEND_STATUS_SHUNNED = 'SHUNNED'
+BACKEND_STATUS_OFFLINE_SOFT = 'OFFLINE_SOFT'
+BACKEND_STATUS_OFFLINE_HARD = 'OFFLINE_HARD'
+
 
 class ProxySQLMySQLBackend(Model):
     """Contains information about MySQL backend"""
@@ -12,7 +17,8 @@ class ProxySQLMySQLBackend(Model):
     # The port MySQL is listening on. When using unix domain socket, set this to 0
     port = IntType(default=3306, required=True)
 
-    status = StringType(choices=['ONLINE', 'SHUNNED', 'OFFLINE_SOFT', 'OFFLINE_HARD'], default='ONLINE')
+    status = StringType(choices=[BACKEND_STATUS_ONLINE, BACKEND_STATUS_SHUNNED, BACKEND_STATUS_OFFLINE_SOFT,
+                                 BACKEND_STATUS_OFFLINE_HARD], default=BACKEND_STATUS_ONLINE)
 
     weight = IntType(default=1)
     compression = IntType(default=0)

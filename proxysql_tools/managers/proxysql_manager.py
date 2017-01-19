@@ -1,7 +1,7 @@
 import pymysql
 
 from contextlib import contextmanager
-from proxysql_tools.entities.proxysql import ProxySQLMySQLBackend, ProxySQLMySQLUser
+from proxysql_tools.entities.proxysql import ProxySQLMySQLBackend, ProxySQLMySQLUser, BACKEND_STATUS_OFFLINE_HARD
 from pymysql.connections import Connection
 from pymysql.cursors import DictCursor
 
@@ -40,6 +40,26 @@ class ProxySQLManager(object):
 
             return self.insert_or_update_mysql_backend(backend, proxy_conn)
 
+    def deregister_mysql_backend(self, hostgroup_id, hostname, port):
+        """Deregister a MySQL backend from ProxySQL database.
+
+        :param int hostgroup_id: The ID of the hostgroup that the MySQL backend belongs to.
+        :param str hostname: The hostname of the MySQL backend.
+        :param int port: The port that the MySQL backend listens on.
+        :return bool: True on success, False otherwise.
+        """
+        backend = ProxySQLMySQLBackend()
+        backend.hostgroup_id = hostgroup_id
+        backend.hostname = hostname
+        backend.port = port
+
+        with self.get_connection() as proxy_conn:
+            if not self.is_mysql_backend_registered(backend, proxy_conn):
+                return True
+
+            return self.update_mysql_backend_status(backend.hostgroup_id, backend.hostname, backend.port,
+                                                    BACKEND_STATUS_OFFLINE_HARD)
+
     def update_mysql_backend_status(self, hostgroup_id, hostname, port, status):
         """Update the status of a MySQL backend.
 
@@ -62,22 +82,36 @@ class ProxySQLManager(object):
 
             return self.insert_or_update_mysql_backend(backend, proxy_conn)
 
+    def fetch_mysql_backends(self, hostgroup_id=None):
+        """Fetch a list of the MySQL backends registered with ProxySQL, either in a particular hostgroup
+        or in all hostgroups.
+
+        :param int hostgroup_id: The ID of the hostgroup that the MySQL backend belongs to.
+        :return list[ProxySQLMySQLBackend]: A list of ProxySQL backends.
+        """
+        with self.get_connection() as proxy_conn:
+            with proxy_conn.cursor() as cursor:
+                sql = "SELECT * FROM mysql_servers"
+                params = []
+                if hostgroup_id is not None:
+                    sql += "WHERE hostgroup_id=%s"
+                    params.append(hostgroup_id)
+
+                cursor.execute(sql, tuple(params))
+                backends_list = [ProxySQLMySQLBackend(row) for row in cursor]
+
+        return backends_list
+
     def register_mysql_users(self):
         pass
 
     def register_single_mysql_user(self):
         pass
 
-    def unregister_mysql_backend(self):
-        pass
-
-    def set_variables(self):
-        pass
-
     def fetch_mysql_users(self):
         pass
 
-    def fetch_registered_mysql_users(self):
+    def set_variables(self):
         pass
 
     @contextmanager
