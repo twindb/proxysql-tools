@@ -1,32 +1,18 @@
-# Config file for automatic testing at travis-ci.org
-# This file will be regenerated if you run travis_pypi_setup.py
+sudo: required
 
 language: python
-python: 3.5
+python:
+    - '2.7'
 
-env:
-  - TOXENV=py35
-  - TOXENV=py34
-  - TOXENV=py33
-  - TOXENV=py27
-  - TOXENV=py26
-  - TOXENV=pypy
+services:
+    - docker
 
-# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
-install: pip install -U tox
+script:
+    - make virtualenv
+    - source env/bin/activate
+    - make bootstrap
+    - sudo make test
 
-# command to run tests, e.g. python setup.py test
-script: tox -e ${TOXENV}
-
-# After you create the Github repo and add it to Travis, run the
-# travis_pypi_setup.py script to finish PyPI deployment setup
-deploy:
-  provider: pypi
-  distributions: sdist bdist_wheel
-  user: twindb
-  password:
-    secure: PLEASE_REPLACE_ME
-  on:
-    tags: true
-    repo: twindb/proxysql_tools
-    condition: $TOXENV == py27
+notifications:
+  slack:
+    secure: m93SUlspdjGsGchPECDbBoKAPSABH6z/9G87kXr1X9Of0DSghSoGDHsAmPwu/5SEe5BVFR+tnj44VgCoLC5/4CHxj2BG8ykRy8RAUnGR6p9k+s+qLuk1it7oCiI0skQ5wGdmqcbeHX+wzD7FpBa+Bqz6hRc45bGxmTc4LgADUwX5x9S4kMnz+MtX6JvvUOpZJAJpyvbQPt7Q5KQD1+9uBmigIaiX/eeMNsdZKBa0klEX07bkwNKXR03uqclhxv8l77+kKC+na5zfczGJQ7Ygg515sIPwZUm7BoiCoGeXXXAt52K4Ec9BkHl7UCAWeU6Az8AqDbbWJZHRiZmr0RkSg9ZvvtW1iXCjWoS5tM0rSOr7u+m3bGdVdhYgBnPwcf3H8RUTgy6t2c56sWiEy17LJLXBRiOxPKNawBbGI/WHQqoVfT95klzzHCN9ZGQETDkeZU7xNs/KGrW6UnXI/I34cJ4/L1RM3pVuXuCxgloIw3/w+s9JAv0dj8iNjtYHt3UCrtcJWFEYI1RahPXpNXQM1pWmqIk1CA9CPp9WQdTOoOAXjDX8PTDFnLSlRSpIZ3C8C9avqjiPw+Q3LVH2V/2hOPBX6EzGAhGnIXpqStSrj5oGuegpjBi59Cpk1e3JDZful/HjTIp8S8YvSt8T+yIvXnc47hHLoIGD3AmtwdJH6pE=
