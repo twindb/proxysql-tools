@@ -8,8 +8,6 @@ services:
     - docker
 
 script:
-    - make virtualenv
-    - source env/bin/activate
     - make bootstrap
     - sudo make test
 
