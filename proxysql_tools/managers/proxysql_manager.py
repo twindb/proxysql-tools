@@ -94,7 +94,7 @@ class ProxySQLManager(object):
                 sql = "SELECT * FROM mysql_servers"
                 params = []
                 if hostgroup_id is not None:
-                    sql += "WHERE hostgroup_id=%s"
+                    sql += " WHERE hostgroup_id=%s"
                     params.append(hostgroup_id)
 
                 cursor.execute(sql, tuple(params))
@@ -102,17 +102,47 @@ class ProxySQLManager(object):
 
         return backends_list
 
-    def register_mysql_users(self):
-        pass
+    def register_mysql_user(self, username, password, default_hostgroup):
+        """Register a MySQL user with ProxySQL.
 
-    def register_single_mysql_user(self):
-        pass
+        :param str username: The MySQL username.
+        :param str password: The MySQL user's password hash.
+        :param int default_hostgroup: The ID of the hostgroup that is the default for this user.
+        :return bool: True on success, False otherwise.
+        """
+        user = ProxySQLMySQLUser()
+        user.username = username
+        user.password = password
+        user.default_hostgroup = default_hostgroup
 
-    def fetch_mysql_users(self):
-        pass
+        with self.get_connection() as proxy_conn:
+            if self.is_mysql_user_registered(user, proxy_conn):
+                return True
+
+            return self.insert_or_update_mysql_user(user, proxy_conn)
+
+    def fetch_mysql_users(self, default_hostgroup_id=None):
+        """Fetch a list of MySQL users registered with ProxySQL, either with a particular default_hostgroup or all of
+        them.
+
+        :param int default_hostgroup_id: The ID of the hostgroup which is the default for the user.
+        :return list[ProxySQLMySQLUser]: A list of MySQL users registered with ProxySQL.
+        """
+        with self.get_connection() as proxy_conn:
+            with proxy_conn.cursor() as cursor:
+                sql = "SELECT * FROM mysql_users"
+                params = []
+                if default_hostgroup_id is not None:
+                    sql += " WHERE default_hostgroup=%s"
+                    params.append(default_hostgroup_id)
+
+                cursor.execute(sql, tuple(params))
+                users_list = [ProxySQLMySQLUser(row) for row in cursor]
+
+        return users_list
 
     def set_variables(self):
-        pass
+        raise NotImplementedError()
 
     @contextmanager
     def get_connection(self):
@@ -162,6 +192,21 @@ class ProxySQLManager(object):
         return int(result['cnt']) > 0
 
     @staticmethod
+    def is_mysql_user_registered(user, proxy_conn):
+        """Check ProxySQL to verify whether a MySQL user is registered with it or not.
+
+        :param ProxySQLMySQLUser user: The MySQL user to check for registration.
+        :param Connection proxy_conn: A connection to ProxySQL.
+        :return bool: True on success, False otherwise.
+        """
+        with proxy_conn.cursor() as cursor:
+            sql = "SELECT COUNT(*) AS cnt from mysql_users WHERE username=%s AND backend=%s"
+            cursor.execute(sql, (user.username, user.backend))
+            result = cursor.fetchone()
+
+        return int(result['cnt']) > 0
+
+    @staticmethod
     def insert_or_update_mysql_backend(backend, proxy_conn):
         """Update the MySQL backend registered with ProxySQL.
 
@@ -183,6 +228,31 @@ class ProxySQLManager(object):
             cursor.execute(sql)
             cursor.execute('LOAD MYSQL SERVERS TO RUNTIME')
             cursor.execute('SAVE MYSQL SERVERS TO DISK')
+
+        return True
+
+    @staticmethod
+    def insert_or_update_mysql_user(user, proxy_conn):
+        """Update the MySQL backend registered with ProxySQL.
+
+        :param ProxySQLMySQLUser user: The MySQL user that will connect to ProxySQL.
+        :param Connection proxy_conn: A connection to ProxySQL.
+        :return bool: True on success, False otherwise.
+        """
+        user.validate()
+
+        column_expressions = []
+        value_expressions = []
+        for key, val in user.to_primitive().iteritems():
+            column_expressions.append(str(key))
+            value_expressions.append("'%s'" % pymysql.escape_string(str(val)))
+
+        with proxy_conn.cursor() as cursor:
+            sql = "REPLACE INTO mysql_users(%s) VALUES(%s)" % (', '.join(column_expressions),
+                                                               ', '.join(value_expressions))
+            cursor.execute(sql)
+            cursor.execute('LOAD MYSQL USERS TO RUNTIME')
+            cursor.execute('SAVE MYSQL USERS TO DISK')
 
         return True
 

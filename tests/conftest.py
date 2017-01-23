@@ -3,7 +3,7 @@ import pprint
 import pytest
 import time
 
-from proxysql_tools.entities.proxysql import ProxySQLMySQLBackend
+from proxysql_tools.entities.proxysql import ProxySQLMySQLBackend, ProxySQLMySQLUser
 from proxysql_tools.managers.proxysql_manager import ProxySQLManager
 from tests.library import get_unused_port, docker_client, docker_pull_image
 
@@ -150,10 +150,19 @@ def proxysql_manager(proxysql_container):
     return manager
 
 
-def get_mysql_backend(hostname):
+def get_mysql_backend(hostname, hostgroup_id=None):
     backend = ProxySQLMySQLBackend()
-    backend.hostgroup_id = 10
+    backend.hostgroup_id = 10 if hostgroup_id is None else hostgroup_id
     backend.hostname = hostname
     backend.port = 10000
 
     return backend
+
+
+def get_mysql_user(username, default_hostgroup_id=None):
+    user = ProxySQLMySQLUser()
+    user.username = username
+    user.password = 'secret_password'
+    user.default_hostgroup = 10 if default_hostgroup_id is None else default_hostgroup_id
+
+    return user
