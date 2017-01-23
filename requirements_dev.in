@@ -1,0 +1,15 @@
+pip
+bumpversion
+wheel
+watchdog
+flake8
+pytest>=2.9.0
+pytest-flakes
+pytest-mock
+tox
+coverage
+Sphinx
+cryptography
+PyYAML
+docker
+unittest2

@@ -6,8 +6,8 @@ ProxySQL Tools
 .. image:: https://img.shields.io/pypi/v/proxysql_tools.svg
         :target: https://pypi.python.org/pypi/proxysql_tools
 
-.. image:: https://img.shields.io/travis/twindb/proxysql_tools.svg
-        :target: https://travis-ci.org/twindb/proxysql_tools
+.. image:: https://travis-ci.org/twindb/proxysql-tools.svg
+        :target: https://travis-ci.org/twindb/proxysql-tools
 
 .. image:: https://readthedocs.org/projects/proxysql-tools/badge/?version=latest
         :target: https://proxysql-tools.readthedocs.io/en/latest/?badge=latest
