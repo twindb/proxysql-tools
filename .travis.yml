@@ -9,7 +9,7 @@ services:
 
 script:
     - make bootstrap
-    - sudo make test
+    - make test
 
 notifications:
   slack:
