@@ -7,9 +7,16 @@ python:
 services:
     - docker
 
+install: pip install -U -rrequirements_dev.txt
+
 script:
-    - make bootstrap
-    - make test
+ - tox -e ${TOXENV}
+ - codecov
+
+env:
+ - TOXENV=py27
+ - TOXENV=flake8
+ - TOXENV=cov
 
 notifications:
   slack:

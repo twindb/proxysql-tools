@@ -13,3 +13,6 @@ cryptography
 PyYAML
 docker
 unittest2
+schematics
+codecov
+pytest-cov
