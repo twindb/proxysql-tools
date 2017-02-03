@@ -3,7 +3,10 @@ import pprint
 import pytest
 import time
 
-from proxysql_tools.entities.proxysql import ProxySQLMySQLBackend, ProxySQLMySQLUser
+from docker.types import IPAMConfig, IPAMPool
+from proxysql_tools.entities.proxysql import (
+    ProxySQLMySQLBackend, ProxySQLMySQLUser
+)
 from proxysql_tools.managers.proxysql_manager import ProxySQLManager
 from tests.library import get_unused_port, docker_client, docker_pull_image
 
@@ -11,20 +14,25 @@ from tests.library import get_unused_port, docker_client, docker_pull_image
 CONTAINERS_FOR_TESTING_LABEL = 'pytest_docker'
 DEBIAN_IMAGE = 'debian:8'
 PROXYSQL_IMAGE = 'twindb/proxysql:latest'
+PXC_IMAGE = 'percona/percona-xtradb-cluster:5.7.16'
 
 PROXYSQL_ADMIN_PORT = 6032
 PROXYSQL_CLIENT_PORT = 6033
 PROXYSQL_ADMIN_USER = 'admin'
 PROXYSQL_ADMIN_PASSWORD = 'admin'
 
+PXC_MYSQL_PORT = 3306
+
 
 def pytest_runtest_logreport(report):
-    """Process a test setup/call/teardown report relating to the respective phase of executing a test."""
+    """Process a test setup/call/teardown report relating to the respective
+        phase of executing a test."""
     if report.failed:
         client = docker_client()
         api = client.api
 
-        test_containers = api.containers(all=True, filters={"label": CONTAINERS_FOR_TESTING_LABEL})
+        test_containers = api.containers(
+            all=True, filters={"label": CONTAINERS_FOR_TESTING_LABEL})
 
         for container in test_containers:
             log_lines = [
@@ -44,8 +52,9 @@ def debian_container():
     # Pull the image locally
     docker_pull_image(DEBIAN_IMAGE)
 
-    container = api.create_container(image=DEBIAN_IMAGE, labels=[CONTAINERS_FOR_TESTING_LABEL],
-                                     command='/bin/sleep 36000')
+    container = api.create_container(
+        image=DEBIAN_IMAGE, labels=[CONTAINERS_FOR_TESTING_LABEL],
+        command='/bin/sleep 36000')
     api.start(container['Id'])
 
     container_info = client.containers.get(container['Id'])
@@ -53,6 +62,24 @@ def debian_container():
     yield container_info
 
     api.remove_container(container=container['Id'], force=True)
+
+
+@pytest.yield_fixture
+def container_network():
+    client = docker_client()
+    api = client.api
+
+    network_name = 'test_network'
+
+    ipam_pool = IPAMPool(subnet="172.25.0.0/16")
+    ipam_config = IPAMConfig(pool_configs=[ipam_pool])
+
+    network = api.create_network(name=network_name, driver="bridge",
+                                 ipam=ipam_config)
+
+    yield network_name
+
+    api.remove_network(net_id=network['Id'])
 
 
 @pytest.fixture
@@ -92,7 +119,8 @@ mysql_variables=
         ping_timeout_server=500
         commands_stats=true
         sessions_sort=true
-}}""".format(admin_user=PROXYSQL_ADMIN_USER, admin_password=PROXYSQL_ADMIN_PASSWORD,
+}}""".format(admin_user=PROXYSQL_ADMIN_USER,
+             admin_password=PROXYSQL_ADMIN_PASSWORD,
              admin_port=PROXYSQL_ADMIN_PORT, client_port=PROXYSQL_CLIENT_PORT)
 
 
@@ -105,7 +133,8 @@ def proxysql_container(proxysql_config_contents, tmpdir):
     config = tmpdir.join('proxysql.cnf')
     config.write(proxysql_config_contents)
 
-    # The ports that the ProxySQL container will be listening on inside the container
+    # The ports that the ProxySQL container will be listening on inside the
+    # container
     container_ports = [PROXYSQL_ADMIN_PORT, PROXYSQL_CLIENT_PORT]
 
     host_config = api.create_host_config(binds=[
@@ -118,8 +147,10 @@ def proxysql_container(proxysql_config_contents, tmpdir):
     # Pull the container image locally first
     docker_pull_image(PROXYSQL_IMAGE)
 
-    container = api.create_container(image=PROXYSQL_IMAGE, labels=[CONTAINERS_FOR_TESTING_LABEL],
-                                     ports=container_ports, host_config=host_config)
+    container = api.create_container(image=PROXYSQL_IMAGE,
+                                     labels=[CONTAINERS_FOR_TESTING_LABEL],
+                                     ports=container_ports,
+                                     host_config=host_config)
     api.start(container['Id'])
 
     container_info = client.containers.get(container['Id'])
@@ -127,6 +158,82 @@ def proxysql_container(proxysql_config_contents, tmpdir):
     yield container_info
 
     api.remove_container(container=container['Id'], force=True)
+
+
+@pytest.yield_fixture
+def percona_xtradb_cluster(container_network):
+    client = docker_client()
+    api = client.api
+
+    # The ports that need to be exposed from the PXC container to host
+    container_ports = [PXC_MYSQL_PORT]
+    container_info = {
+        'pxc01': {
+            'ip': '172.25.3.1',
+            'mysql_port': None,
+            'id': None
+        },
+        'pxc02': {
+            'ip': '172.25.3.2',
+            'mysql_port': None,
+            'id': None
+        },
+        'pxc03': {
+            'ip': '172.25.3.3',
+            'mysql_port': None,
+            'id': None
+        }
+    }
+    cluster_name = 'test_cluster'
+
+    # Pull the container image locally first
+    docker_pull_image(PXC_IMAGE)
+
+    bootstrapped = False
+    cluster_join = ''
+    for node_name, node_details in container_info.iteritems():
+        available_port = get_unused_port()
+        container_info[node_name]['mysql_port'] = available_port
+
+        host_config = api.create_host_config(port_bindings={
+            PXC_MYSQL_PORT: available_port
+        })
+
+        networking_config = api.create_networking_config({
+            container_network: api.create_endpoint_config(
+                ipv4_address=node_details['ip']
+            )
+        })
+
+        environment_vars = {
+            'MYSQL_ALLOW_EMPTY_PASSWORD': 1,
+            'CLUSTER_JOIN': cluster_join,
+            'CLUSTER_NAME': cluster_name,
+            'XTRABACKUP_PASSWORD': 'xtrabackup'
+        }
+
+        container = api.create_container(
+            image=PXC_IMAGE, name=node_name,
+            labels=[CONTAINERS_FOR_TESTING_LABEL], ports=container_ports,
+            host_config=host_config, networking_config=networking_config,
+            environment=environment_vars,
+            command='--wsrep_node_address=%s' % node_details['ip'])
+        api.start(container['Id'])
+        container_info[node_name]['id'] = container['Id']
+
+        if not bootstrapped:
+            cluster_join = node_details['ip']
+            bootstrapped = True
+
+        # We add a bit of delay to allow the node to startup before adding a
+        # new node to the cluster
+        time.sleep(5)
+
+    yield container_info
+
+    # Cleanup the containers now
+    for container in container_info.values():
+        api.remove_container(container=container['id'], force=True)
 
 
 @pytest.fixture
@@ -139,11 +246,13 @@ def proxysql_manager(proxysql_container):
     admin_port = int(admin_port_bindings.pop()['HostPort'])
     assert admin_port
 
-    manager = ProxySQLManager(host=container_ip, port=admin_port, user=PROXYSQL_ADMIN_USER,
+    manager = ProxySQLManager(host=container_ip, port=admin_port,
+                              user=PROXYSQL_ADMIN_USER,
                               password=PROXYSQL_ADMIN_PASSWORD)
 
-    # Allow ProxySQL to startup completely. The problem is that ProxySQL starts listening to the admin port
-    # before it has initialized completely which causes the test to fail with the exception:
+    # Allow ProxySQL to startup completely. The problem is that ProxySQL starts
+    # listening to the admin port before it has initialized completely which
+    # causes the test to fail with the exception:
     # OperationalError: (2013, 'Lost connection to MySQL server during query')
     time.sleep(15)
 
@@ -163,6 +272,7 @@ def get_mysql_user(username, default_hostgroup_id=None):
     user = ProxySQLMySQLUser()
     user.username = username
     user.password = 'secret_password'
-    user.default_hostgroup = 10 if default_hostgroup_id is None else default_hostgroup_id
+    user.default_hostgroup = 10 if default_hostgroup_id is None else \
+        default_hostgroup_id
 
     return user
