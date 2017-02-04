@@ -4,24 +4,26 @@ import pytest
 import time
 
 from docker.types import IPAMConfig, IPAMPool
-from proxysql_tools.entities.proxysql import (
-    ProxySQLMySQLBackend, ProxySQLMySQLUser
-)
+from proxysql_tools.managers.galera_manager import GaleraManager
 from proxysql_tools.managers.proxysql_manager import ProxySQLManager
-from tests.library import get_unused_port, docker_client, docker_pull_image
+from tests.library import (
+    get_unused_port, docker_client, docker_pull_image, eventually
+)
 
 
 CONTAINERS_FOR_TESTING_LABEL = 'pytest_docker'
 DEBIAN_IMAGE = 'debian:8'
 PROXYSQL_IMAGE = 'twindb/proxysql:latest'
-PXC_IMAGE = 'percona/percona-xtradb-cluster:5.7.16'
+PXC_IMAGE = 'twindb/percona-xtradb-cluster:latest'
 
 PROXYSQL_ADMIN_PORT = 6032
 PROXYSQL_CLIENT_PORT = 6033
 PROXYSQL_ADMIN_USER = 'admin'
 PROXYSQL_ADMIN_PASSWORD = 'admin'
 
+PXC_CLUSTER_NAME = 'test_cluster'
 PXC_MYSQL_PORT = 3306
+PXC_ROOT_PASSWORD = 'r00t'
 
 
 def pytest_runtest_logreport(report):
@@ -64,7 +66,7 @@ def debian_container():
     api.remove_container(container=container['Id'], force=True)
 
 
-@pytest.yield_fixture
+@pytest.yield_fixture(scope='session')
 def container_network():
     client = docker_client()
     api = client.api
@@ -160,40 +162,42 @@ def proxysql_container(proxysql_config_contents, tmpdir):
     api.remove_container(container=container['Id'], force=True)
 
 
-@pytest.yield_fixture
+@pytest.yield_fixture(scope='session')
 def percona_xtradb_cluster(container_network):
     client = docker_client()
     api = client.api
 
     # The ports that need to be exposed from the PXC container to host
     container_ports = [PXC_MYSQL_PORT]
-    container_info = {
-        'pxc01': {
+    container_info = [
+        {
+            'name': 'pxc01',
             'ip': '172.25.3.1',
             'mysql_port': None,
             'id': None
         },
-        'pxc02': {
+        {
+            'name': 'pxc02',
             'ip': '172.25.3.2',
             'mysql_port': None,
             'id': None
         },
-        'pxc03': {
+        {
+            'name': 'pxc03',
             'ip': '172.25.3.3',
             'mysql_port': None,
             'id': None
         }
-    }
-    cluster_name = 'test_cluster'
+    ]
 
     # Pull the container image locally first
     docker_pull_image(PXC_IMAGE)
 
     bootstrapped = False
     cluster_join = ''
-    for node_name, node_details in container_info.iteritems():
+    for node in container_info:
         available_port = get_unused_port()
-        container_info[node_name]['mysql_port'] = available_port
+        node['mysql_port'] = available_port
 
         host_config = api.create_host_config(port_bindings={
             PXC_MYSQL_PORT: available_port
@@ -201,28 +205,28 @@ def percona_xtradb_cluster(container_network):
 
         networking_config = api.create_networking_config({
             container_network: api.create_endpoint_config(
-                ipv4_address=node_details['ip']
+                ipv4_address=node['ip']
             )
         })
 
         environment_vars = {
-            'MYSQL_ALLOW_EMPTY_PASSWORD': 1,
+            'MYSQL_ROOT_PASSWORD': PXC_ROOT_PASSWORD,
             'CLUSTER_JOIN': cluster_join,
-            'CLUSTER_NAME': cluster_name,
+            'CLUSTER_NAME': PXC_CLUSTER_NAME,
             'XTRABACKUP_PASSWORD': 'xtrabackup'
         }
 
         container = api.create_container(
-            image=PXC_IMAGE, name=node_name,
+            image=PXC_IMAGE, name=node['name'],
             labels=[CONTAINERS_FOR_TESTING_LABEL], ports=container_ports,
             host_config=host_config, networking_config=networking_config,
-            environment=environment_vars,
-            command='--wsrep_node_address=%s' % node_details['ip'])
+            environment=environment_vars)
         api.start(container['Id'])
-        container_info[node_name]['id'] = container['Id']
+
+        node['id'] = container['Id']
 
         if not bootstrapped:
-            cluster_join = node_details['ip']
+            cluster_join = node['ip']
             bootstrapped = True
 
         # We add a bit of delay to allow the node to startup before adding a
@@ -232,7 +236,7 @@ def percona_xtradb_cluster(container_network):
     yield container_info
 
     # Cleanup the containers now
-    for container in container_info.values():
+    for container in container_info:
         api.remove_container(container=container['id'], force=True)
 
 
@@ -250,29 +254,45 @@ def proxysql_manager(proxysql_container):
                               user=PROXYSQL_ADMIN_USER,
                               password=PROXYSQL_ADMIN_PASSWORD)
 
+    def check_started():
+        with manager.get_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute('SELECT 1')
+
+        return True
+
     # Allow ProxySQL to startup completely. The problem is that ProxySQL starts
     # listening to the admin port before it has initialized completely which
     # causes the test to fail with the exception:
     # OperationalError: (2013, 'Lost connection to MySQL server during query')
-    time.sleep(15)
+    eventually(check_started, retries=15, sleep_time=1)
 
     return manager
 
 
-def get_mysql_backend(hostname, hostgroup_id=None):
-    backend = ProxySQLMySQLBackend()
-    backend.hostgroup_id = 10 if hostgroup_id is None else hostgroup_id
-    backend.hostname = hostname
-    backend.port = 10000
+@pytest.fixture
+def galera_manager(percona_xtradb_cluster):
+    client = docker_client()
 
-    return backend
+    cluster_node = percona_xtradb_cluster[0]
 
+    for node in percona_xtradb_cluster:
+        container_info = client.containers.get(node['id'])
+        assert container_info.status == 'running'
 
-def get_mysql_user(username, default_hostgroup_id=None):
-    user = ProxySQLMySQLUser()
-    user.username = username
-    user.password = 'secret_password'
-    user.default_hostgroup = 10 if default_hostgroup_id is None else \
-        default_hostgroup_id
+    manager = GaleraManager(host='127.0.0.1',
+                            port=cluster_node['mysql_port'],
+                            user='root', password=PXC_ROOT_PASSWORD)
 
-    return user
+    def check_started():
+        with manager.get_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute('SELECT 1')
+
+        return True
+
+    # Allow the first cluster node to startup completely, while the other two
+    # nodes in the cluster can keep starting up.
+    eventually(check_started, retries=15, sleep_time=4)
+
+    return manager

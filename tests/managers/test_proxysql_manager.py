@@ -1,7 +1,9 @@
 from proxysql_tools.entities.proxysql import (
     BACKEND_STATUS_OFFLINE_SOFT, BACKEND_STATUS_OFFLINE_HARD
 )
-from tests.conftest import get_mysql_backend, get_mysql_user
+from proxysql_tools.entities.proxysql import (
+    ProxySQLMySQLBackend, ProxySQLMySQLUser
+)
 
 
 def test__can_connect_to_proxysql_admin_interface(proxysql_manager):
@@ -112,3 +114,22 @@ def test__fetch_mysql_users_with_default_hostgroup(proxysql_manager):
     users_list = proxysql_manager.fetch_mysql_users(default_hostgroup_id=200)
     assert len(users_list) == 1
     assert users_list.pop().username == 'aleks'
+
+
+def get_mysql_backend(hostname, hostgroup_id=None):
+    backend = ProxySQLMySQLBackend()
+    backend.hostgroup_id = 10 if hostgroup_id is None else hostgroup_id
+    backend.hostname = hostname
+    backend.port = 10000
+
+    return backend
+
+
+def get_mysql_user(username, default_hostgroup_id=None):
+    user = ProxySQLMySQLUser()
+    user.username = username
+    user.password = 'secret_password'
+    user.default_hostgroup = 10 if default_hostgroup_id is None else \
+        default_hostgroup_id
+
+    return user
