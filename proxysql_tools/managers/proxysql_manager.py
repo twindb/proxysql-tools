@@ -200,7 +200,8 @@ class ProxySQLManager(object):
         with proxy_conn.cursor() as cursor:
             sql = ("SELECT COUNT(*) AS cnt from mysql_servers "
                    "WHERE hostgroup_id=%s AND hostname=%s AND port=%s")
-            cursor.execute(sql, (backend.hostgroup_id, backend.hostname, backend.port))
+            cursor.execute(sql, (backend.hostgroup_id, backend.hostname,
+                                 backend.port))
             result = cursor.fetchone()
 
         return int(result['cnt']) > 0
