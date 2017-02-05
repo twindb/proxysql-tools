@@ -4,11 +4,7 @@ import pytest
 import time
 
 from docker.types import IPAMConfig, IPAMPool
-from proxysql_tools.managers.galera_manager import GaleraManager
-from proxysql_tools.managers.proxysql_manager import ProxySQLManager
-from tests.library import (
-    get_unused_port, docker_client, docker_pull_image, eventually
-)
+from tests.library import get_unused_port, docker_client, docker_pull_image
 
 
 CONTAINERS_FOR_TESTING_LABEL = 'pytest_docker'
@@ -238,63 +234,3 @@ def percona_xtradb_cluster(container_network):
     # Cleanup the containers now
     for container in container_info:
         api.remove_container(container=container['id'], force=True)
-
-
-@pytest.fixture
-def proxysql_manager(proxysql_container):
-    assert proxysql_container.status == 'running'
-
-    container_ip = '127.0.0.1'
-
-    admin_port_bindings = proxysql_container.attrs['NetworkSettings']['Ports']['%s/tcp' % PROXYSQL_ADMIN_PORT]
-    admin_port = int(admin_port_bindings.pop()['HostPort'])
-    assert admin_port
-
-    manager = ProxySQLManager(host=container_ip, port=admin_port,
-                              user=PROXYSQL_ADMIN_USER,
-                              password=PROXYSQL_ADMIN_PASSWORD)
-
-    def check_started():
-        with manager.get_connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute('SELECT 1')
-
-        return True
-
-    # Allow ProxySQL to startup completely. The problem is that ProxySQL starts
-    # listening to the admin port before it has initialized completely which
-    # causes the test to fail with the exception:
-    # OperationalError: (2013, 'Lost connection to MySQL server during query')
-    eventually(check_started, retries=15, sleep_time=1)
-
-    return manager
-
-
-@pytest.fixture
-def galera_manager(percona_xtradb_cluster):
-    client = docker_client()
-
-    cluster_node = percona_xtradb_cluster[0]
-
-    for node in percona_xtradb_cluster:
-        container_info = client.containers.get(node['id'])
-        assert container_info.status == 'running'
-
-    manager = GaleraManager(cluster_node_host='127.0.0.1',
-                            cluster_node_port=cluster_node['mysql_port'],
-                            user='root', password=PXC_ROOT_PASSWORD)
-
-    def check_started():
-        manager.discover_cluster_nodes()
-
-        with manager.nodes[0].get_connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute('SELECT 1')
-
-        return True
-
-    # Allow the first cluster node to startup completely, while the other two
-    # nodes in the cluster can keep starting up.
-    eventually(check_started, retries=15, sleep_time=4)
-
-    return manager
