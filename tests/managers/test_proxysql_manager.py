@@ -38,7 +38,7 @@ def proxysql_manager(proxysql_container):
     # listening to the admin port before it has initialized completely which
     # causes the test to fail with the exception:
     # OperationalError: (2013, 'Lost connection to MySQL server during query')
-    eventually(check_started, retries=15, sleep_time=1)
+    eventually(check_started, retries=15, sleep_time=4)
 
     return manager
 
