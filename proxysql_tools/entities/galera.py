@@ -18,7 +18,7 @@ class GaleraNode(Model):
     host = StringType(required=True)
 
     # The MySQL port of the cluster node
-    port = IntType(required=True)
+    port = IntType(required=True, default=3306)
 
     # The name of the cluster this node belongs to
     cluster_name = StringType(required=True)
