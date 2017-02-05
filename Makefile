@@ -36,12 +36,12 @@ virtualenv: ## create virtual environment typically used for development purpose
 	virtualenv env --setuptools --prompt='(twindb_proxysql_tools)'
 
 .PHONY: rebuild-requirements
-rebuild-requirements:
+rebuild-requirements: ## Rebuild requirements files requirements.txt and requirements_dev.txt
 	pip-compile --verbose --no-index --output-file requirements.txt requirements.in
 	pip-compile --verbose --no-index --output-file requirements_dev.txt requirements_dev.in
 
 .PHONY: upgrade-requirements
-upgrade-requirements:
+upgrade-requirements: ## Upgrade requirements
 	pip-compile --upgrade --verbose --no-index --output-file requirements.txt requirements.in
 	pip-compile --upgrade --verbose --no-index --output-file requirements_dev.txt requirements_dev.in
 
@@ -87,11 +87,7 @@ test-all: ## run tests on every Python version with tox
 	tox
 
 coverage: ## check code coverage quickly with the default Python
-	coverage run --source proxysql_tools -m pytest
-	
-	coverage report -m
-	coverage html
-	$(BROWSER) htmlcov/index.html
+	pytest --cov=./proxysql_tools
 
 .PHONY: docs
 docs: ## generate Sphinx HTML documentation, including API docs
