@@ -171,19 +171,19 @@ def percona_xtradb_cluster(container_network):
     container_ports = [PXC_MYSQL_PORT]
     container_info = [
         {
-            'name': 'pxc01',
+            'name': 'pxc-node01',
             'ip': '172.25.3.1',
             'mysql_port': None,
             'id': None
         },
         {
-            'name': 'pxc02',
+            'name': 'pxc-node02',
             'ip': '172.25.3.2',
             'mysql_port': None,
             'id': None
         },
         {
-            'name': 'pxc03',
+            'name': 'pxc-node03',
             'ip': '172.25.3.3',
             'mysql_port': None,
             'id': None
@@ -280,12 +280,14 @@ def galera_manager(percona_xtradb_cluster):
         container_info = client.containers.get(node['id'])
         assert container_info.status == 'running'
 
-    manager = GaleraManager(host='127.0.0.1',
-                            port=cluster_node['mysql_port'],
+    manager = GaleraManager(cluster_node_host='127.0.0.1',
+                            cluster_node_port=cluster_node['mysql_port'],
                             user='root', password=PXC_ROOT_PASSWORD)
 
     def check_started():
-        with manager.get_connection() as conn:
+        manager.discover_cluster_nodes()
+
+        with manager.nodes[0].get_connection() as conn:
             with conn.cursor() as cursor:
                 cursor.execute('SELECT 1')
 
