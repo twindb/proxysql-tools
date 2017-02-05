@@ -4,7 +4,6 @@ from contextlib import contextmanager
 from proxysql_tools.entities.proxysql import (
     ProxySQLMySQLBackend, ProxySQLMySQLUser, BACKEND_STATUS_OFFLINE_HARD
 )
-from pymysql.connections import Connection
 from pymysql.cursors import DictCursor
 
 
@@ -64,8 +63,6 @@ class ProxySQLManager(object):
             return self.update_mysql_backend_status(
                 backend.hostgroup_id, backend.hostname, backend.port,
                 BACKEND_STATUS_OFFLINE_HARD)
-
-            return ret
 
     def update_mysql_backend_status(self, hostgroup_id,
                                     hostname, port, status):
