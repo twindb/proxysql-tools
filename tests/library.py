@@ -24,7 +24,8 @@ def docker_pull_image(image):
     # pull operation.
     pull_result = json.loads(lines[-1])
     if "error" in pull_result:
-        raise Exception("Could not pull {}: {}".format(image, pull_result["error"]))
+        raise Exception("Could not pull {}: {}".format(
+            image, pull_result["error"]))
 
 
 def get_unused_port():

@@ -19,7 +19,7 @@ def proxysql_manager(proxysql_container):
 
     container_ip = '127.0.0.1'
 
-    admin_port_bindings = proxysql_container.attrs['NetworkSettings']['Ports']['%s/tcp' % PROXYSQL_ADMIN_PORT]
+    admin_port_bindings = proxysql_container.attrs['NetworkSettings']['Ports']['%s/tcp' % PROXYSQL_ADMIN_PORT]  # NOQA
     admin_port = int(admin_port_bindings.pop()['HostPort'])
     assert admin_port
 

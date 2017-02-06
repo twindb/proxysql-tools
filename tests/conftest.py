@@ -38,7 +38,8 @@ def pytest_runtest_logreport(report):
                 ("docker logs {!r}:".format(container['Id'])),
                 (api.logs(container['Id'])),
             ]
-            report.longrepr.addsection('docker logs', os.linesep.join(log_lines))
+            report.longrepr.addsection('docker logs',
+                                       os.linesep.join(log_lines))
 
 
 @pytest.yield_fixture
