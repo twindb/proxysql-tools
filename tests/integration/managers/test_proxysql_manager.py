@@ -17,13 +17,10 @@ from tests.library import eventually
 def proxysql_manager(proxysql_container):
     assert proxysql_container.status == 'running'
 
-    container_ip = '127.0.0.1'
+    net_settings = proxysql_container.attrs['NetworkSettings']
+    container_ip = net_settings['Networks']['bridge']['IPAddress']
 
-    admin_port_bindings = proxysql_container.attrs['NetworkSettings']['Ports']['%s/tcp' % PROXYSQL_ADMIN_PORT]  # NOQA
-    admin_port = int(admin_port_bindings.pop()['HostPort'])
-    assert admin_port
-
-    manager = ProxySQLManager(host=container_ip, port=admin_port,
+    manager = ProxySQLManager(host=container_ip, port=PROXYSQL_ADMIN_PORT,
                               user=PROXYSQL_ADMIN_USER,
                               password=PROXYSQL_ADMIN_PASSWORD)
 
