@@ -17,7 +17,6 @@ PROXYSQL_CLIENT_PORT = 6033
 PROXYSQL_ADMIN_USER = 'admin'
 PROXYSQL_ADMIN_PASSWORD = 'admin'
 
-PXC_CLUSTER_NAME = 'test_cluster'
 PXC_MYSQL_PORT = 3306
 PXC_ROOT_PASSWORD = 'r00t'
 
@@ -158,8 +157,8 @@ def proxysql_container(proxysql_config_contents, tmpdir):
     api.remove_container(container=container['Id'], force=True)
 
 
-@pytest.yield_fixture(scope='session')
-def percona_xtradb_cluster(container_network):
+@pytest.yield_fixture
+def percona_xtradb_cluster_three_node(container_network):
     client = docker_client()
     api = client.api
 
@@ -185,6 +184,51 @@ def percona_xtradb_cluster(container_network):
             'id': None
         }
     ]
+    cluster_name = 'test_cluster_3_node'
+
+    # Create the cluster
+    container_info = create_percona_xtradb_cluster(
+        container_info, container_ports, container_network, cluster_name)
+
+    yield container_info
+
+    # Cleanup the containers now
+    for container in container_info:
+        api.remove_container(container=container['id'], force=True)
+
+
+@pytest.yield_fixture
+def percona_xtradb_cluster_one_node(container_network):
+    client = docker_client()
+    api = client.api
+
+    # The ports that need to be exposed from the PXC container to host
+    container_ports = [PXC_MYSQL_PORT]
+    container_info = [
+        {
+            'name': 'pxc-one-node-node01',
+            'ip': '172.25.3.10',
+            'mysql_port': None,
+            'id': None
+        }
+    ]
+    cluster_name = 'test_cluster_1_node'
+
+    # Create the cluster
+    container_info = create_percona_xtradb_cluster(
+        container_info, container_ports, container_network, cluster_name)
+
+    yield container_info
+
+    # Cleanup the containers now
+    for container in container_info:
+        api.remove_container(container=container['id'], force=True)
+
+
+def create_percona_xtradb_cluster(container_info, container_ports,
+                                  network_name, cluster_name):
+    client = docker_client()
+    api = client.api
 
     # Pull the container image locally first
     docker_pull_image(PXC_IMAGE)
@@ -200,7 +244,7 @@ def percona_xtradb_cluster(container_network):
         })
 
         networking_config = api.create_networking_config({
-            container_network: api.create_endpoint_config(
+            network_name: api.create_endpoint_config(
                 ipv4_address=node['ip']
             )
         })
@@ -208,7 +252,7 @@ def percona_xtradb_cluster(container_network):
         environment_vars = {
             'MYSQL_ROOT_PASSWORD': PXC_ROOT_PASSWORD,
             'CLUSTER_JOIN': cluster_join,
-            'CLUSTER_NAME': PXC_CLUSTER_NAME,
+            'CLUSTER_NAME': cluster_name,
             'XTRABACKUP_PASSWORD': 'xtrabackup'
         }
 
@@ -229,8 +273,4 @@ def percona_xtradb_cluster(container_network):
         # new node to the cluster
         time.sleep(5)
 
-    yield container_info
-
-    # Cleanup the containers now
-    for container in container_info:
-        api.remove_container(container=container['id'], force=True)
+    return container_info
