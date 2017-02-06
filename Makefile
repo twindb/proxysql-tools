@@ -87,7 +87,7 @@ test-all: ## run tests on every Python version with tox
 	tox
 
 coverage: ## check code coverage quickly with the default Python
-	pytest --cov=./proxysql_tools
+	py.test --cov-report term-missing --cov=./proxysql_tools tests
 
 .PHONY: docs
 docs: ## generate Sphinx HTML documentation, including API docs

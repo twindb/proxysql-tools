@@ -17,6 +17,7 @@ class ProxySQLMySQLBackend(Model):
 
     # The port MySQL is listening on. When using unix domain socket,
     # set this to 0
+
     port = IntType(default=3306, required=True)
 
     status = StringType(choices=[BACKEND_STATUS_ONLINE, BACKEND_STATUS_SHUNNED,
@@ -48,6 +49,7 @@ class ProxySQLMySQLUser(Model):
 
     # If there is no matching rule for the queries sent by this user
     # then the traffic is sent to the specified hostgroup
+
     default_hostgroup = IntType(default=0)
 
     # The schema to which the connection should change by default
@@ -73,6 +75,7 @@ class ProxySQLMySQLUser(Model):
 
     # If set to 1, this (username, password) pair is used for authenticating
     # to the ProxySQL instance
+
     frontend = IntType(choices=[0, 1], default=1)
 
     max_connections = IntType(default=10000)
