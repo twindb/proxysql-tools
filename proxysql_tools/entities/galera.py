@@ -10,6 +10,8 @@ LOCAL_STATE_DONOR_DESYNCED = 2
 LOCAL_STATE_JOINED = 3
 LOCAL_STATE_SYNCED = 4
 
+CLUSTER_STATUS_PRIMARY = 'primary'
+
 
 class GaleraNode(Model):
     """Contains information about a Galera cluster node."""
@@ -33,7 +35,7 @@ class GaleraNode(Model):
     # the primary status of the cluster component that the node is in. The node
     # should only return a value of Primary. Any other value indicates that the
     # node is part of a nonoperational component.
-    cluster_status = StringType(required=True, choices=['primary'])
+    cluster_status = StringType(required=True, choices=[CLUSTER_STATUS_PRIMARY])
 
     # Local state of the node in the cluster
     local_state = IntType(required=True, choices=[LOCAL_STATE_JOINING,
