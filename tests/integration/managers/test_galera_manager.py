@@ -1,30 +1,7 @@
-import pytest
-
 from proxysql_tools.entities.galera import GaleraNode, LOCAL_STATE_SYNCED
 from proxysql_tools.managers.galera_manager import GaleraManager
 from tests.conftest import PXC_ROOT_PASSWORD, PXC_MYSQL_PORT
 from tests.library import eventually
-
-
-@pytest.fixture
-def percona_xtradb_cluster_node(percona_xtradb_cluster_one_node):
-    node = GaleraNode({
-        'host': percona_xtradb_cluster_one_node[0]['ip'],
-        'username': 'root',
-        'password': PXC_ROOT_PASSWORD
-    })
-
-    def check_started():
-        with node.get_connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute('SELECT 1')
-
-        return True
-
-    # Allow the cluster node to startup completely.
-    eventually(check_started, retries=15, sleep_time=4)
-
-    return node
 
 
 def test__can_connect_to_galera_node(percona_xtradb_cluster_node):

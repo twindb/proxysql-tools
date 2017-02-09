@@ -1,43 +1,9 @@
-import pytest
-
 from proxysql_tools.entities.proxysql import (
     BACKEND_STATUS_OFFLINE_SOFT, BACKEND_STATUS_OFFLINE_HARD
 )
 from proxysql_tools.entities.proxysql import (
     ProxySQLMySQLBackend, ProxySQLMySQLUser
 )
-from proxysql_tools.managers.proxysql_manager import ProxySQLManager
-from tests.conftest import (
-    PROXYSQL_ADMIN_USER, PROXYSQL_ADMIN_PASSWORD, PROXYSQL_ADMIN_PORT
-)
-from tests.library import eventually
-
-
-@pytest.fixture
-def proxysql_manager(proxysql_container):
-    assert proxysql_container.status == 'running'
-
-    net_settings = proxysql_container.attrs['NetworkSettings']
-    container_ip = net_settings['Networks']['bridge']['IPAddress']
-
-    manager = ProxySQLManager(host=container_ip, port=PROXYSQL_ADMIN_PORT,
-                              user=PROXYSQL_ADMIN_USER,
-                              password=PROXYSQL_ADMIN_PASSWORD)
-
-    def check_started():
-        with manager.get_connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute('SELECT 1')
-
-        return True
-
-    # Allow ProxySQL to startup completely. The problem is that ProxySQL starts
-    # listening to the admin port before it has initialized completely which
-    # causes the test to fail with the exception:
-    # OperationalError: (2013, 'Lost connection to MySQL server during query')
-    eventually(check_started, retries=15, sleep_time=4)
-
-    return manager
 
 
 def test__can_connect_to_proxysql_admin_interface(proxysql_manager):
