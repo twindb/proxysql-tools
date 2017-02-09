@@ -99,3 +99,7 @@ class GaleraNode(Model):
         finally:
             if db:
                 db.close()
+
+    # To uniquely identify a Galera Node all we need is the host and port
+    def __hash__(self):
+        return hash('%s__%s' % (self.host, self.port))

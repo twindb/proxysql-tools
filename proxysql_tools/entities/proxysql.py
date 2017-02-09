@@ -34,7 +34,8 @@ class ProxySQLMySQLBackend(Model):
     comment = StringType(default='')
 
     def __hash__(self):
-        return hash(str(self.hostgroup_id) + self.hostname + str(self.port))
+        return hash("%s__%s__%s" % (self.hostgroup_id, self.hostname,
+                                    self.port))
 
 
 class ProxySQLMySQLUser(Model):
@@ -81,4 +82,4 @@ class ProxySQLMySQLUser(Model):
     max_connections = IntType(default=10000)
 
     def __hash__(self):
-        return hash(str(self.username) + str(self.backend))
+        return hash('%s__%s' % (self.username, self.backend))

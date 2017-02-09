@@ -91,7 +91,7 @@ class ProxySQLManager(object):
 
     def fetch_mysql_backends(self, hostgroup_id=None):
         """Fetch a list of the MySQL backends registered with ProxySQL, either
-            in a particular hostgroup or in all hostgroups.
+        in a particular hostgroup or in all hostgroups.
 
         :param int hostgroup_id: The ID of the hostgroup
             that the MySQL backend belongs to.
@@ -132,7 +132,7 @@ class ProxySQLManager(object):
 
     def fetch_mysql_users(self, default_hostgroup_id=None):
         """Fetch a list of MySQL users registered with ProxySQL,
-            either with a particular default_hostgroup or all of them.
+        either with a particular default_hostgroup or all of them.
 
         :param int default_hostgroup_id: The ID of the hostgroup
             which is the default for the user.
@@ -190,7 +190,7 @@ class ProxySQLManager(object):
     @staticmethod
     def is_mysql_backend_registered(backend, proxy_conn):
         """Check ProxySQL to verify whether a MySQL server is registered
-            with it or not.
+        with it or not.
 
         :param ProxySQLMySQLBackend backend: The MySQL backend server
             to check for registration.
@@ -209,7 +209,7 @@ class ProxySQLManager(object):
     @staticmethod
     def is_mysql_user_registered(user, proxy_conn):
         """Check ProxySQL to verify whether a MySQL user is registered
-            with it or not.
+        with it or not.
 
         :param ProxySQLMySQLUser user: The MySQL user to check
             for registration.
