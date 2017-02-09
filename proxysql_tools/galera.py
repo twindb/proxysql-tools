@@ -1,5 +1,5 @@
 from proxysql_tools.entities.galera import (
-    GaleraNode, LOCAL_STATE_SYNCED, LOCAL_STATE_DONOR_DESYNCED
+    LOCAL_STATE_SYNCED, LOCAL_STATE_DONOR_DESYNCED
 )
 from proxysql_tools.managers.galera_manager import (
     GaleraManager, GaleraNodeNonPrimary, GaleraNodeUnknownState
