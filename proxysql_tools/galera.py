@@ -7,10 +7,11 @@ from proxysql_tools.managers.galera_manager import (
 from proxysql_tools.managers.proxysql_manager import ProxySQLManager
 
 
-def register_cluster_with_proxysql(proxy_host, proxy_admin_port, proxy_admin_user,
-                                   proxy_admin_pass, hostgroup_id_writer,
-                                   hostgroup_id_reader, cluster_host,
-                                   cluster_port, cluster_user, cluster_pass):
+def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
+                                   proxy_admin_user, proxy_admin_pass,
+                                   hostgroup_id_writer, hostgroup_id_reader,
+                                   cluster_host, cluster_port, cluster_user,
+                                   cluster_pass):
     """Register a Galera cluster within ProxySQL. The nodes in the cluster
     will be distributed between writer hostgroup and reader hostgroup.
 
