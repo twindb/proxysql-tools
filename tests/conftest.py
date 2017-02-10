@@ -1,13 +1,13 @@
 import os
 import pprint
 import pytest
-import time
 
 from docker.types import IPAMConfig, IPAMPool
 from proxysql_tools.entities.galera import GaleraNode
 from proxysql_tools.managers.proxysql_manager import ProxySQLManager
 from tests.library import (
-    get_unused_port, docker_client, docker_pull_image, eventually
+    get_unused_port, docker_client, docker_pull_image, eventually,
+    create_percona_xtradb_cluster
 )
 
 
@@ -81,7 +81,7 @@ def container_network():
 
     yield network_name
 
-    api.remove_network(net_id=network['Id'])
+    #api.remove_network(net_id=network['Id'])
 
 
 @pytest.fixture
@@ -171,7 +171,7 @@ def proxysql_container(proxysql_config_contents, tmpdir, container_network):
 
     yield container_info
 
-    api.remove_container(container=container['Id'], force=True)
+    #api.remove_container(container=container['Id'], force=True)
 
 
 @pytest.fixture
@@ -206,35 +206,40 @@ def percona_xtradb_cluster_three_node(container_network):
     container_ports = [PXC_MYSQL_PORT]
     container_info = [
         {
+            'id': None,
             'name': 'pxc-node01',
             'ip': '172.25.3.1',
-            'mysql_port': None,
-            'id': None
+            'mysql_port': PXC_MYSQL_PORT,
+            'root_password': PXC_ROOT_PASSWORD
         },
         {
+            'id': None,
             'name': 'pxc-node02',
             'ip': '172.25.3.2',
-            'mysql_port': None,
-            'id': None
+            'mysql_port': PXC_MYSQL_PORT,
+            'root_password': PXC_ROOT_PASSWORD
         },
         {
+            'id': None,
             'name': 'pxc-node03',
             'ip': '172.25.3.3',
-            'mysql_port': None,
-            'id': None
+            'mysql_port': PXC_MYSQL_PORT,
+            'root_password': PXC_ROOT_PASSWORD
         }
     ]
     cluster_name = 'test_cluster_3_node'
 
     # Create the cluster
     container_info = create_percona_xtradb_cluster(
-        container_info, container_ports, container_network, cluster_name)
+        PXC_IMAGE, [CONTAINERS_FOR_TESTING_LABEL], container_info,
+        container_ports, container_network, cluster_name
+    )
 
     yield container_info
 
     # Cleanup the containers now
-    for container in container_info:
-        api.remove_container(container=container['id'], force=True)
+    #for container in container_info:
+    #    api.remove_container(container=container['id'], force=True)
 
 
 @pytest.yield_fixture
@@ -246,23 +251,26 @@ def percona_xtradb_cluster_one_node(container_network):
     container_ports = [PXC_MYSQL_PORT]
     container_info = [
         {
+            'id': None,
             'name': 'pxc-one-node-node01',
             'ip': '172.25.3.10',
-            'mysql_port': None,
-            'id': None
+            'mysql_port': PXC_MYSQL_PORT,
+            'root_password': PXC_ROOT_PASSWORD
         }
     ]
     cluster_name = 'test_cluster_1_node'
 
     # Create the cluster
     container_info = create_percona_xtradb_cluster(
-        container_info, container_ports, container_network, cluster_name)
+        PXC_IMAGE, [CONTAINERS_FOR_TESTING_LABEL], container_info,
+        container_ports, container_network, cluster_name
+    )
 
     yield container_info
 
     # Cleanup the containers now
-    for container in container_info:
-        api.remove_container(container=container['id'], force=True)
+    #for container in container_info:
+    #    api.remove_container(container=container['id'], force=True)
 
 
 @pytest.fixture
@@ -284,54 +292,3 @@ def percona_xtradb_cluster_node(percona_xtradb_cluster_one_node):
     eventually(check_started, retries=15, sleep_time=4)
 
     return node
-
-
-def create_percona_xtradb_cluster(container_info, container_ports,
-                                  network_name, cluster_name):
-    client = docker_client()
-    api = client.api
-
-    # Pull the container image locally first
-    docker_pull_image(PXC_IMAGE)
-
-    bootstrapped = False
-    cluster_join = ''
-    for node in container_info:
-        available_port = get_unused_port()
-        node['mysql_port'] = available_port
-
-        host_config = api.create_host_config(port_bindings={
-            PXC_MYSQL_PORT: available_port
-        })
-
-        networking_config = api.create_networking_config({
-            network_name: api.create_endpoint_config(
-                ipv4_address=node['ip']
-            )
-        })
-
-        environment_vars = {
-            'MYSQL_ROOT_PASSWORD': PXC_ROOT_PASSWORD,
-            'CLUSTER_JOIN': cluster_join,
-            'CLUSTER_NAME': cluster_name,
-            'XTRABACKUP_PASSWORD': 'xtrabackup'
-        }
-
-        container = api.create_container(
-            image=PXC_IMAGE, name=node['name'],
-            labels=[CONTAINERS_FOR_TESTING_LABEL], ports=container_ports,
-            host_config=host_config, networking_config=networking_config,
-            environment=environment_vars)
-        api.start(container['Id'])
-
-        node['id'] = container['Id']
-
-        if not bootstrapped:
-            cluster_join = node['ip']
-            bootstrapped = True
-
-        # We add a bit of delay to allow the node to startup before adding a
-        # new node to the cluster
-        time.sleep(5)
-
-    return container_info

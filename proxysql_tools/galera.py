@@ -1,6 +1,7 @@
 from proxysql_tools.entities.galera import (
     LOCAL_STATE_SYNCED, LOCAL_STATE_DONOR_DESYNCED
 )
+from proxysql_tools.entities.proxysql import BACKEND_STATUS_ONLINE
 from proxysql_tools.managers.galera_manager import (
     GaleraManager, GaleraNodeNonPrimary, GaleraNodeUnknownState
 )
@@ -40,10 +41,10 @@ def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
         return False
 
     # First we try to find nodes in synced state.
-    galera_nodes_synced = filter_nodes_with_state(galera_man.nodes,
-                                                  LOCAL_STATE_SYNCED)
-    galera_nodes_desynced = filter_nodes_with_state(galera_man.nodes,
-                                                    LOCAL_STATE_DONOR_DESYNCED)
+    galera_nodes_synced = [n for n in galera_man.nodes
+                           if n.local_state == LOCAL_STATE_SYNCED]
+    galera_nodes_desynced = [n for n in galera_man.nodes
+                             if n.local_state == LOCAL_STATE_DONOR_DESYNCED]
 
     # If we found no nodes in synced or donor/desynced state then we
     # cannot continue.
@@ -60,7 +61,8 @@ def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
             LOCAL_STATE_DONOR_DESYNCED
 
         backends_list = deregister_unhealthy_backends(
-            proxysql_man, galera_man.nodes, hostgroup_id, [desired_state])
+            proxysql_man, galera_man.nodes, hostgroup_id, [desired_state]
+        )
 
         # If there are more than one nodes in the writer hostgroup then we
         # remove all but one.
@@ -88,18 +90,24 @@ def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
                     proxysql_man.register_mysql_backend(hostgroup_id_reader,
                                                         node.host, node.port)
 
-    # Now filter nodes that are common between writer hostgroup and reader
-    # hostgroup
-    writer_backends = proxysql_man.fetch_mysql_backends(hostgroup_id_writer)
-    reader_backends = proxysql_man.fetch_mysql_backends(hostgroup_id_reader)
+    # Now filter healthy backends that are common between writer hostgroup and
+    # reader hostgroup
+    writer_backend = [b for b in
+                       proxysql_man.fetch_mysql_backends(hostgroup_id_writer)
+                       if b.status == BACKEND_STATUS_ONLINE][0]
+    reader_backends = [b for b in
+                       proxysql_man.fetch_mysql_backends(hostgroup_id_reader)
+                       if b.status == BACKEND_STATUS_ONLINE]
 
     # If we have more than one backend registered in the reader hostgroup
     # then we remove the ones that are also present in the writer hostgroup
     if len(reader_backends) > 1:
-        for backend in set(writer_backends).intersection(set(reader_backends)):
-            proxysql_man.deregister_mysql_backend(hostgroup_id_reader,
-                                                  backend.hostname,
-                                                  backend.port)
+        for backend in reader_backends:
+            if (backend.hostname == writer_backend.hostname and
+                    backend.port == writer_backend.port):
+                proxysql_man.deregister_mysql_backend(
+                    hostgroup_id_reader, backend.hostname,backend.port
+                )
 
     return True
 
@@ -135,22 +143,6 @@ def deregister_unhealthy_backends(proxysql_man, galera_nodes, hostgroup_id,
         backend_list.remove(backend)
 
     return backend_list
-
-
-def filter_nodes_with_state(galera_nodes, desired_state):
-    """Given a list of Galera Nodes, return the node that is in the desired
-    state.
-
-    :param list[GaleraNode] galera_nodes: List of Galera nodes.
-    :param str desired_state: Find a node with this state.
-    :return GaleraNode: Return a node in desired state.
-    """
-    nodes = []
-    for node in galera_nodes:
-        if node.local_state == desired_state:
-            nodes.append(node)
-
-    return nodes
 
 
 def register_mysql_users_with_proxysql():
