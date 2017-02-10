@@ -32,7 +32,7 @@ def test__can_register_cluster_with_proxysql(percona_xtradb_cluster_node,
         percona_xtradb_cluster_node.password
     )
 
-    assert ret == True
+    assert ret
 
     writer_backends = proxysql_manager.fetch_mysql_backends(hostgroup_writer)
     reader_backends = proxysql_manager.fetch_mysql_backends(hostgroup_reader)
@@ -57,7 +57,7 @@ def test__register_cluster_with_proxysql_is_idempotent(
         percona_xtradb_cluster_node.password
     )
 
-    assert ret == True
+    assert ret
 
     writer_backends = proxysql_manager.fetch_mysql_backends(hostgroup_writer)
     reader_backends = proxysql_manager.fetch_mysql_backends(hostgroup_reader)
@@ -71,7 +71,7 @@ def test__register_cluster_with_proxysql_is_idempotent(
         percona_xtradb_cluster_node.password
     )
 
-    assert ret == True
+    assert ret
 
     assert proxysql_manager.fetch_mysql_backends(hostgroup_writer)[0].hostname == writer_backends[0].hostname  # NOQA
     assert proxysql_manager.fetch_mysql_backends(hostgroup_reader)[0].hostname == reader_backends[0].hostname  # NOQA
@@ -95,7 +95,7 @@ def test__register_cluster_with_proxysql_removes_incorrect_nodes(
         percona_xtradb_cluster_node.password
     )
 
-    assert ret == True
+    assert ret
 
     # Now we register the nodes from the three node cluster
     galera_man = GaleraManager(percona_xtradb_cluster_three_node[0]['ip'],
@@ -107,7 +107,7 @@ def test__register_cluster_with_proxysql_removes_incorrect_nodes(
         galera_man.host, galera_man.port, galera_man.user, galera_man.password
     )
 
-    assert ret == True
+    assert ret
 
     # There should be one writer backend and two reader backends.
     # Also validate the backends to make sure they are part of the 3-node

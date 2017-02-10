@@ -93,8 +93,8 @@ def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
     # Now filter healthy backends that are common between writer hostgroup and
     # reader hostgroup
     writer_backend = [b for b in
-                       proxysql_man.fetch_mysql_backends(hostgroup_id_writer)
-                       if b.status == BACKEND_STATUS_ONLINE][0]
+                      proxysql_man.fetch_mysql_backends(hostgroup_id_writer)
+                      if b.status == BACKEND_STATUS_ONLINE][0]
     reader_backends = [b for b in
                        proxysql_man.fetch_mysql_backends(hostgroup_id_reader)
                        if b.status == BACKEND_STATUS_ONLINE]
@@ -102,12 +102,11 @@ def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
     # If we have more than one backend registered in the reader hostgroup
     # then we remove the ones that are also present in the writer hostgroup
     if len(reader_backends) > 1:
-        for backend in reader_backends:
-            if (backend.hostname == writer_backend.hostname and
-                    backend.port == writer_backend.port):
-                proxysql_man.deregister_mysql_backend(
-                    hostgroup_id_reader, backend.hostname,backend.port
-                )
+        for b in reader_backends:
+            if (b.hostname == writer_backend.hostname and
+                    b.port == writer_backend.port):
+                proxysql_man.deregister_mysql_backend(hostgroup_id_reader,
+                                                      b.hostname, b.port)
 
     return True
 
