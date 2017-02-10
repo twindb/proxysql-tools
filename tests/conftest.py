@@ -81,7 +81,7 @@ def container_network():
 
     yield network_name
 
-    #api.remove_network(net_id=network['Id'])
+    api.remove_network(net_id=network['Id'])
 
 
 @pytest.fixture
@@ -171,7 +171,7 @@ def proxysql_container(proxysql_config_contents, tmpdir, container_network):
 
     yield container_info
 
-    #api.remove_container(container=container['Id'], force=True)
+    api.remove_container(container=container['Id'], force=True)
 
 
 @pytest.fixture
@@ -238,8 +238,8 @@ def percona_xtradb_cluster_three_node(container_network):
     yield container_info
 
     # Cleanup the containers now
-    #for container in container_info:
-    #    api.remove_container(container=container['id'], force=True)
+    for container in container_info:
+        api.remove_container(container=container['id'], force=True)
 
 
 @pytest.yield_fixture
@@ -269,8 +269,8 @@ def percona_xtradb_cluster_one_node(container_network):
     yield container_info
 
     # Cleanup the containers now
-    #for container in container_info:
-    #    api.remove_container(container=container['id'], force=True)
+    for container in container_info:
+        api.remove_container(container=container['id'], force=True)
 
 
 @pytest.fixture
