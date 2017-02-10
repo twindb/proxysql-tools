@@ -1,4 +1,4 @@
-from proxysql_tools.entities.galera import GaleraNode
+from proxysql_tools.entities.galera import GaleraNode, CLUSTER_STATUS_PRIMARY
 from schematics.exceptions import ModelValidationError
 
 
@@ -37,6 +37,10 @@ class GaleraManager(object):
             'password': self.password
         })
         initial_node.refresh_state()
+
+        # Check that the initial node status is 'PRIMARY'
+        if not initial_node.cluster_status == CLUSTER_STATUS_PRIMARY:
+            raise GaleraNodeNonPrimary()
 
         self._nodes = [initial_node]
 
@@ -83,7 +87,6 @@ class GaleraManager(object):
 
         :param GaleraNode node1: The Galera node to be compared.
         :param GaleraNode node2: The Galera node to be compared.
-
         :return bool: Returns True if both nodes are in the same cluster,
             False otherwise.
         """
@@ -91,4 +94,8 @@ class GaleraManager(object):
 
 
 class GaleraNodeUnknownState(Exception):
+    pass
+
+
+class GaleraNodeNonPrimary(Exception):
     pass
