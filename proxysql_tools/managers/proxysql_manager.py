@@ -37,9 +37,6 @@ class ProxySQLManager(object):
         backend.port = port
 
         with self.get_connection() as proxy_conn:
-            if self.is_mysql_backend_registered(backend, proxy_conn):
-                return True
-
             return self.insert_or_update_mysql_backend(backend, proxy_conn)
 
     def deregister_mysql_backend(self, hostgroup_id, hostname, port):

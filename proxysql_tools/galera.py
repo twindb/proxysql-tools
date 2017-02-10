@@ -130,16 +130,21 @@ def deregister_unhealthy_backends(proxysql_man, galera_nodes, hostgroup_id,
         # Find the matching galera node and then see if the node state is
         # synced or donor/desynced. If not one of those two states then we
         # deregister the node from ProxySQL as well.
-        for node in galera_nodes:
-            if node.host == backend.hostname and node.port == backend.port:
-                if node.local_state in desired_states:
-                    continue
+        backend_found_in_cluster = False
+        if backend.status == BACKEND_STATUS_ONLINE:
+            for node in galera_nodes:
+                if (node.host == backend.hostname and node.port == backend.port
+                        and node.local_state in desired_states):
+                    backend_found_in_cluster = True
+                    break
 
-        proxysql_man.deregister_mysql_backend(hostgroup_id, backend.hostname,
-                                              backend.port)
+        if not backend_found_in_cluster:
+            proxysql_man.deregister_mysql_backend(hostgroup_id,
+                                                  backend.hostname,
+                                                  backend.port)
 
-        # Remove the backend from list of writer backends as well.
-        backend_list.remove(backend)
+            # Remove the backend from list of writer backends as well.
+            backend_list.remove(backend)
 
     return backend_list
 
