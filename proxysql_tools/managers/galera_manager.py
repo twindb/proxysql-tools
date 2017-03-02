@@ -40,7 +40,8 @@ class GaleraManager(object):
 
         # Check that the initial node status is 'PRIMARY'
         if not initial_node.cluster_status == CLUSTER_STATUS_PRIMARY:
-            raise GaleraNodeNonPrimary()
+            raise GaleraNodeNonPrimary('Node: %s:%s is in non-primary state' %
+                                       (initial_node.host, initial_node.port))
 
         self._nodes = [initial_node]
 
@@ -71,9 +72,16 @@ class GaleraManager(object):
 
                     try:
                         node.refresh_state()
+                        if not node.cluster_status == CLUSTER_STATUS_PRIMARY:
+                            raise GaleraNodeNonPrimary(
+                                'Node: %s:%s is in non-primary state' %
+                                (node.host, node.port)
+                            )
                     except ModelValidationError as e:
                         # The node state cannot be refreshed as some of the
-                        # properties of the node could not be fetched.
+                        # properties of the node could not be fetched. We
+                        # should fail the discovery in such a case as this is
+                        # unexpected error.
                         raise GaleraNodeUnknownState(e.messages)
 
                     if GaleraManager.nodes_in_same_cluster(initial_node, node):
