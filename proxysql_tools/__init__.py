@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import logging
 
 __author__ = """TwinDB Development Team"""

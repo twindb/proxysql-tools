@@ -1,3 +1,4 @@
+from proxysql_tools import log
 from proxysql_tools.entities.galera import (
     LOCAL_STATE_SYNCED,
     LOCAL_STATE_DONOR_DESYNCED
@@ -39,8 +40,12 @@ def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
     try:
         galera_man.discover_cluster_nodes()
     except GaleraNodeNonPrimary:
+        log.error('Cluster node %s:%s used for registration is non-primary.' %
+                  (cluster_host, cluster_port))
         return False
     except GaleraNodeUnknownState:
+        log.error('Cluster node %s:%s used for registration is in unknown '
+                  'state.' % (cluster_host, cluster_port))
         return False
 
     # First we try to find nodes in synced state.
@@ -52,6 +57,7 @@ def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
     # If we found no nodes in synced or donor/desynced state then we
     # cannot continue.
     if not galera_nodes_synced and not galera_nodes_desynced:
+        log.error('No node found in SYNCED or DESYNCED state.')
         return False
 
     proxysql_man = ProxySQLManager(proxy_host, proxy_admin_port,

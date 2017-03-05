@@ -1,5 +1,7 @@
-from proxysql_tools.entities.galera import GaleraNode, CLUSTER_STATUS_PRIMARY
 from schematics.exceptions import ModelValidationError
+
+from proxysql_tools import log
+from proxysql_tools.entities.galera import GaleraNode, CLUSTER_STATUS_PRIMARY
 
 
 class GaleraManager(object):
@@ -36,12 +38,9 @@ class GaleraManager(object):
             'username': self.user,
             'password': self.password
         })
-        initial_node.refresh_state()
 
         # Check that the initial node status is 'PRIMARY'
-        if not initial_node.cluster_status == CLUSTER_STATUS_PRIMARY:
-            raise GaleraNodeNonPrimary('Node: %s:%s is in non-primary state' %
-                                       (initial_node.host, initial_node.port))
+        self.refresh_and_validate_node_state(initial_node)
 
         self._nodes = [initial_node]
 
@@ -53,8 +52,15 @@ class GaleraManager(object):
                        for r in cursor.fetchall()}
 
                 if not res.get('wsrep_incoming_addresses'):
-                    raise GaleraNodeUnknownState('Unknown status variable '
-                                                 '"wsrep_incoming_addresses"')
+                    err_msg = ('Node %s:%s unknown status variable '
+                               '"wsrep_incoming_addresses"')
+
+                    log.error(err_msg)
+                    raise GaleraNodeUnknownState(err_msg)
+
+                log.info('Node %s:%s wsrep_incoming_addresses:: %s' %
+                         (initial_node.host, initial_node.port,
+                          res['wsrep_incoming_addresses']))
 
                 for host_port in res['wsrep_incoming_addresses'].split(','):
                     host, port = host_port.split(':')
@@ -70,24 +76,39 @@ class GaleraManager(object):
                         'password': initial_node.password
                     })
 
-                    try:
-                        node.refresh_state()
-                        if not node.cluster_status == CLUSTER_STATUS_PRIMARY:
-                            raise GaleraNodeNonPrimary(
-                                'Node: %s:%s is in non-primary state' %
-                                (node.host, node.port)
-                            )
-                    except ModelValidationError as e:
-                        # The node state cannot be refreshed as some of the
-                        # properties of the node could not be fetched. We
-                        # should fail the discovery in such a case as this is
-                        # unexpected error.
-                        raise GaleraNodeUnknownState(e.messages)
+                    # Check that the initial node status is 'PRIMARY'
+                    self.refresh_and_validate_node_state(node)
 
                     if GaleraManager.nodes_in_same_cluster(initial_node, node):
                         self._nodes.append(node)
 
         return True
+
+    @staticmethod
+    def refresh_and_validate_node_state(node):
+        """Validates the state of the node to ensure that the node's status
+        is PRIMARY and that all the node's properties can be fetched.
+
+        :param GaleraNode node: The object that stores information on the
+            Galera node.
+        """
+        try:
+            node.refresh_state()
+            if not node.cluster_status == CLUSTER_STATUS_PRIMARY:
+                err_msg = ('Node %s:%s is in non-primary '
+                           'state %s' % (node.host, node.port,
+                                         node.cluster_status))
+
+                log.error(err_msg)
+                raise GaleraNodeNonPrimary(err_msg)
+        except ModelValidationError as e:
+            # The node state cannot be refreshed as some of the
+            # properties of the node could not be fetched. We
+            # should fail the discovery in such a case as this is
+            # unexpected error.
+            log.error('Node %s:%s state could not be fetched' %
+                      (node.host, node.port))
+            raise GaleraNodeUnknownState(e.messages)
 
     @staticmethod
     def nodes_in_same_cluster(node1, node2):
