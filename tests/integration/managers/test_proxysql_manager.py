@@ -22,7 +22,7 @@ def test__can_connect_to_proxysql_admin_interface(proxysql_manager):
 def test__can_register_mysql_backend(proxysql_manager):
     backend = get_mysql_backend('db01')
 
-    assert proxysql_manager.register_mysql_backend(
+    assert proxysql_manager.register_backend(
         backend.hostgroup_id, backend.hostname, backend.port)
 
     with proxysql_manager.get_connection() as conn:
@@ -32,24 +32,24 @@ def test__can_register_mysql_backend(proxysql_manager):
 def test__fetch_mysql_backends(proxysql_manager):
     backend = get_mysql_backend('db01')
 
-    assert proxysql_manager.register_mysql_backend(
+    assert proxysql_manager.register_backend(
         backend.hostgroup_id, backend.hostname, backend.port)
 
-    backends_list = proxysql_manager.fetch_mysql_backends()
+    backends_list = proxysql_manager.fetch_backends()
     assert len(backends_list) == 1
     assert backends_list.pop().hostname == 'db01'
 
 
 def test__fetch_mysql_backends_belonging_to_hostgroup(proxysql_manager):
     backend = get_mysql_backend('db01')
-    assert proxysql_manager.register_mysql_backend(
+    assert proxysql_manager.register_backend(
         backend.hostgroup_id, backend.hostname, backend.port)
 
     backend = get_mysql_backend('db02', hostgroup_id=200)
-    assert proxysql_manager.register_mysql_backend(
+    assert proxysql_manager.register_backend(
         backend.hostgroup_id, backend.hostname, backend.port)
 
-    backends_list = proxysql_manager.fetch_mysql_backends(hostgroup_id=200)
+    backends_list = proxysql_manager.fetch_backends(hostgroup_id=200)
     assert len(backends_list) == 1
     assert backends_list.pop().hostname == 'db02'
 
@@ -57,26 +57,26 @@ def test__fetch_mysql_backends_belonging_to_hostgroup(proxysql_manager):
 def test__update_mysql_backend_status(proxysql_manager):
     backend = get_mysql_backend('db01')
 
-    proxysql_manager.register_mysql_backend(
+    proxysql_manager.register_backend(
         backend.hostgroup_id, backend.hostname, backend.port)
 
     assert proxysql_manager.update_mysql_backend_status(
         backend.hostgroup_id, backend.hostname, backend.port,
         BACKEND_STATUS_OFFLINE_SOFT)
 
-    backends_list = proxysql_manager.fetch_mysql_backends()
+    backends_list = proxysql_manager.fetch_backends()
     assert backends_list.pop().status == BACKEND_STATUS_OFFLINE_SOFT
 
 
 def test__mysql_backend_can_be_deregistered(proxysql_manager):
     backend = get_mysql_backend('db01')
 
-    proxysql_manager.register_mysql_backend(
+    proxysql_manager.register_backend(
         backend.hostgroup_id, backend.hostname, backend.port)
 
-    assert proxysql_manager.deregister_mysql_backend(
+    assert proxysql_manager.deregister_backend(
         backend.hostgroup_id, backend.hostname, backend.port)
-    backends_list = proxysql_manager.fetch_mysql_backends()
+    backends_list = proxysql_manager.fetch_backends()
 
     assert backends_list.pop().status == BACKEND_STATUS_OFFLINE_HARD
 

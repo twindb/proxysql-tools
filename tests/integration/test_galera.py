@@ -11,8 +11,8 @@ def test__can_register_cluster_with_proxysql(percona_xtradb_cluster_node,
     hostgroup_reader = 11
 
     # To start off there should be no nodes in the hostgroups
-    assert len(proxysql_manager.fetch_mysql_backends(hostgroup_writer)) == 0
-    assert len(proxysql_manager.fetch_mysql_backends(hostgroup_reader)) == 0
+    assert len(proxysql_manager.fetch_backends(hostgroup_writer)) == 0
+    assert len(proxysql_manager.fetch_backends(hostgroup_reader)) == 0
 
     galera_man = GaleraManager(
         percona_xtradb_cluster_node.host, percona_xtradb_cluster_node.port,
@@ -34,8 +34,8 @@ def test__can_register_cluster_with_proxysql(percona_xtradb_cluster_node,
 
     assert ret
 
-    writer_backends = proxysql_manager.fetch_mysql_backends(hostgroup_writer)
-    reader_backends = proxysql_manager.fetch_mysql_backends(hostgroup_reader)
+    writer_backends = proxysql_manager.fetch_backends(hostgroup_writer)
+    reader_backends = proxysql_manager.fetch_backends(hostgroup_reader)
 
     assert len(writer_backends) == len(reader_backends) == 1
     assert writer_backends[0].hostname == reader_backends[0].hostname
@@ -59,8 +59,8 @@ def test__register_cluster_with_proxysql_is_idempotent(
 
     assert ret
 
-    writer_backends = proxysql_manager.fetch_mysql_backends(hostgroup_writer)
-    reader_backends = proxysql_manager.fetch_mysql_backends(hostgroup_reader)
+    writer_backends = proxysql_manager.fetch_backends(hostgroup_writer)
+    reader_backends = proxysql_manager.fetch_backends(hostgroup_reader)
 
     # We try to register again and check that registration is idempotent
     ret = register_cluster_with_proxysql(
@@ -73,8 +73,8 @@ def test__register_cluster_with_proxysql_is_idempotent(
 
     assert ret
 
-    assert proxysql_manager.fetch_mysql_backends(hostgroup_writer)[0].hostname == writer_backends[0].hostname  # NOQA
-    assert proxysql_manager.fetch_mysql_backends(hostgroup_reader)[0].hostname == reader_backends[0].hostname  # NOQA
+    assert proxysql_manager.fetch_backends(hostgroup_writer)[0].hostname == writer_backends[0].hostname  # NOQA
+    assert proxysql_manager.fetch_backends(hostgroup_reader)[0].hostname == reader_backends[0].hostname  # NOQA
 
 
 def test__register_cluster_with_proxysql_removes_incorrect_nodes(
@@ -115,10 +115,10 @@ def test__register_cluster_with_proxysql_removes_incorrect_nodes(
     galera_man.discover_cluster_nodes()
 
     writer_backends = [b for b in
-                       proxysql_manager.fetch_mysql_backends(hostgroup_writer)
+                       proxysql_manager.fetch_backends(hostgroup_writer)
                        if b.status == BACKEND_STATUS_ONLINE]
     reader_backends = [b for b in
-                       proxysql_manager.fetch_mysql_backends(hostgroup_reader)
+                       proxysql_manager.fetch_backends(hostgroup_reader)
                        if b.status == BACKEND_STATUS_ONLINE]
 
     assert len(writer_backends) == 1

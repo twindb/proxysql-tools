@@ -8,19 +8,23 @@ from pymysql.cursors import DictCursor
 
 
 class ProxySQLManager(object):
-    def __init__(self, host, port, user, password, socket=None):
+    def __init__(self, host, port, user, password, socket=None,
+                 reload_runtime=True):
         """Initializes the ProxySQL manager.
 
         :param str host: The ProxySQL host to operate against.
         :param int port: The ProxySQL admin port to connect to.
         :param str user: The ProxySQL admin username.
         :param str password: The ProxySQL admin password.
+        :param bool reload_runtime: Whether the ProxySQL runtime should be
+            reloaded for the changes to take affect.
         """
         self.host = host
         self.port = int(port)
         self.user = user
         self.password = password
         self.socket = socket
+        self.should_reload_runtime = reload_runtime
 
     def reload_runtime(self):
         """Reload the ProxySQL runtime so that the changes take affect.
@@ -32,16 +36,13 @@ class ProxySQLManager(object):
                 cursor.execute('LOAD MYSQL SERVERS TO RUNTIME')
                 cursor.execute('LOAD MYSQL USERS TO RUNTIME')
 
-    def register_mysql_backend(self, hostgroup_id, hostname, port,
-                               reload_runtime=True):
+    def register_backend(self, hostgroup_id, hostname, port):
         """Register a MySQL backend with ProxySQL.
 
         :param int hostgroup_id: The ID of the hostgroup that the MySQL backend
             belongs to.
         :param str hostname: The hostname of the MySQL backend.
         :param int port: The port that the MySQL backend listens on.
-        :param bool reload_runtime: Whether the ProxySQL runtime should be
-            reloaded for the changes to take affect.
         :return bool: True on success, False otherwise.
         """
         backend = ProxySQLMySQLBackend()
@@ -50,19 +51,15 @@ class ProxySQLManager(object):
         backend.port = port
 
         with self.get_connection() as proxy_conn:
-            return self.insert_or_update_mysql_backend(backend, proxy_conn,
-                                                       reload_runtime)
+            return self.insert_or_update_mysql_backend(backend, proxy_conn)
 
-    def deregister_mysql_backend(self, hostgroup_id, hostname, port,
-                                 reload_runtime=True):
+    def deregister_backend(self, hostgroup_id, hostname, port):
         """Deregister a MySQL backend from ProxySQL database.
 
         :param int hostgroup_id: The ID of the hostgroup that the MySQL backend
             belongs to.
         :param str hostname: The hostname of the MySQL backend.
         :param int port: The port that the MySQL backend listens on.
-        :param bool reload_runtime: Whether the ProxySQL runtime should be
-            reloaded for the changes to take affect.
         :return bool: True on success, False otherwise.
         """
         backend = ProxySQLMySQLBackend()
@@ -76,10 +73,10 @@ class ProxySQLManager(object):
 
             return self.update_mysql_backend_status(
                 backend.hostgroup_id, backend.hostname, backend.port,
-                BACKEND_STATUS_OFFLINE_HARD, reload_runtime)
+                BACKEND_STATUS_OFFLINE_HARD)
 
     def update_mysql_backend_status(self, hostgroup_id, hostname, port,
-                                    status, reload_runtime=True):
+                                    status):
         """Update the status of a MySQL backend.
 
         :param int hostgroup_id: The ID of the hostgroup
@@ -87,8 +84,6 @@ class ProxySQLManager(object):
         :param str hostname: The hostname of the MySQL backend.
         :param int port: The port that the MySQL backend listens on.
         :param str status: MySQL backend status.
-        :param bool reload_runtime: Whether the ProxySQL runtime should be
-            reloaded for the changes to take affect.
         :return bool: True on success, False otherwise.
         """
         backend = ProxySQLMySQLBackend()
@@ -103,10 +98,9 @@ class ProxySQLManager(object):
                     'MySQL backend %s:%s is not registered' %
                     (backend.hostname, backend.port))
 
-            return self.insert_or_update_mysql_backend(backend, proxy_conn,
-                                                       reload_runtime)
+            return self.insert_or_update_mysql_backend(backend, proxy_conn)
 
-    def fetch_mysql_backends(self, hostgroup_id=None):
+    def fetch_backends(self, hostgroup_id=None):
         """Fetch a list of the MySQL backends registered with ProxySQL, either
         in a particular hostgroup or in all hostgroups.
 
@@ -127,16 +121,13 @@ class ProxySQLManager(object):
 
         return backends_list
 
-    def register_mysql_user(self, username, password, default_hostgroup,
-                            reload_runtime=True):
+    def register_mysql_user(self, username, password, default_hostgroup):
         """Register a MySQL user with ProxySQL.
 
         :param str username: The MySQL username.
         :param str password: The MySQL user's password hash.
         :param int default_hostgroup: The ID of the hostgroup that is the
             default for this user.
-        :param bool reload_runtime: Whether the ProxySQL runtime should be
-            reloaded for the changes to take affect.
         :return bool: True on success, False otherwise.
         """
         user = ProxySQLMySQLUser()
@@ -148,8 +139,7 @@ class ProxySQLManager(object):
             if self.is_mysql_user_registered(user, proxy_conn):
                 return True
 
-            return self.insert_or_update_mysql_user(user, proxy_conn,
-                                                    reload_runtime)
+            return self.insert_or_update_mysql_user(user, proxy_conn)
 
     def fetch_mysql_users(self, default_hostgroup_id=None):
         """Fetch a list of MySQL users registered with ProxySQL,
@@ -245,15 +235,11 @@ class ProxySQLManager(object):
 
         return int(result['cnt']) > 0
 
-    @staticmethod
-    def insert_or_update_mysql_backend(backend, proxy_conn,
-                                       reload_runtime=True):
+    def insert_or_update_mysql_backend(self, backend, proxy_conn):
         """Update the MySQL backend registered with ProxySQL.
 
         :param ProxySQLMySQLBackend backend: The MySQL backend server.
         :param Connection proxy_conn: A connection to ProxySQL.
-        :param bool reload_runtime: Whether the ProxySQL runtime should be
-            reloaded for the changes to take affect.
         :return bool: True on success, False otherwise.
         """
         backend.validate()
@@ -270,20 +256,17 @@ class ProxySQLManager(object):
             cursor.execute(sql)
             cursor.execute('SAVE MYSQL SERVERS TO DISK')
 
-            if reload_runtime:
+            if self.should_reload_runtime:
                 cursor.execute('LOAD MYSQL SERVERS TO RUNTIME')
 
         return True
 
-    @staticmethod
-    def insert_or_update_mysql_user(user, proxy_conn, reload_runtime=True):
+    def insert_or_update_mysql_user(self, user, proxy_conn):
         """Update the MySQL backend registered with ProxySQL.
 
         :param ProxySQLMySQLUser user: The MySQL user
             that will connect to ProxySQL.
         :param Connection proxy_conn: A connection to ProxySQL.
-        :param bool reload_runtime: Whether the ProxySQL runtime should be
-            reloaded for the changes to take affect.
         :return bool: True on success, False otherwise.
         """
         user.validate()
@@ -301,7 +284,7 @@ class ProxySQLManager(object):
 
             cursor.execute('SAVE MYSQL USERS TO DISK')
 
-            if reload_runtime:
+            if self.should_reload_runtime:
                 cursor.execute('LOAD MYSQL USERS TO RUNTIME')
 
         return True
