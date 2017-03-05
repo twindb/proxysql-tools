@@ -3,7 +3,9 @@ from ConfigParser import ConfigParser
 
 import click
 
-from proxysql_tools import aws, setup_logging, log, __version__
+import proxysql_tools.aws
+import proxysql_tools.galera
+from proxysql_tools import setup_logging, log, __version__
 from proxysql_tools.managers.proxysql_manager import (
     ProxySQLManager,
     ProxySQLAdminConnectionError
@@ -15,7 +17,7 @@ pass_cfg = click.make_pass_decorator(ConfigParser, ensure=True)
 @click.group(invoke_without_command=True)
 @click.option('--debug', help='Print debug messages', is_flag=True,
               default=False)
-@click.option('--config', help='ProxySQL Tools config file.',
+@click.option('--config', help='ProxySQL Tools configuration file.',
               default='/etc/twindb/proxysql-tools.cfg',
               show_default=True)
 @click.option('--version', help='Show tool version and exit.', is_flag=True,
@@ -23,7 +25,7 @@ pass_cfg = click.make_pass_decorator(ConfigParser, ensure=True)
 @pass_cfg
 @click.pass_context
 def main(ctx, cfg, debug, config, version):
-    if not ctx.invoked_subcommand:
+    if ctx.invoked_subcommand is None:
         if version:
             print(__version__)
             exit(0)
@@ -43,11 +45,7 @@ def main(ctx, cfg, debug, config, version):
 @main.command()
 @pass_cfg
 def ping(cfg):
-    """Checks the health of ProxySQL.
-
-    :param ConfigParser cfg: The config object that holds options and their
-        values from the parsed configuration file.
-    """
+    """Checks the health of ProxySQL."""
     cfg_options = {item[0]: item[1] for item in cfg.items('proxysql')}
 
     log.debug('Performing health check on ProxySQL instance at %s:%s' %
@@ -67,14 +65,48 @@ def ping(cfg):
              (cfg_options['host'], cfg_options['admin_port']))
 
 
-@main.command()
+@main.group()
 @pass_cfg
-def aws_notify_master(cfg):
-    """The notify_master script for keepalived.
+def aws(cfg):
+    """Commands to interact with ProxySQL on AWS."""
+    pass
 
-    :param ConfigParser cfg: The config object that holds options and their
-        values from the parsed configuration file.
-    """
-    log.debug('Switching to master state and executing keepalived '
+
+@aws.command()
+@pass_cfg
+def notify_master(cfg):
+    """The notify_master script for keepalived."""
+    log.debug('Switching to master role and executing keepalived '
               'notify_master script.')
-    aws.notify_master(cfg)
+    proxysql_tools.aws.notify_master(cfg)
+
+
+@main.group()
+@pass_cfg
+@click.pass_context
+def galera(cfg):
+    """Commands for ProxySQL and Galera integration."""
+    pass
+
+
+@galera.command()
+@pass_cfg
+def register(cfg):
+    """Registers Galera cluster nodes with ProxySQL."""
+    proxysql_options = {item[0]: item[1] for item in cfg.items('proxysql')}
+    galera_options = {item[0]: item[1] for item in cfg.items('galera')}
+
+    ret_val = proxysql_tools.galera.register_cluster_with_proxysql(
+        proxysql_options['host'], proxysql_options['admin_port'],
+        proxysql_options['admin_username'], proxysql_options['admin_password'],
+        galera_options['writer_hostgroup_id'],
+        galera_options['reader_hostgroup_id'], galera_options['cluster_host'],
+        galera_options['cluster_port'], galera_options['cluster_username'],
+        galera_options['cluster_password']
+    )
+
+    if not ret_val:
+        log.error('Registration of Galera cluster nodes failed.')
+        exit(1)
+
+    log.info('Registration of Galera cluster nodes successful.')
