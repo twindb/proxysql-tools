@@ -1,10 +1,12 @@
 from proxysql_tools.entities.galera import (
-    GaleraNode, LOCAL_STATE_SYNCED, LOCAL_STATE_DONOR_DESYNCED,
-    CLUSTER_STATUS_PRIMARY
+    LOCAL_STATE_SYNCED,
+    LOCAL_STATE_DONOR_DESYNCED
 )
 from proxysql_tools.entities.proxysql import BACKEND_STATUS_ONLINE
 from proxysql_tools.managers.galera_manager import (
-    GaleraManager, GaleraNodeNonPrimary, GaleraNodeUnknownState
+    GaleraManager,
+    GaleraNodeNonPrimary,
+    GaleraNodeUnknownState
 )
 from proxysql_tools.managers.proxysql_manager import ProxySQLManager
 
@@ -67,9 +69,10 @@ def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
                 desired_state = LOCAL_STATE_DONOR_DESYNCED
                 nodes_list = galera_nodes_desynced
 
-            backends_list = deregister_unhealthy_backends(
-                proxysql_man, galera_man.nodes, hostgroup_id, [desired_state]
-            )
+            backends_list = deregister_unhealthy_backends(proxysql_man,
+                                                          galera_man.nodes,
+                                                          hostgroup_id,
+                                                          [desired_state])
 
             # If there are more than one nodes in the writer hostgroup then we
             # remove all but one.
@@ -115,83 +118,6 @@ def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
         # Reload the ProxySQL runtime so that it picks up all the changes
         # that have been made so far.
         proxysql_man.reload_runtime()
-
-    return True
-
-
-def sync_proxysql_with_cluster_state(proxy_host, proxy_admin_port,
-                                     proxy_admin_user, proxy_admin_pass,
-                                     hostgroup_writer, hostgroup_reader,
-                                     cluster_user, cluster_pass):
-    proxysql_man = ProxySQLManager(proxy_host, proxy_admin_port,
-                                   proxy_admin_user, proxy_admin_pass)
-
-    writer_backends = proxysql_man.fetch_backends(hostgroup_writer)
-    reader_backends = proxysql_man.fetch_backends(hostgroup_reader)
-
-    all_cluster_nodes = set()
-
-    # First remove all the unhealthy nodes
-    for backends_list in [writer_backends, reader_backends]:
-        for backend in backends_list:
-            try:
-                # If the node state cannot be refreshed either because its not
-                # reachable or because it is not in a good state, then we need
-                # to remove the node from ProxySQL.
-                if not backend.status == BACKEND_STATUS_ONLINE:
-                    raise Exception('Backend %s:%s is not online.' %
-                                    (backend.hostname, backend.port))
-
-                galera_man = GaleraManager(backend.hostname, backend.port,
-                                           cluster_user, cluster_pass)
-
-                # Discover all the other sibling nodes in the same cluster
-                # as the current node and store them.
-                galera_man.discover_cluster_nodes()
-                all_cluster_nodes.update(galera_man.nodes)
-            except (GaleraNodeNonPrimary, GaleraNodeUnknownState):
-                proxysql_man.deregister_backend(hostgroup_writer,
-                                                backend.hostname,
-                                                backend.port)
-                backends_list.remove(backend)
-
-    # We remove any additional nodes in the write hostgroup, as we only
-    # want one.
-    if len(writer_backends) > 1:
-        for backend in writer_backends[1:]:
-            proxysql_man.deregister_backend(hostgroup_writer,
-                                            backend.hostname,
-                                            backend.port)
-
-    # If the write hostgroup is empty we add one of the healthy cluster nodes
-    # to the hostgroup.
-    if len(writer_backends) == 0:
-        node = all_cluster_nodes.pop()
-        proxysql_man.register_backend(hostgroup_writer, node.host, node.port)
-
-    # Let's loop through all the cluster nodes we have discovered and make
-    # sure they are in the appropriate hostgroup
-    for node in all_cluster_nodes:
-        proxysql_man.register_backend(hostgroup_reader, node.host,
-                                      node.port)
-
-    # Now filter healthy backends that are common between writer hostgroup and
-    # reader hostgroup
-    writer_backend = [b for b in
-                      proxysql_man.fetch_backends(hostgroup_writer)
-                      if b.status == BACKEND_STATUS_ONLINE][0]
-    reader_backends = [b for b in
-                       proxysql_man.fetch_backends(hostgroup_reader)
-                       if b.status == BACKEND_STATUS_ONLINE]
-
-    # If we have more than one backend registered in the reader hostgroup
-    # then we remove the ones that are also present in the writer hostgroup
-    if len(reader_backends) > 1:
-        for b in reader_backends:
-            if (b.hostname == writer_backend.hostname and
-                    b.port == writer_backend.port):
-                proxysql_man.deregister_backend(hostgroup_reader,
-                                                b.hostname, b.port)
 
     return True
 
