@@ -2,6 +2,7 @@ from contextlib import contextmanager
 
 import pymysql
 from pymysql.cursors import DictCursor
+from pymysql.err import OperationalError
 
 from proxysql_tools import log
 from proxysql_tools.entities.proxysql import (
@@ -27,6 +28,22 @@ class ProxySQLManager(object):
         self.password = password
         self.socket = socket
         self.should_reload_runtime = reload_runtime
+
+    def ping(self):
+        """Ping the ProxySQL instance to see if its alive."""
+        try:
+            with self.get_connection() as proxy_conn:
+                with proxy_conn.cursor() as cursor:
+                    log.debug('Pinging ProxySQL to check if its alive.')
+
+                    cursor.execute('SELECT 1')
+        except OperationalError as e:
+            log.error('Failed to connect to ProxySQL admin at %s:%s' %
+                      (self.host, self.port))
+
+            raise ProxySQLAdminConnectionError(e.message)
+
+        return True
 
     def reload_runtime(self):
         """Reload the ProxySQL runtime so that the changes take affect."""
@@ -321,4 +338,8 @@ class ProxySQLManager(object):
 
 
 class ProxySQLMySQLBackendUnregistered(Exception):
+    pass
+
+
+class ProxySQLAdminConnectionError(Exception):
     pass

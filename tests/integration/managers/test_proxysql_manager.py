@@ -1,8 +1,14 @@
+import pytest
+
 from proxysql_tools.entities.proxysql import (
-    BACKEND_STATUS_OFFLINE_SOFT, BACKEND_STATUS_OFFLINE_HARD
+    BACKEND_STATUS_OFFLINE_SOFT,
+    BACKEND_STATUS_OFFLINE_HARD,
+    ProxySQLMySQLBackend,
+    ProxySQLMySQLUser
 )
-from proxysql_tools.entities.proxysql import (
-    ProxySQLMySQLBackend, ProxySQLMySQLUser
+from proxysql_tools.managers.proxysql_manager import (
+    ProxySQLManager,
+    ProxySQLAdminConnectionError
 )
 
 
@@ -17,6 +23,18 @@ def test__can_connect_to_proxysql_admin_interface(proxysql_manager):
             version = result['version']
 
     assert version == "5.5.30"
+
+
+def test__ping_successful_on_successful_connection(proxysql_manager):
+    assert proxysql_manager.ping()
+
+
+def test__ping_raises_exception_on_connection_failure():
+    proxysql_man = ProxySQLManager(host='host_error', port=0,
+                                   user='user_error', password='pass_error')
+
+    with pytest.raises(ProxySQLAdminConnectionError):
+        proxysql_man.ping()
 
 
 def test__can_register_mysql_backend(proxysql_manager):
