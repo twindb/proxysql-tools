@@ -12,8 +12,8 @@ ProxySQL Tools
 .. image:: https://img.shields.io/codecov/c/github/twindb/proxysql-tools.svg
         :target: https://codecov.io/gh/twindb/proxysql-tools
 
-.. image:: https://readthedocs.org/projects/proxysql-tools/badge/?version=latest
-        :target: https://proxysql-tools.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/proxysql-tools/badge/?version=master
+        :target: http://proxysql-tools.readthedocs.io/en/master/
         :alt: Documentation Status
 
 

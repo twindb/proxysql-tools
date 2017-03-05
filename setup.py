@@ -18,7 +18,7 @@ test_requirements = [str(ir.req) for ir in
 
 setup(
     name='proxysql_tools',
-    version='0.1.0',
+    version='0.2.2',
     description="ProxySQL Tools",
     long_description=readme + '\n\n' + history,
     author="TwinDB Development Team",
