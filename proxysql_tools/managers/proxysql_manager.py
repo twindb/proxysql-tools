@@ -123,8 +123,8 @@ class ProxySQLManager(object):
         with self.get_connection() as proxy_conn:
             if not self.is_mysql_backend_registered(backend, proxy_conn):
                 err_msg = ('Backend %s:%s is not registered in hostgroup %s' %
-                          (backend.hostname, backend.port,
-                           backend.hostgroup_id))
+                           (backend.hostname, backend.port,
+                            backend.hostgroup_id))
 
                 log.error(err_msg)
                 raise ProxySQLMySQLBackendUnregistered(err_msg)

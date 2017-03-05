@@ -48,7 +48,7 @@ def ping(cfg):
     :param ConfigParser cfg: The config object that holds options and their
         values from the parsed configuration file.
     """
-    cfg_options = {item[0]:item[1] for item in cfg.items('proxysql')}
+    cfg_options = {item[0]: item[1] for item in cfg.items('proxysql')}
 
     log.debug('Performing health check on ProxySQL instance at %s:%s' %
               (cfg_options['host'], cfg_options['admin_port']))
@@ -63,8 +63,8 @@ def ping(cfg):
         log.error('ProxySQL ping failed.')
         exit(1)
 
-    log.info('ProxySQL ping on %s:%s successful.' % (cfg_options['host'],
-                                                     cfg_options['admin_port']))
+    log.info('ProxySQL ping on %s:%s successful.' %
+             (cfg_options['host'], cfg_options['admin_port']))
 
 
 @main.command()
