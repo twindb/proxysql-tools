@@ -15,47 +15,35 @@ from proxysql_tools.managers.proxysql_manager import (
 )
 
 
-def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
-                                   proxy_admin_user, proxy_admin_pass,
-                                   hostgroup_writer, hostgroup_reader,
-                                   cluster_host, cluster_port, cluster_user,
-                                   cluster_pass, proxy_monitor_user,
-                                   proxy_monitor_pass):
+def register_cluster_with_proxysql(config):
     """Register a Galera cluster within ProxySQL. The nodes in the cluster
     will be distributed between writer hostgroup and reader hostgroup.
 
-    :param str proxy_host: The ProxySQL host.
-    :param int proxy_admin_port: The ProxySQL admin port.
-    :param str proxy_admin_user: The ProxySQL admin user.
-    :param str proxy_admin_pass: The ProxySQL admin password.
-    :param int hostgroup_writer: The ID of writer ProxySQL hostgroup.
-    :param int hostgroup_reader: The ID of reader ProxySQL hostgroup.
-    :param str cluster_host: Hostname of a node in Galera cluster.
-    :param int cluster_port: Port of a node in Galera cluster.
-    :param str cluster_user: MySQL username of a user in Galera cluster.
-    :param str cluster_pass: MySQL password of a user in Galera cluster.
-    :param str proxy_monitor_user: The user used by ProxySQL to monitor
-        the backends.
-    :param str proxy_monitor_pass: The password of user used by ProxySQL to
-        monitor the backends.
+    :param ConfigParser.ConfigParser config: The config object.
     :return bool: Returns True on success, False otherwise.
     """
-    # TODO: Add user sync functionality that syncs MySQL users with ProxySQL.
+    proxy_options = {item[0]: item[1] for item in config.items('proxysql')}
+    galera_options = {item[0]: item[1] for item in config.items('galera')}
+
+    hostgroup_writer = galera_options['writer_hostgroup_id']
+    hostgroup_reader = galera_options['reader_hostgroup_id']
 
     # We also check that the initial node that is being used to register the
     # cluster with ProxySQL is actually a healthy node and part of the primary
     # component.
-    galera_man = GaleraManager(cluster_host, cluster_port,
-                               cluster_user, cluster_pass)
+    galera_man = GaleraManager(galera_options['cluster_host'],
+                               galera_options['cluster_port'],
+                               galera_options['cluster_username'],
+                               galera_options['cluster_password'])
     try:
         galera_man.discover_cluster_nodes()
     except GaleraNodeNonPrimary:
         log.error('Cluster node %s:%s used for registration is non-primary.' %
-                  (cluster_host, cluster_port))
+                  (galera_man.host, galera_man.port))
         return False
     except GaleraNodeUnknownState:
         log.error('Cluster node %s:%s used for registration is in unknown '
-                  'state.' % (cluster_host, cluster_port))
+                  'state.' % (galera_man.host, galera_man.port))
         return False
 
     # First we try to find nodes in synced state.
@@ -70,8 +58,10 @@ def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
         log.error('No node found in SYNCED or DESYNCED state.')
         return False
 
-    proxysql_man = ProxySQLManager(proxy_host, proxy_admin_port,
-                                   proxy_admin_user, proxy_admin_pass,
+    proxysql_man = ProxySQLManager(proxy_options['host'],
+                                   proxy_options['admin_port'],
+                                   proxy_options['admin_username'],
+                                   proxy_options['admin_password'],
                                    reload_runtime=False)
 
     try:
@@ -79,8 +69,9 @@ def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
         proxysql_man.ping()
 
         # Setup the monitoring user used by ProxySQL to monitor the backends
-        setup_proxysql_monitoring_user(proxysql_man, proxy_monitor_user,
-                                       proxy_monitor_pass)
+        setup_proxysql_monitoring_user(proxysql_man,
+                                       proxy_options['monitor_username'],
+                                       proxy_options['monitor_password'])
 
         for hostgroup_id in [hostgroup_writer, hostgroup_reader]:
             # Let's remove all the nodes defined in the hostgroups that are not
@@ -137,6 +128,8 @@ def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
                         b.port == writer_backend.port):
                     proxysql_man.deregister_backend(hostgroup_reader,
                                                     b.hostname, b.port)
+
+        # TODO: Add user sync functionality that syncs MySQL users with Proxy.
     except ProxySQLAdminConnectionError:
         log.error('ProxySQL connection failed.')
         return False

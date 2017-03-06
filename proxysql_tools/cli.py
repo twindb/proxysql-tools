@@ -93,20 +93,7 @@ def galera(cfg):
 @pass_cfg
 def register(cfg):
     """Registers Galera cluster nodes with ProxySQL."""
-    proxy_options = {item[0]: item[1] for item in cfg.items('proxysql')}
-    galera_options = {item[0]: item[1] for item in cfg.items('galera')}
-
-    ret_val = proxysql_tools.galera.register_cluster_with_proxysql(
-        proxy_options['host'], proxy_options['admin_port'],
-        proxy_options['admin_username'], proxy_options['admin_password'],
-        galera_options['writer_hostgroup_id'],
-        galera_options['reader_hostgroup_id'], galera_options['cluster_host'],
-        galera_options['cluster_port'], galera_options['cluster_username'],
-        galera_options['cluster_password'], proxy_options['monitor_username'],
-        proxy_options['monitor_password']
-    )
-
-    if not ret_val:
+    if not proxysql_tools.galera.register_cluster_with_proxysql(cfg):
         log.error('Registration of Galera cluster nodes failed.')
         exit(1)
 
