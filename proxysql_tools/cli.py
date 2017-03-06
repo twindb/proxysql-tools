@@ -83,7 +83,6 @@ def notify_master(cfg):
 
 @main.group()
 @pass_cfg
-@click.pass_context
 def galera(cfg):
     """Commands for ProxySQL and Galera integration."""
     pass

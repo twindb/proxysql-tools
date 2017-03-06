@@ -1,50 +1,11 @@
-from ConfigParser import ConfigParser
-import io
-
 from proxysql_tools.entities.proxysql import BACKEND_STATUS_ONLINE
 from proxysql_tools.galera import register_cluster_with_proxysql
 from proxysql_tools.managers.galera_manager import GaleraManager
 from tests.conftest import PXC_MYSQL_PORT, PXC_ROOT_PASSWORD
-from tests.library import wait_for_cluster_nodes_to_become_healthy
-
-
-def test__can_register_cluster_with_proxysql(percona_xtradb_cluster_node,
-                                             proxysql_manager):
-    hostgroup_writer = 10
-    hostgroup_reader = 11
-
-    # To start off there should be no nodes in the hostgroups
-    assert len(proxysql_manager.fetch_backends(hostgroup_writer)) == 0
-    assert len(proxysql_manager.fetch_backends(hostgroup_reader)) == 0
-
-    galera_man = GaleraManager(
-        percona_xtradb_cluster_node.host, percona_xtradb_cluster_node.port,
-        percona_xtradb_cluster_node.username,
-        percona_xtradb_cluster_node.password
-    )
-    galera_man.discover_cluster_nodes()
-
-    # Validate that there is one healthy node in the cluster
-    assert len(galera_man.nodes) == 1
-
-    # Setup the config object
-    config = proxysql_tools_config(proxysql_manager,
-                                   percona_xtradb_cluster_node.host,
-                                   percona_xtradb_cluster_node.port,
-                                   percona_xtradb_cluster_node.username,
-                                   percona_xtradb_cluster_node.password,
-                                   hostgroup_writer, hostgroup_reader,
-                                   'monitor', 'monitor')
-
-    assert register_cluster_with_proxysql(config)
-
-    writer_backends = proxysql_manager.fetch_backends(hostgroup_writer)
-    reader_backends = proxysql_manager.fetch_backends(hostgroup_reader)
-
-    assert len(writer_backends) == len(reader_backends) == 1
-    assert writer_backends[0].hostname == reader_backends[0].hostname
-    assert writer_backends[0].port == reader_backends[0].port
-    assert writer_backends[0].status == reader_backends[0].status
+from tests.library import (
+    wait_for_cluster_nodes_to_become_healthy,
+    proxysql_tools_config
+)
 
 
 def test__register_cluster_with_proxysql_is_idempotent(
@@ -133,39 +94,3 @@ def test__register_cluster_with_proxysql_removes_incorrect_nodes(
     # Now we validate that the writer nodes and readers node form a disjoint
     # set
     assert len(set(writer_nodes).intersection(set(reader_nodes))) == 0
-
-
-def proxysql_tools_config(proxysql_manager, cluster_host, cluster_port,
-                          cluster_user, cluster_pass, hostgroup_writer,
-                          hostgroup_reader, monitor_user, monitor_pass):
-    config_contents = """
-[proxysql]
-host={proxy_host}
-admin_port={proxy_port}
-admin_username={proxy_user}
-admin_password={proxy_pass}
-
-monitor_username={monitor_user}
-monitor_password={monitor_pass}
-
-[galera]
-cluster_host={cluster_host}
-cluster_port={cluster_port}
-cluster_username={cluster_user}
-cluster_password={cluster_pass}
-
-load_balancing_mode=singlewriter
-
-writer_hostgroup_id={writer_hostgroup}
-reader_hostgroup_id={reader_hostgroup}
-""".format(proxy_host=proxysql_manager.host, proxy_port=proxysql_manager.port,
-           proxy_user=proxysql_manager.user,
-           proxy_pass=proxysql_manager.password, monitor_user=monitor_user,
-           monitor_pass=monitor_pass, cluster_host=cluster_host,
-           cluster_port=cluster_port, cluster_user=cluster_user,
-           cluster_pass=cluster_pass, writer_hostgroup=hostgroup_writer,
-           reader_hostgroup=hostgroup_reader)
-
-    config = ConfigParser()
-    config.readfp(io.BytesIO(config_contents))
-    return config
