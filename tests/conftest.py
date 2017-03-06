@@ -6,7 +6,9 @@ from docker.types import IPAMConfig, IPAMPool
 from proxysql_tools.entities.galera import GaleraNode
 from proxysql_tools.managers.proxysql_manager import ProxySQLManager
 from tests.library import (
-    get_unused_port, docker_client, docker_pull_image, eventually,
+    docker_client,
+    docker_pull_image,
+    eventually,
     create_percona_xtradb_cluster
 )
 
@@ -144,16 +146,12 @@ def proxysql_container(proxysql_config_contents, tmpdir, container_network):
     container_info = {
         'name': 'proxysql01',
         'ip': '172.25.3.100',
-        'admin_port': get_unused_port(),
-        'client_port': get_unused_port()
     }
 
-    host_config = api.create_host_config(binds=[
-        "{}:/etc/proxysql.cnf".format(str(config))
-    ], port_bindings={
-        PROXYSQL_ADMIN_PORT: container_info['admin_port'],
-        PROXYSQL_CLIENT_PORT: container_info['client_port']
-    })
+    host_config = api.create_host_config(
+        binds=["{}:/etc/proxysql.cnf".format(str(config))],
+        port_bindings={}
+    )
 
     networking_config = api.create_networking_config({
         container_network: api.create_endpoint_config(

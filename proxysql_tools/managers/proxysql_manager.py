@@ -9,6 +9,8 @@ from proxysql_tools.entities.proxysql import (
     ProxySQLMySQLBackend, ProxySQLMySQLUser, BACKEND_STATUS_OFFLINE_HARD
 )
 
+PROXYSQL_CONNECT_TIMEOUT = 20
+
 
 class ProxySQLManager(object):
     def __init__(self, host, port, user, password, socket=None,
@@ -217,6 +219,7 @@ class ProxySQLManager(object):
                     unix_socket=self.socket,
                     user=self.user,
                     passwd=self.password,
+                    connect_timeout=PROXYSQL_CONNECT_TIMEOUT,
                     cursorclass=DictCursor
                 )
             elif self.port:
@@ -225,6 +228,7 @@ class ProxySQLManager(object):
                     port=self.port,
                     user=self.user,
                     passwd=self.password,
+                    connect_timeout=PROXYSQL_CONNECT_TIMEOUT,
                     cursorclass=DictCursor
                 )
             else:
@@ -232,6 +236,7 @@ class ProxySQLManager(object):
                     host=self.host,
                     user=self.user,
                     passwd=self.password,
+                    connect_timeout=PROXYSQL_CONNECT_TIMEOUT,
                     cursorclass=DictCursor
                 )
 

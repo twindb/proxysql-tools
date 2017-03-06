@@ -35,7 +35,7 @@ def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
     :param str cluster_pass: MySQL password of a user in Galera cluster.
     :return bool: Returns True on success, False otherwise.
     """
-    # TODO: Add user syncing functionality that syncs MySQL users with ProxySQL.
+    # TODO: Add user sync functionality that syncs MySQL users with ProxySQL.
     # TODO: Add functionality to setup monitor username/password in ProxySQL.
 
     # We also check that the initial node that is being used to register the

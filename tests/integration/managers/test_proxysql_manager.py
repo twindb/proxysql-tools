@@ -30,7 +30,7 @@ def test__ping_successful_on_successful_connection(proxysql_manager):
 
 
 def test__ping_raises_exception_on_connection_failure():
-    proxysql_man = ProxySQLManager(host='host_error', port=0,
+    proxysql_man = ProxySQLManager(host='172.0.0.1', port=10000,
                                    user='user_error', password='pass_error')
 
     with pytest.raises(ProxySQLAdminConnectionError):
