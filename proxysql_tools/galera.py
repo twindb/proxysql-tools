@@ -9,7 +9,10 @@ from proxysql_tools.managers.galera_manager import (
     GaleraNodeNonPrimary,
     GaleraNodeUnknownState
 )
-from proxysql_tools.managers.proxysql_manager import ProxySQLManager
+from proxysql_tools.managers.proxysql_manager import (
+    ProxySQLManager,
+    ProxySQLAdminConnectionError
+)
 
 
 def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
@@ -32,6 +35,9 @@ def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
     :param str cluster_pass: MySQL password of a user in Galera cluster.
     :return bool: Returns True on success, False otherwise.
     """
+    # TODO: Add user syncing functionality that syncs MySQL users with ProxySQL.
+    # TODO: Add functionality to setup monitor username/password in ProxySQL.
+
     # We also check that the initial node that is being used to register the
     # cluster with ProxySQL is actually a healthy node and part of the primary
     # component.
@@ -65,6 +71,9 @@ def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
                                    reload_runtime=False)
 
     try:
+        # We also validate that we can connect to ProxySQL
+        proxysql_man.ping()
+
         for hostgroup_id in [hostgroup_writer, hostgroup_reader]:
             # Let's remove all the nodes defined in the hostgroups that are not
             # part of this cluster or are not in desired state.
@@ -120,6 +129,9 @@ def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
                         b.port == writer_backend.port):
                     proxysql_man.deregister_backend(hostgroup_reader,
                                                     b.hostname, b.port)
+    except ProxySQLAdminConnectionError:
+        log.error('ProxySQL connection failed.')
+        return False
     finally:
         # Reload the ProxySQL runtime so that it picks up all the changes
         # that have been made so far.
