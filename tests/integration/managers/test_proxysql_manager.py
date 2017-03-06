@@ -134,6 +134,15 @@ def test__fetch_mysql_users_with_default_hostgroup(proxysql_manager):
     assert users_list.pop().username == 'aleks'
 
 
+def test__can_set_proxysql_variables(proxysql_manager):
+    proxysql_manager.set_var('mysql-monitor_username', 'monitor_user')
+    proxysql_manager.set_var('mysql-monitor_password', 'monitor_pass')
+
+    proxysql_vars = proxysql_manager.get_vars()
+    assert proxysql_vars['mysql-monitor_username'] == 'monitor_user'
+    assert proxysql_vars['mysql-monitor_password'] == 'monitor_pass'
+
+
 def get_mysql_backend(hostname, hostgroup_id=None):
     backend = ProxySQLMySQLBackend()
     backend.hostgroup_id = 10 if hostgroup_id is None else hostgroup_id

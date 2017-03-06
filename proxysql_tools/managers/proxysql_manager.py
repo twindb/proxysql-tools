@@ -55,6 +55,7 @@ class ProxySQLManager(object):
 
                 cursor.execute('LOAD MYSQL SERVERS TO RUNTIME')
                 cursor.execute('LOAD MYSQL USERS TO RUNTIME')
+                cursor.execute('LOAD MYSQL VARIABLES TO RUNTIME')
 
     def register_backend(self, hostgroup_id, hostname, port):
         """Register a MySQL backend with ProxySQL.
@@ -207,8 +208,39 @@ class ProxySQLManager(object):
 
         return users_list
 
-    def set_variables(self):
-        raise NotImplementedError()
+    def set_var(self, variable_name, variable_value):
+        """Update ProxySQL variable with the supplied value.
+
+        :param str variable_name: The name of the variable to update.
+        :param str variable_value: The updated value of the variable.
+        :return bool: True on success, False otherwise.
+        """
+        with self.get_connection() as proxy_conn:
+            with proxy_conn.cursor() as cursor:
+                cursor.execute('UPDATE global_variables SET '
+                               'variable_value=%s WHERE variable_name=%s',
+                               (variable_value, variable_name))
+
+                cursor.execute('SAVE MYSQL VARIABLES TO DISK')
+
+                if self.should_reload_runtime:
+                    cursor.execute('LOAD MYSQL VARIABLES TO RUNTIME')
+
+        return True
+
+    def get_vars(self):
+        """Fetch all the variables from ProxySQL.
+
+        :return dict: A dict of variables in the form {var_name: var_val}.
+        """
+        with self.get_connection() as proxy_conn:
+            with proxy_conn.cursor() as cursor:
+                cursor.execute("SELECT variable_name, variable_value "
+                               "FROM global_variables")
+                res = {r['variable_name'].lower(): r['variable_value'].lower()
+                       for r in cursor.fetchall()}
+
+        return res
 
     @contextmanager
     def get_connection(self):
