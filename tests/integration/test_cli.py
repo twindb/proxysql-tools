@@ -1,7 +1,6 @@
 from click.testing import CliRunner
 
 from proxysql_tools.cli import main
-from proxysql_tools.galera import register_cluster_with_proxysql
 from proxysql_tools.managers.galera_manager import GaleraManager
 from tests.library import proxysql_tools_config
 

@@ -8,12 +8,15 @@ class GaleraManager(object):
     def __init__(self, cluster_node_host, cluster_node_port, user, password):
         """Initializes the Galera manager.
 
-        :param str cluster_node_host: The Galera cluster host to operate
-            against.
-        :param int cluster_node_port: The MySQL port on Galera cluster host to
+        :param cluster_node_host: The Galera cluster host to operate against.
+        :type cluster_node_host: str
+        :param cluster_node_port: The MySQL port on Galera cluster host to
             connect to.
-        :param str user: The MySQL username.
-        :param str password: The MySQL password.
+        :type cluster_node_port: int
+        :param user: The MySQL username.
+        :type user: str
+        :param password: The MySQL password.
+        :type password: str
         """
         self.host = cluster_node_host
         self.port = int(cluster_node_port)
@@ -30,7 +33,8 @@ class GaleraManager(object):
         It sets up the internal nodes list which is later used to perform
         operations on the nodes or the cluster.
 
-        :return bool: Returns True on success, False otherwise.
+        :return: Returns True on success, False otherwise.
+        :rtype: bool
         """
         initial_node = GaleraNode({
             'host': self.host,
@@ -89,8 +93,8 @@ class GaleraManager(object):
         """Validates the state of the node to ensure that the node's status
         is PRIMARY and that all the node's properties can be fetched.
 
-        :param GaleraNode node: The object that stores information on the
-            Galera node.
+        :param node: The object that stores information on the Galera node.
+        :type node: GaleraNode
         """
         try:
             node.refresh_state()
@@ -114,10 +118,13 @@ class GaleraManager(object):
     def nodes_in_same_cluster(node1, node2):
         """Check to see if the two nodes belong to the same cluster.
 
-        :param GaleraNode node1: The Galera node to be compared.
-        :param GaleraNode node2: The Galera node to be compared.
-        :return bool: Returns True if both nodes are in the same cluster,
+        :param node1: The Galera node to be compared.
+        :type node1: GaleraNode
+        :param node2: The Galera node to be compared.
+        :type node2: GaleraNode
+        :return: Returns True if both nodes are in the same cluster,
             False otherwise.
+        :rtype: bool
         """
         return node1.cluster_state_uuid == node2.cluster_state_uuid
 
