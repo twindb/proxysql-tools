@@ -59,6 +59,7 @@ class GaleraNode(Model):
         :return: Returns True when all properties of the node can be
             refreshed based on its current state.
         :rtype: bool
+        :raises: ModelValidationError, OperationalError
         """
         with self.get_connection() as conn:
             with conn.cursor() as cursor:

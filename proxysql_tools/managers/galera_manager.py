@@ -1,5 +1,7 @@
 from schematics.exceptions import ModelValidationError
 
+from pymysql.err import OperationalError
+
 from proxysql_tools import log
 from proxysql_tools.entities.galera import GaleraNode, CLUSTER_STATUS_PRIMARY
 
@@ -105,7 +107,7 @@ class GaleraManager(object):
 
                 log.error(err_msg)
                 raise GaleraNodeNonPrimary(err_msg)
-        except ModelValidationError as e:
+        except (ModelValidationError, OperationalError) as e:
             # The node state cannot be refreshed as some of the
             # properties of the node could not be fetched. We
             # should fail the discovery in such a case as this is
