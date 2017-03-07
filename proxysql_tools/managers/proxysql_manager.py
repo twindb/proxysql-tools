@@ -17,12 +17,17 @@ class ProxySQLManager(object):
                  reload_runtime=True):
         """Initializes the ProxySQL manager.
 
-        :param str host: The ProxySQL host to operate against.
-        :param int port: The ProxySQL admin port to connect to.
-        :param str user: The ProxySQL admin username.
-        :param str password: The ProxySQL admin password.
-        :param bool reload_runtime: Whether the ProxySQL runtime should be
+        :param host: The ProxySQL host to operate against.
+        :type host: str
+        :param port: The ProxySQL admin port to connect to.
+        :type port: int
+        :param user: The ProxySQL admin username.
+        :type user: str
+        :param password: The ProxySQL admin password.
+        :type password: str
+        :param reload_runtime: Whether the ProxySQL runtime should be
             reloaded for the changes to take affect.
+        :type reload_runtime: bool
         """
         self.host = host
         self.port = int(port)
@@ -60,11 +65,15 @@ class ProxySQLManager(object):
     def register_backend(self, hostgroup_id, hostname, port):
         """Register a MySQL backend with ProxySQL.
 
-        :param int hostgroup_id: The ID of the hostgroup that the MySQL backend
+        :param hostgroup_id: The ID of the hostgroup that the MySQL backend
             belongs to.
-        :param str hostname: The hostname of the MySQL backend.
-        :param int port: The port that the MySQL backend listens on.
-        :return bool: True on success, False otherwise.
+        :type hostgroup_id: int
+        :param hostname: The hostname of the MySQL backend.
+        :type hostname: str
+        :param port: The port that the MySQL backend listens on.
+        :type port: int
+        :return: True on success, False otherwise.
+        :rtype: bool
         """
         backend = ProxySQLMySQLBackend()
         backend.hostgroup_id = hostgroup_id
@@ -80,11 +89,15 @@ class ProxySQLManager(object):
     def deregister_backend(self, hostgroup_id, hostname, port):
         """Deregister a MySQL backend from ProxySQL database.
 
-        :param int hostgroup_id: The ID of the hostgroup that the MySQL backend
+        :param hostgroup_id: The ID of the hostgroup that the MySQL backend
             belongs to.
-        :param str hostname: The hostname of the MySQL backend.
-        :param int port: The port that the MySQL backend listens on.
-        :return bool: True on success, False otherwise.
+        :type hostgroup_id: int
+        :param hostname: The hostname of the MySQL backend.
+        :type hostname: str
+        :param port: The port that the MySQL backend listens on.
+        :type port: int
+        :return: True on success, False otherwise.
+        :rtype: bool
         """
         backend = ProxySQLMySQLBackend()
         backend.hostgroup_id = hostgroup_id
@@ -110,12 +123,17 @@ class ProxySQLManager(object):
                                     status):
         """Update the status of a MySQL backend.
 
-        :param int hostgroup_id: The ID of the hostgroup
-            that the MySQL backend belongs to.
-        :param str hostname: The hostname of the MySQL backend.
-        :param int port: The port that the MySQL backend listens on.
-        :param str status: MySQL backend status.
-        :return bool: True on success, False otherwise.
+        :param hostgroup_id: The ID of the hostgroup that the MySQL backend
+            belongs to.
+        :type hostgroup_id: int
+        :param hostname: The hostname of the MySQL backend.
+        :type hostname: str
+        :param port: The port that the MySQL backend listens on.
+        :type port: int
+        :param status: MySQL backend status.
+        :type status: str
+        :return: True on success, False otherwise.
+        :rtype: bool
         """
         backend = ProxySQLMySQLBackend()
         backend.hostgroup_id = hostgroup_id
@@ -142,9 +160,11 @@ class ProxySQLManager(object):
         """Fetch a list of the MySQL backends registered with ProxySQL, either
         in a particular hostgroup or in all hostgroups.
 
-        :param int hostgroup_id: The ID of the hostgroup
-            that the MySQL backend belongs to.
-        :return list[ProxySQLMySQLBackend]: A list of ProxySQL backends.
+        :param hostgroup_id: The ID of the hostgroup that the MySQL backend
+            belongs to.
+        :type hostgroup_id: int
+        :return: A list of ProxySQL backends.
+        :rtype: list[ProxySQLMySQLBackend]
         """
         with self.get_connection() as proxy_conn:
             with proxy_conn.cursor() as cursor:
@@ -162,11 +182,15 @@ class ProxySQLManager(object):
     def register_mysql_user(self, username, password, default_hostgroup):
         """Register a MySQL user with ProxySQL.
 
-        :param str username: The MySQL username.
-        :param str password: The MySQL user's password hash.
-        :param int default_hostgroup: The ID of the hostgroup that is the
+        :param username: The MySQL username.
+        :type username: str
+        :param password: The MySQL user's password hash.
+        :type password: str
+        :param default_hostgroup: The ID of the hostgroup that is the
             default for this user.
-        :return bool: True on success, False otherwise.
+        :type default_hostgroup: int
+        :return: True on success, False otherwise.
+        :rtype: bool
         """
         user = ProxySQLMySQLUser()
         user.username = username
@@ -190,10 +214,11 @@ class ProxySQLManager(object):
         """Fetch a list of MySQL users registered with ProxySQL,
         either with a particular default_hostgroup or all of them.
 
-        :param int default_hostgroup_id: The ID of the hostgroup
-            which is the default for the user.
-        :return list[ProxySQLMySQLUser]: A list of MySQL users
-            registered with ProxySQL.
+        :param default_hostgroup_id: The ID of the hostgroup which is the
+            default for the user.
+        :type default_hostgroup_id: int
+        :return: A list of MySQL users registered with ProxySQL.
+        :rtype: list[ProxySQLMySQLUser]
         """
         with self.get_connection() as proxy_conn:
             with proxy_conn.cursor() as cursor:
@@ -211,9 +236,12 @@ class ProxySQLManager(object):
     def set_var(self, variable_name, variable_value):
         """Update ProxySQL variable with the supplied value.
 
-        :param str variable_name: The name of the variable to update.
-        :param str variable_value: The updated value of the variable.
-        :return bool: True on success, False otherwise.
+        :param variable_name: The name of the variable to update.
+        :type variable_name: str
+        :param variable_value: The updated value of the variable.
+        :type variable_value: str
+        :return: True on success, False otherwise.
+        :rtype: bool
         """
         with self.get_connection() as proxy_conn:
             with proxy_conn.cursor() as cursor:
@@ -231,7 +259,8 @@ class ProxySQLManager(object):
     def get_vars(self):
         """Fetch all the variables from ProxySQL.
 
-        :return dict: A dict of variables in the form {var_name: var_val}.
+        :return: A dict of variables in the form {var_name: var_val}.
+        :rtype: dict
         """
         with self.get_connection() as proxy_conn:
             with proxy_conn.cursor() as cursor:
@@ -282,10 +311,12 @@ class ProxySQLManager(object):
         """Check ProxySQL to verify whether a MySQL server is registered
         with it or not.
 
-        :param ProxySQLMySQLBackend backend: The MySQL backend server
-            to check for registration.
-        :param Connection proxy_conn: A connection to ProxySQL.
-        :return bool: True on success, False otherwise.
+        :param backend: The MySQL backend server to check for registration.
+        :type backend: ProxySQLMySQLBackend
+        :param proxy_conn: A connection to ProxySQL.
+        :type proxy_conn: Connection
+        :return: True on success, False otherwise.
+        :rtype: bool
         """
         with proxy_conn.cursor() as cursor:
             sql = ("SELECT COUNT(*) AS cnt from mysql_servers "
@@ -301,10 +332,12 @@ class ProxySQLManager(object):
         """Check ProxySQL to verify whether a MySQL user is registered
         with it or not.
 
-        :param ProxySQLMySQLUser user: The MySQL user to check
-            for registration.
-        :param Connection proxy_conn: A connection to ProxySQL.
-        :return bool: True on success, False otherwise.
+        :param user: The MySQL user to check for registration.
+        :type user: ProxySQLMySQLUser
+        :param proxy_conn: A connection to ProxySQL.
+        :type proxy_conn: Connection
+        :return: True on success, False otherwise.
+        :rtype: bool
         """
         with proxy_conn.cursor() as cursor:
             sql = ("SELECT COUNT(*) AS cnt from mysql_users "
@@ -317,9 +350,12 @@ class ProxySQLManager(object):
     def insert_or_update_mysql_backend(self, backend, proxy_conn):
         """Update the MySQL backend registered with ProxySQL.
 
-        :param ProxySQLMySQLBackend backend: The MySQL backend server.
-        :param Connection proxy_conn: A connection to ProxySQL.
-        :return bool: True on success, False otherwise.
+        :param backend: The MySQL backend server.
+        :type backend: ProxySQLMySQLBackend
+        :param proxy_conn: A connection to ProxySQL.
+        :type proxy_conn: Connection
+        :return: True on success, False otherwise.
+        :rtype: bool
         """
         backend.validate()
 
@@ -346,10 +382,12 @@ class ProxySQLManager(object):
     def insert_or_update_mysql_user(self, user, proxy_conn):
         """Update the MySQL backend registered with ProxySQL.
 
-        :param ProxySQLMySQLUser user: The MySQL user
-            that will connect to ProxySQL.
-        :param Connection proxy_conn: A connection to ProxySQL.
-        :return bool: True on success, False otherwise.
+        :param user: The MySQL user that will connect to ProxySQL.
+        :type user: ProxySQLMySQLUser
+        :param proxy_conn: A connection to ProxySQL.
+        :type proxy_conn: Connection
+        :return: True on success, False otherwise.
+        :rtype: bool
         """
         user.validate()
 

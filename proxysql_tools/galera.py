@@ -19,8 +19,10 @@ def register_cluster_with_proxysql(config):
     """Register a Galera cluster within ProxySQL. The nodes in the cluster
     will be distributed between writer hostgroup and reader hostgroup.
 
-    :param ConfigParser.ConfigParser config: The config object.
-    :return bool: Returns True on success, False otherwise.
+    :param config: The config object.
+    :type config: ConfigParser.ConfigParser
+    :return: Returns True on success, False otherwise.
+    :rtype: bool
     """
     proxy_options = {item[0]: item[1] for item in config.items('proxysql')}
     galera_options = {item[0]: item[1] for item in config.items('galera')}
@@ -146,14 +148,19 @@ def deregister_unhealthy_backends(proxysql_man, galera_nodes, hostgroup_id,
     """Remove backends in a particular hostgroup that are not in the Galera
     cluster or whose state is not in one of the desired states.
 
-    :param ProxySQLManager proxysql_man: ProxySQL manager corresponding to the
-        ProxySQL instance.
-    :param list[GaleraNode] galera_nodes: List of Galera nodes.
-    :param int hostgroup_id: The ID of the ProxySQL hostgroup.
-    :param list[str] desired_states: Nodes not in this list of states are
-        considered unhealthy.
-    :return list[GaleraNode]: List of backends that correspond to the Galera
-        nodes that are part of the cluster.
+    :param proxysql_man: ProxySQL manager corresponding to the ProxySQL
+        instance.
+    :type proxysql_man: ProxySQLManager
+    :param galera_nodes: List of Galera nodes.
+    :type galera_nodes: list[GaleraNode]
+    :param hostgroup_id: The ID of the ProxySQL hostgroup.
+    :type hostgroup_id: int
+    :param desired_states: Nodes not in this list of states are considered
+        unhealthy.
+    :type desired_states: list[str]
+    :return: List of backends that correspond to the Galera nodes that are
+        part of the cluster.
+    :rtype: list[GaleraNode]
     """
     backend_list = proxysql_man.fetch_backends(hostgroup_id)
     for backend in backend_list:
@@ -181,11 +188,14 @@ def deregister_unhealthy_backends(proxysql_man, galera_nodes, hostgroup_id,
 def setup_proxysql_monitoring_user(proxysql_man, monitor_user, monitor_pass):
     """Setup the monitoring user used by ProxySQL to monitor the backends.
 
-    :param ProxySQLManager proxysql_man: ProxySQL manager corresponding to the
+    :param proxysql_man: ProxySQL manager corresponding to the
         ProxySQL instance.
-    :param str monitor_user: The user used by ProxySQL to monitor the backends.
-    :param str monitor_pass: The password of user used by ProxySQL to monitor
+    :type proxysql_man: ProxySQLManager
+    :param monitor_user: The user used by ProxySQL to monitor the backends.
+    :type monitor_user: str
+    :param monitor_pass: The password of user used by ProxySQL to monitor
         the backends.
+    :type monitor_pass: str
     """
     proxysql_man.set_var('mysql-monitor_username', monitor_user)
     proxysql_man.set_var('mysql-monitor_password', monitor_pass)
