@@ -1,8 +1,14 @@
+import pytest
+
 from proxysql_tools.entities.proxysql import (
-    BACKEND_STATUS_OFFLINE_SOFT, BACKEND_STATUS_OFFLINE_HARD
+    BACKEND_STATUS_OFFLINE_SOFT,
+    BACKEND_STATUS_OFFLINE_HARD,
+    ProxySQLMySQLBackend,
+    ProxySQLMySQLUser
 )
-from proxysql_tools.entities.proxysql import (
-    ProxySQLMySQLBackend, ProxySQLMySQLUser
+from proxysql_tools.managers.proxysql_manager import (
+    ProxySQLManager,
+    ProxySQLAdminConnectionError
 )
 
 
@@ -17,6 +23,18 @@ def test__can_connect_to_proxysql_admin_interface(proxysql_manager):
             version = result['version']
 
     assert version == "5.5.30"
+
+
+def test__ping_successful_on_successful_connection(proxysql_manager):
+    assert proxysql_manager.ping()
+
+
+def test__ping_raises_exception_on_connection_failure():
+    proxysql_man = ProxySQLManager(host='172.0.0.1', port=10000,
+                                   user='user_error', password='pass_error')
+
+    with pytest.raises(ProxySQLAdminConnectionError):
+        proxysql_man.ping()
 
 
 def test__can_register_mysql_backend(proxysql_manager):
@@ -114,6 +132,15 @@ def test__fetch_mysql_users_with_default_hostgroup(proxysql_manager):
     users_list = proxysql_manager.fetch_mysql_users(default_hostgroup_id=200)
     assert len(users_list) == 1
     assert users_list.pop().username == 'aleks'
+
+
+def test__can_set_proxysql_variables(proxysql_manager):
+    proxysql_manager.set_var('mysql-monitor_username', 'monitor_user')
+    proxysql_manager.set_var('mysql-monitor_password', 'monitor_pass')
+
+    proxysql_vars = proxysql_manager.get_vars()
+    assert proxysql_vars['mysql-monitor_username'] == 'monitor_user'
+    assert proxysql_vars['mysql-monitor_password'] == 'monitor_pass'
 
 
 def get_mysql_backend(hostname, hostgroup_id=None):

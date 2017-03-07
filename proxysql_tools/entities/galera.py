@@ -56,8 +56,10 @@ class GaleraNode(Model):
         the node belongs to. It also updates the state of the node in the
         cluster.
 
-        :return bool: Returns True when all properties of the node can be
+        :return: Returns True when all properties of the node can be
             refreshed based on its current state.
+        :rtype: bool
+        :raises: ModelValidationError, OperationalError
         """
         with self.get_connection() as conn:
             with conn.cursor() as cursor:
@@ -84,7 +86,8 @@ class GaleraNode(Model):
     def get_connection(self):
         """Connect to the Galera cluster node.
 
-        :return Connection: Returns a MySQL connection to the node.
+        :return: Returns a MySQL connection to the node.
+        :rtype: Connection
         """
         db = None
         try:

@@ -1,44 +1,51 @@
+from proxysql_tools import log
 from proxysql_tools.entities.galera import (
-    GaleraNode, LOCAL_STATE_SYNCED, LOCAL_STATE_DONOR_DESYNCED,
-    CLUSTER_STATUS_PRIMARY
+    LOCAL_STATE_SYNCED,
+    LOCAL_STATE_DONOR_DESYNCED
 )
 from proxysql_tools.entities.proxysql import BACKEND_STATUS_ONLINE
 from proxysql_tools.managers.galera_manager import (
-    GaleraManager, GaleraNodeNonPrimary, GaleraNodeUnknownState
+    GaleraManager,
+    GaleraNodeNonPrimary,
+    GaleraNodeUnknownState
 )
-from proxysql_tools.managers.proxysql_manager import ProxySQLManager
+from proxysql_tools.managers.proxysql_manager import (
+    ProxySQLManager,
+    ProxySQLAdminConnectionError
+)
 
 
-def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
-                                   proxy_admin_user, proxy_admin_pass,
-                                   hostgroup_writer, hostgroup_reader,
-                                   cluster_host, cluster_port, cluster_user,
-                                   cluster_pass):
+def register_cluster_with_proxysql(config):
     """Register a Galera cluster within ProxySQL. The nodes in the cluster
     will be distributed between writer hostgroup and reader hostgroup.
 
-    :param str proxy_host: The ProxySQL host.
-    :param int proxy_admin_port: The ProxySQL admin port.
-    :param str proxy_admin_user: The ProxySQL admin user.
-    :param str proxy_admin_pass: The ProxySQL admin password.
-    :param int hostgroup_writer: The ID of writer ProxySQL hostgroup.
-    :param int hostgroup_reader: The ID of reader ProxySQL hostgroup.
-    :param str cluster_host: Hostname of a node in Galera cluster.
-    :param int cluster_port: Port of a node in Galera cluster.
-    :param str cluster_user: MySQL username of a user in Galera cluster.
-    :param str cluster_pass: MySQL password of a user in Galera cluster.
-    :return bool: Returns True on success, False otherwise.
+    :param config: The config object.
+    :type config: ConfigParser.ConfigParser
+    :return: Returns True on success, False otherwise.
+    :rtype: bool
     """
+    proxy_options = {item[0]: item[1] for item in config.items('proxysql')}
+    galera_options = {item[0]: item[1] for item in config.items('galera')}
+
+    hostgroup_writer = galera_options['writer_hostgroup_id']
+    hostgroup_reader = galera_options['reader_hostgroup_id']
+
     # We also check that the initial node that is being used to register the
     # cluster with ProxySQL is actually a healthy node and part of the primary
     # component.
-    galera_man = GaleraManager(cluster_host, cluster_port,
-                               cluster_user, cluster_pass)
+    galera_man = GaleraManager(galera_options['cluster_host'],
+                               galera_options['cluster_port'],
+                               galera_options['cluster_username'],
+                               galera_options['cluster_password'])
     try:
         galera_man.discover_cluster_nodes()
     except GaleraNodeNonPrimary:
+        log.error('Cluster node %s:%s used for registration is non-primary.' %
+                  (galera_man.host, galera_man.port))
         return False
     except GaleraNodeUnknownState:
+        log.error('Cluster node %s:%s used for registration is in unknown '
+                  'state.' % (galera_man.host, galera_man.port))
         return False
 
     # First we try to find nodes in synced state.
@@ -50,13 +57,24 @@ def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
     # If we found no nodes in synced or donor/desynced state then we
     # cannot continue.
     if not galera_nodes_synced and not galera_nodes_desynced:
+        log.error('No node found in SYNCED or DESYNCED state.')
         return False
 
-    proxysql_man = ProxySQLManager(proxy_host, proxy_admin_port,
-                                   proxy_admin_user, proxy_admin_pass,
+    proxysql_man = ProxySQLManager(proxy_options['host'],
+                                   proxy_options['admin_port'],
+                                   proxy_options['admin_username'],
+                                   proxy_options['admin_password'],
                                    reload_runtime=False)
 
     try:
+        # We also validate that we can connect to ProxySQL
+        proxysql_man.ping()
+
+        # Setup the monitoring user used by ProxySQL to monitor the backends
+        setup_proxysql_monitoring_user(proxysql_man,
+                                       proxy_options['monitor_username'],
+                                       proxy_options['monitor_password'])
+
         for hostgroup_id in [hostgroup_writer, hostgroup_reader]:
             # Let's remove all the nodes defined in the hostgroups that are not
             # part of this cluster or are not in desired state.
@@ -67,9 +85,10 @@ def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
                 desired_state = LOCAL_STATE_DONOR_DESYNCED
                 nodes_list = galera_nodes_desynced
 
-            backends_list = deregister_unhealthy_backends(
-                proxysql_man, galera_man.nodes, hostgroup_id, [desired_state]
-            )
+            backends_list = deregister_unhealthy_backends(proxysql_man,
+                                                          galera_man.nodes,
+                                                          hostgroup_id,
+                                                          [desired_state])
 
             # If there are more than one nodes in the writer hostgroup then we
             # remove all but one.
@@ -111,87 +130,15 @@ def register_cluster_with_proxysql(proxy_host, proxy_admin_port,
                         b.port == writer_backend.port):
                     proxysql_man.deregister_backend(hostgroup_reader,
                                                     b.hostname, b.port)
+
+        # TODO: Add user sync functionality that syncs MySQL users with Proxy.
+    except ProxySQLAdminConnectionError:
+        log.error('ProxySQL connection failed.')
+        return False
     finally:
         # Reload the ProxySQL runtime so that it picks up all the changes
         # that have been made so far.
         proxysql_man.reload_runtime()
-
-    return True
-
-
-def sync_proxysql_with_cluster_state(proxy_host, proxy_admin_port,
-                                     proxy_admin_user, proxy_admin_pass,
-                                     hostgroup_writer, hostgroup_reader,
-                                     cluster_user, cluster_pass):
-    proxysql_man = ProxySQLManager(proxy_host, proxy_admin_port,
-                                   proxy_admin_user, proxy_admin_pass)
-
-    writer_backends = proxysql_man.fetch_backends(hostgroup_writer)
-    reader_backends = proxysql_man.fetch_backends(hostgroup_reader)
-
-    all_cluster_nodes = set()
-
-    # First remove all the unhealthy nodes
-    for backends_list in [writer_backends, reader_backends]:
-        for backend in backends_list:
-            try:
-                # If the node state cannot be refreshed either because its not
-                # reachable or because it is not in a good state, then we need
-                # to remove the node from ProxySQL.
-                if not backend.status == BACKEND_STATUS_ONLINE:
-                    raise Exception('Backend %s:%s is not online.' %
-                                    (backend.hostname, backend.port))
-
-                galera_man = GaleraManager(backend.hostname, backend.port,
-                                           cluster_user, cluster_pass)
-
-                # Discover all the other sibling nodes in the same cluster
-                # as the current node and store them.
-                galera_man.discover_cluster_nodes()
-                all_cluster_nodes.update(galera_man.nodes)
-            except (GaleraNodeNonPrimary, GaleraNodeUnknownState):
-                proxysql_man.deregister_backend(hostgroup_writer,
-                                                backend.hostname,
-                                                backend.port)
-                backends_list.remove(backend)
-
-    # We remove any additional nodes in the write hostgroup, as we only
-    # want one.
-    if len(writer_backends) > 1:
-        for backend in writer_backends[1:]:
-            proxysql_man.deregister_backend(hostgroup_writer,
-                                            backend.hostname,
-                                            backend.port)
-
-    # If the write hostgroup is empty we add one of the healthy cluster nodes
-    # to the hostgroup.
-    if len(writer_backends) == 0:
-        node = all_cluster_nodes.pop()
-        proxysql_man.register_backend(hostgroup_writer, node.host, node.port)
-
-    # Let's loop through all the cluster nodes we have discovered and make
-    # sure they are in the appropriate hostgroup
-    for node in all_cluster_nodes:
-        proxysql_man.register_backend(hostgroup_reader, node.host,
-                                      node.port)
-
-    # Now filter healthy backends that are common between writer hostgroup and
-    # reader hostgroup
-    writer_backend = [b for b in
-                      proxysql_man.fetch_backends(hostgroup_writer)
-                      if b.status == BACKEND_STATUS_ONLINE][0]
-    reader_backends = [b for b in
-                       proxysql_man.fetch_backends(hostgroup_reader)
-                       if b.status == BACKEND_STATUS_ONLINE]
-
-    # If we have more than one backend registered in the reader hostgroup
-    # then we remove the ones that are also present in the writer hostgroup
-    if len(reader_backends) > 1:
-        for b in reader_backends:
-            if (b.hostname == writer_backend.hostname and
-                    b.port == writer_backend.port):
-                proxysql_man.deregister_backend(hostgroup_reader,
-                                                b.hostname, b.port)
 
     return True
 
@@ -201,14 +148,19 @@ def deregister_unhealthy_backends(proxysql_man, galera_nodes, hostgroup_id,
     """Remove backends in a particular hostgroup that are not in the Galera
     cluster or whose state is not in one of the desired states.
 
-    :param ProxySQLManager proxysql_man: ProxySQL manager corresponding to the
-        ProxySQL instance.
-    :param list[GaleraNode] galera_nodes: List of Galera nodes.
-    :param int hostgroup_id: The ID of the ProxySQL hostgroup.
-    :param list[str] desired_states: Nodes not in this list of states are
-        considered unhealthy.
-    :return list[GaleraNode]: List of backends that correspond to the Galera
-        nodes that are part of the cluster.
+    :param proxysql_man: ProxySQL manager corresponding to the ProxySQL
+        instance.
+    :type proxysql_man: ProxySQLManager
+    :param galera_nodes: List of Galera nodes.
+    :type galera_nodes: list[GaleraNode]
+    :param hostgroup_id: The ID of the ProxySQL hostgroup.
+    :type hostgroup_id: int
+    :param desired_states: Nodes not in this list of states are considered
+        unhealthy.
+    :type desired_states: list[str]
+    :return: List of backends that correspond to the Galera nodes that are
+        part of the cluster.
+    :rtype: list[GaleraNode]
     """
     backend_list = proxysql_man.fetch_backends(hostgroup_id)
     for backend in backend_list:
@@ -231,6 +183,22 @@ def deregister_unhealthy_backends(proxysql_man, galera_nodes, hostgroup_id,
             backend_list.remove(backend)
 
     return backend_list
+
+
+def setup_proxysql_monitoring_user(proxysql_man, monitor_user, monitor_pass):
+    """Setup the monitoring user used by ProxySQL to monitor the backends.
+
+    :param proxysql_man: ProxySQL manager corresponding to the
+        ProxySQL instance.
+    :type proxysql_man: ProxySQLManager
+    :param monitor_user: The user used by ProxySQL to monitor the backends.
+    :type monitor_user: str
+    :param monitor_pass: The password of user used by ProxySQL to monitor
+        the backends.
+    :type monitor_pass: str
+    """
+    proxysql_man.set_var('mysql-monitor_username', monitor_user)
+    proxysql_man.set_var('mysql-monitor_password', monitor_pass)
 
 
 def register_mysql_users_with_proxysql():
