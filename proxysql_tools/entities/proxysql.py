@@ -94,5 +94,5 @@ class ProxySQLConfig(Model):
     admin_password = StringType(required=True)
     monitor_username = StringType(required=True)
     monitor_password = StringType(required=True)
-    virtual_ip = StringType(required=True)
-    virtual_netmask = StringType(required=True)
+    virtual_ip = StringType()
+    virtual_netmask = StringType()
