@@ -107,3 +107,15 @@ class GaleraNode(Model):
     # To uniquely identify a Galera Node all we need is the host and port
     def __hash__(self):
         return hash('%s__%s' % (self.host, self.port))
+
+
+class GaleraConfig(Model):
+    """A model that defines Galera configuration needed by proxysql-tools."""
+
+    writer_hostgroup_id = StringType(required=True)
+    reader_hostgroup_id = StringType(required=True)
+    cluster_host = StringType(required=True)
+    cluster_port = StringType(required=True)
+    cluster_username = StringType(required=True)
+    cluster_password = StringType(required=True)
+    load_balancing_mode = StringType(required=True)

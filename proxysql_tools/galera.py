@@ -1,9 +1,15 @@
+from schematics.exceptions import ModelValidationError
+
 from proxysql_tools import log
 from proxysql_tools.entities.galera import (
     LOCAL_STATE_SYNCED,
-    LOCAL_STATE_DONOR_DESYNCED
+    LOCAL_STATE_DONOR_DESYNCED,
+    GaleraConfig
 )
-from proxysql_tools.entities.proxysql import BACKEND_STATUS_ONLINE
+from proxysql_tools.entities.proxysql import (
+    BACKEND_STATUS_ONLINE,
+    ProxySQLConfig
+)
 from proxysql_tools.managers.galera_manager import (
     GaleraManager,
     GaleraNodeNonPrimary,
@@ -15,28 +21,29 @@ from proxysql_tools.managers.proxysql_manager import (
 )
 
 
-def register_cluster_with_proxysql(config):
+def register_cluster_with_proxysql(proxy_cfg, galera_cfg):
     """Register a Galera cluster within ProxySQL. The nodes in the cluster
     will be distributed between writer hostgroup and reader hostgroup.
 
     :param config: The config object.
     :type config: ConfigParser.ConfigParser
+    :param proxy_cfg: The ProxySQL config object.
+    :type proxy_cfg: ProxySQLConfig
+    :param galera_cfg: The Galera config object.
+    :type galera_cfg: GaleraConfig
     :return: Returns True on success, False otherwise.
     :rtype: bool
     """
-    proxy_options = {item[0]: item[1] for item in config.items('proxysql')}
-    galera_options = {item[0]: item[1] for item in config.items('galera')}
-
-    hostgroup_writer = galera_options['writer_hostgroup_id']
-    hostgroup_reader = galera_options['reader_hostgroup_id']
+    hostgroup_writer = galera_cfg.writer_hostgroup_id
+    hostgroup_reader = galera_cfg.reader_hostgroup_id
 
     # We also check that the initial node that is being used to register the
     # cluster with ProxySQL is actually a healthy node and part of the primary
     # component.
-    galera_man = GaleraManager(galera_options['cluster_host'],
-                               galera_options['cluster_port'],
-                               galera_options['cluster_username'],
-                               galera_options['cluster_password'])
+    galera_man = GaleraManager(galera_cfg.cluster_host,
+                               galera_cfg.cluster_port,
+                               galera_cfg.cluster_username,
+                               galera_cfg.cluster_password)
     try:
         galera_man.discover_cluster_nodes()
     except GaleraNodeNonPrimary:
@@ -60,10 +67,10 @@ def register_cluster_with_proxysql(config):
         log.error('No node found in SYNCED or DESYNCED state.')
         return False
 
-    proxysql_man = ProxySQLManager(proxy_options['host'],
-                                   proxy_options['admin_port'],
-                                   proxy_options['admin_username'],
-                                   proxy_options['admin_password'],
+    proxysql_man = ProxySQLManager(proxy_cfg.host,
+                                   proxy_cfg.admin_port,
+                                   proxy_cfg.admin_username,
+                                   proxy_cfg.admin_password,
                                    reload_runtime=False)
 
     try:
@@ -72,8 +79,8 @@ def register_cluster_with_proxysql(config):
 
         # Setup the monitoring user used by ProxySQL to monitor the backends
         setup_proxysql_monitoring_user(proxysql_man,
-                                       proxy_options['monitor_username'],
-                                       proxy_options['monitor_password'])
+                                       proxy_cfg.monitor_username,
+                                       proxy_cfg.monitor_password)
 
         for hostgroup_id in [hostgroup_writer, hostgroup_reader]:
             # Let's remove all the nodes defined in the hostgroups that are not
