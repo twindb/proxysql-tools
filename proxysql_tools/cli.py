@@ -3,7 +3,7 @@ from ConfigParser import ConfigParser
 
 import click
 
-from schematics.exceptions import ModelValidationError
+from schematics.exceptions import ModelValidationError, ModelConversionError
 
 import proxysql_tools.aws
 import proxysql_tools.galera
@@ -71,7 +71,7 @@ def ping(cfg):
                   (p_cfg.host, p_cfg.admin_port,
                    p_cfg.admin_username, "*" * len(p_cfg.admin_password)))
         exit(1)
-    except ModelValidationError as e:
+    except (ModelValidationError, ModelConversionError) as e:
         log.error('ProxySQL configuration options missing: %s' % e)
         exit(1)
 
@@ -120,7 +120,7 @@ def register(cfg):
     try:
         galera_cfg = GaleraConfig(galera_options)
         galera_cfg.validate()
-    except ModelValidationError as e:
+    except (ModelValidationError, ModelConversionError) as e:
         log.error('Galera configuration options missing: %s' % e)
         exit(1)
 
