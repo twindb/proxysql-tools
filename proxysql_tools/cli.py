@@ -72,7 +72,7 @@ def ping(cfg):
                    p_cfg.admin_username, "*" * len(p_cfg.admin_password)))
         exit(1)
     except (ModelValidationError, ModelConversionError) as e:
-        log.error('ProxySQL configuration options missing: %s' % e)
+        log.error('ProxySQL configuration options error: %s' % e)
         exit(1)
 
     log.info('ProxySQL ping on %s:%s successful.' %
@@ -113,7 +113,7 @@ def register(cfg):
         proxy_cfg = ProxySQLConfig(proxy_options)
         proxy_cfg.validate()
     except ModelValidationError as e:
-        log.error('ProxySQL configuration options missing: %s' % e)
+        log.error('ProxySQL configuration options error: %s' % e)
         exit(1)
 
     galera_options = {item[0]: item[1] for item in cfg.items('galera')}
@@ -121,7 +121,7 @@ def register(cfg):
         galera_cfg = GaleraConfig(galera_options)
         galera_cfg.validate()
     except (ModelValidationError, ModelConversionError) as e:
-        log.error('Galera configuration options missing: %s' % e)
+        log.error('Galera configuration options error: %s' % e)
         exit(1)
 
     if not proxysql_tools.galera.register_cluster_with_proxysql(proxy_cfg,
