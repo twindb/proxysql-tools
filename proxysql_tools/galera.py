@@ -1,15 +1,9 @@
-from schematics.exceptions import ModelValidationError
-
 from proxysql_tools import log
 from proxysql_tools.entities.galera import (
     LOCAL_STATE_SYNCED,
-    LOCAL_STATE_DONOR_DESYNCED,
-    GaleraConfig
+    LOCAL_STATE_DONOR_DESYNCED
 )
-from proxysql_tools.entities.proxysql import (
-    BACKEND_STATUS_ONLINE,
-    ProxySQLConfig
-)
+from proxysql_tools.entities.proxysql import BACKEND_STATUS_ONLINE
 from proxysql_tools.managers.galera_manager import (
     GaleraManager,
     GaleraNodeNonPrimary,
@@ -83,7 +77,7 @@ def register_cluster_with_proxysql(proxy_cfg, galera_cfg):
                                        proxy_cfg.monitor_password)
 
         # Let's remove all the nodes defined in the hostgroups that are not
-            # part of this cluster or are not in desired state.
+        # part of this cluster or are not in desired state.
         if galera_nodes_synced:
             desired_state = LOCAL_STATE_SYNCED
             nodes_list = galera_nodes_synced
@@ -172,8 +166,8 @@ def deregister_unhealthy_backends(proxysql_man, galera_nodes, hostgroup_id,
     :param desired_states: Nodes not in this list of states are considered
         unhealthy.
     :type desired_states: list[str]
-    :return: A list of ProxySQL backends that correspond to the Galera nodes that are
-        part of the cluster.
+    :return: A list of ProxySQL backends that correspond to the Galera nodes
+        that are part of the cluster.
     :rtype: list[ProxySQLMySQLBackend]
     """
     backend_list = proxysql_man.fetch_backends(hostgroup_id)

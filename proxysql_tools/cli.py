@@ -58,7 +58,7 @@ def ping(cfg):
         p_cfg.validate()
 
         log.debug('Performing health check on ProxySQL instance at %s:%s' %
-              (p_cfg.host, p_cfg.admin_port))
+                  (p_cfg.host, p_cfg.admin_port))
 
         proxysql_man = ProxySQLManager(host=p_cfg.host,
                                        port=p_cfg.admin_port,
