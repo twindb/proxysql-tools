@@ -50,10 +50,11 @@ def main(ctx, cfg, debug, config, version):
 @pass_cfg
 def ping(cfg):
     """Checks the health of ProxySQL."""
-    cfg_opts = {item[0]: item[1] for item in cfg.items('proxysql')}
-    p_cfg = ProxySQLConfig(cfg_opts)
+    p_cfg = None
 
+    cfg_opts = {item[0]: item[1] for item in cfg.items('proxysql')}
     try:
+        p_cfg = ProxySQLConfig(cfg_opts)
         p_cfg.validate()
 
         log.debug('Performing health check on ProxySQL instance at %s:%s' %
@@ -105,17 +106,19 @@ def galera(cfg):
 @pass_cfg
 def register(cfg):
     """Registers Galera cluster nodes with ProxySQL."""
+    proxy_cfg = galera_cfg = None
+
     proxy_options = {item[0]: item[1] for item in cfg.items('proxysql')}
-    proxy_cfg = ProxySQLConfig(proxy_options)
     try:
+        proxy_cfg = ProxySQLConfig(proxy_options)
         proxy_cfg.validate()
     except ModelValidationError as e:
         log.error('ProxySQL configuration options missing: %s' % e)
         exit(1)
 
     galera_options = {item[0]: item[1] for item in cfg.items('galera')}
-    galera_cfg = GaleraConfig(galera_options)
     try:
+        galera_cfg = GaleraConfig(galera_options)
         galera_cfg.validate()
     except ModelValidationError as e:
         log.error('Galera configuration options missing: %s' % e)
