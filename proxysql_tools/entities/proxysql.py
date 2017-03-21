@@ -83,3 +83,16 @@ class ProxySQLMySQLUser(Model):
 
     def __hash__(self):
         return hash('%s__%s' % (self.username, self.backend))
+
+
+class ProxySQLConfig(Model):
+    """A model that defines ProxySQL configuration needed by proxysql-tools."""
+
+    host = StringType(required=True)
+    admin_port = StringType(required=True)
+    admin_username = StringType(required=True)
+    admin_password = StringType(required=True)
+    monitor_username = StringType(required=True)
+    monitor_password = StringType(required=True)
+    virtual_ip = StringType()
+    virtual_netmask = StringType()
