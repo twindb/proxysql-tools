@@ -64,25 +64,34 @@ Ready to contribute? Here's how to set up `proxysql_tools` for local development
 
     $ git clone git@github.com:your_name_here/proxysql_tools.git
 
-3. Install your local copy into a virtualenv::
+3. Install ``virtualenvwrapper`` and create virtual environment::
+
+    $ sudo pip install virtualenvwrapper
+
+   Check `virtualenvwrapper documentation`_ for details.
+
+   Create environment for ``proxysql-tools``::
 
     $ mkvirtualenv proxysql-tools
+
+4. Install your local copy into a virtualenv::
+
     $ workon proxysql-tools
     $ make bootstrap
 
-4. Create a branch for local development::
+5. Create a branch for local development::
 
     $ git checkout -b name-of-your-bugfix-or-feature
 
    Now you can make your changes locally.
 
-5. When you're done making changes, check that your changes pass flake8 and the tests, including testing other Python versions with tox::
+6. When you're done making changes, check that your changes pass tests::
 
     $ make lint
     $ make test
 
 
-6. Commit your changes and push your branch to GitHub::
+7. Commit your changes and push your branch to GitHub::
 
     $ git add .
     $ git commit -m "Your detailed description of your changes."
@@ -102,3 +111,6 @@ Before you submit a pull request, check that it meets these guidelines:
 3. The pull request should work for Python 2.7. Check
    https://travis-ci.org/twindb/proxysql-tools/pull_requests
    and make sure that the tests pass for all supported Python versions.
+
+
+.. _virtualenvwrapper documentation: http://virtualenvwrapper.readthedocs.io/en/latest/install.html
