@@ -23,7 +23,7 @@ setup(
     long_description=readme + '\n\n' + history,
     author="TwinDB Development Team",
     author_email='dev@twindb.com',
-    url='https://github.com/twindb/proxysql_tools',
+    url='https://github.com/twindb/proxysql-tools',
     packages=[
         'proxysql_tools',
     ],
@@ -31,7 +31,7 @@ setup(
                  'proxysql_tools'},
     entry_points={
         'console_scripts': [
-            'proxysql_tools=proxysql_tools.cli:main'
+            'proxysql-tool=proxysql_tools.cli:main'
         ]
     },
     include_package_data=True,
@@ -45,12 +45,7 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
         "Programming Language :: Python :: 2",
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
     ],
     test_suite='tests',
     tests_require=test_requirements
