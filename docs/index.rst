@@ -1,5 +1,5 @@
 Welcome to ProxySQL Tools's documentation!
-======================================
+==========================================
 
 Contents:
 
@@ -9,8 +9,9 @@ Contents:
    readme
    installation
    usage
+   modules
    contributing
-   authorshistory
+   authors
 
 Indices and tables
 ==================
