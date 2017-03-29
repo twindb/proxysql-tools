@@ -31,7 +31,8 @@ setup(
                  'proxysql_tools'},
     entry_points={
         'console_scripts': [
-            'proxysql-tool=proxysql_tools.cli:main'
+            'proxysql-tool=proxysql_tools.cli:main',
+            'proxysql_tools=proxysql_tools.cli:main'
         ]
     },
     include_package_data=True,
