@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from pip.req import parse_requirements
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -24,9 +24,7 @@ setup(
     author="TwinDB Development Team",
     author_email='dev@twindb.com',
     url='https://github.com/twindb/proxysql-tools',
-    packages=[
-        'proxysql_tools',
-    ],
+    packages=find_packages(exclude=('tests*',)),
     package_dir={'proxysql_tools':
                  'proxysql_tools'},
     entry_points={
