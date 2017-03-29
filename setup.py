@@ -18,7 +18,7 @@ test_requirements = [str(ir.req) for ir in
 
 setup(
     name='proxysql_tools',
-    version='0.2.3',
+    version='0.2.4',
     description="ProxySQL Tools",
     long_description=readme + '\n\n' + history,
     author="TwinDB Development Team",
@@ -31,7 +31,8 @@ setup(
                  'proxysql_tools'},
     entry_points={
         'console_scripts': [
-            'proxysql-tool=proxysql_tools.cli:main'
+            'proxysql-tool=proxysql_tools.cli:main',
+            'proxysql_tools=proxysql_tools.cli:main'
         ]
     },
     include_package_data=True,
