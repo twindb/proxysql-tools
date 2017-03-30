@@ -19,8 +19,6 @@ def register_cluster_with_proxysql(proxy_cfg, galera_cfg):
     """Register a Galera cluster within ProxySQL. The nodes in the cluster
     will be distributed between writer hostgroup and reader hostgroup.
 
-    :param config: The config object.
-    :type config: ConfigParser.ConfigParser
     :param proxy_cfg: The ProxySQL config object.
     :type proxy_cfg: ProxySQLConfig
     :param galera_cfg: The Galera config object.
@@ -34,19 +32,11 @@ def register_cluster_with_proxysql(proxy_cfg, galera_cfg):
     # We also check that the initial node that is being used to register the
     # cluster with ProxySQL is actually a healthy node and part of the primary
     # component.
-    galera_man = GaleraManager(galera_cfg.cluster_host,
-                               galera_cfg.cluster_port,
-                               galera_cfg.cluster_username,
-                               galera_cfg.cluster_password)
     try:
-        galera_man.discover_cluster_nodes()
-    except GaleraNodeNonPrimary:
-        log.error('Cluster node %s:%s used for registration is non-primary.' %
-                  (galera_man.host, galera_man.port))
-        return False
-    except GaleraNodeUnknownState:
-        log.error('Cluster node %s:%s used for registration is in unknown '
-                  'state.' % (galera_man.host, galera_man.port))
+        galera_man = fetch_galera_manager(galera_cfg)
+        if galera_man is None:
+            return False
+    except (ValueError, GaleraNodeNonPrimary, GaleraNodeUnknownState):
         return False
 
     # First we try to find nodes in synced state.
@@ -212,5 +202,49 @@ def setup_proxysql_monitoring_user(proxysql_man, monitor_user, monitor_pass):
     proxysql_man.set_var('mysql-monitor_password', monitor_pass)
 
 
-def register_mysql_users_with_proxysql():
-    pass
+def fetch_galera_manager(galera_cfg):
+    """Finds a host from list of hosts passed as part of the config which
+    is in primary part of the cluster.
+
+    :param galera_cfg: The Galera config object.
+    :type galera_cfg: GaleraConfig
+    :return: A Galera manager that can be used to interact with the primary
+        component of the Galera cluster.
+    :rtype: GaleraManager
+    :raises: ValueError, GaleraNodeNonPrimary, GaleraNodeUnknownState
+    """
+    exception = None
+    err_msg = ''
+
+    for host_port in galera_cfg.cluster_host.split(','):
+        try:
+            host, port = [v.strip() for v in host_port.split(':')]
+
+            # We check that the node that is being used to register the cluster
+            # with ProxySQL is actually a healthy node and part of the primary
+            # component.
+            galera_man = GaleraManager(host, port, galera_cfg.cluster_username,
+                                       galera_cfg.cluster_password)
+            galera_man.discover_cluster_nodes()
+
+            return galera_man
+        except ValueError as e:
+            log.error('Cluster host config option %s in invalid format. Should '
+                      'be in the format host:port,host:port.' % host_port)
+            exception = e
+            err_msg = ('Cluster host config option %s in invalid format. Should '
+                       'be in the format host:port,host:port.' % host_port)
+        except GaleraNodeNonPrimary as e:
+            exception = e
+            err_msg = ('Cluster node %s:%s used for registration is '
+                       'non-primary, skipping.' % (host, port))
+        except GaleraNodeUnknownState as e:
+            log.error('Cluster node %s:%s used for registration is in unknown '
+                      'state, skipping.' % (host, port))
+            exception = e
+            err_msg = ('Cluster node %s:%s used for registration is in unknown '
+                       'state, skipping.' % (host, port))
+
+    if exception is not None:
+        log.error(err_msg)
+        raise exception

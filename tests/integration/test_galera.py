@@ -26,8 +26,9 @@ def test__register_cluster_with_proxysql_is_idempotent(
     galera_config = GaleraConfig({
         'writer_hostgroup_id': hostgroup_writer,
         'reader_hostgroup_id': hostgroup_reader,
-        'cluster_host': percona_xtradb_cluster_node.host,
-        'cluster_port': percona_xtradb_cluster_node.port,
+        'cluster_host': '%s:%s' %
+                        (percona_xtradb_cluster_node.host,
+                         percona_xtradb_cluster_node.port),
         'cluster_username': percona_xtradb_cluster_node.username,
         'cluster_password': percona_xtradb_cluster_node.password,
         'load_balancing_mode': 'singlewriter'
@@ -67,8 +68,9 @@ def test__register_cluster_with_proxysql_removes_incorrect_nodes(
     galera_config = GaleraConfig({
         'writer_hostgroup_id': hostgroup_writer,
         'reader_hostgroup_id': hostgroup_reader,
-        'cluster_host': percona_xtradb_cluster_node.host,
-        'cluster_port': percona_xtradb_cluster_node.port,
+        'cluster_host': '%s:%s' %
+                        (percona_xtradb_cluster_node.host,
+                         percona_xtradb_cluster_node.port),
         'cluster_username': percona_xtradb_cluster_node.username,
         'cluster_password': percona_xtradb_cluster_node.password,
         'load_balancing_mode': 'singlewriter'
@@ -85,8 +87,7 @@ def test__register_cluster_with_proxysql_removes_incorrect_nodes(
     galera_config = GaleraConfig({
         'writer_hostgroup_id': hostgroup_writer,
         'reader_hostgroup_id': hostgroup_reader,
-        'cluster_host': galera_man.host,
-        'cluster_port': galera_man.port,
+        'cluster_host': '%s:%s' % (galera_man.host, galera_man.port),
         'cluster_username': galera_man.user,
         'cluster_password': galera_man.password,
         'load_balancing_mode': 'singlewriter'

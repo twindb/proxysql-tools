@@ -115,7 +115,6 @@ class GaleraConfig(Model):
     writer_hostgroup_id = StringType(required=True)
     reader_hostgroup_id = StringType(required=True)
     cluster_host = StringType(required=True)
-    cluster_port = StringType(required=True)
     cluster_username = StringType(required=True)
     cluster_password = StringType(required=True)
     load_balancing_mode = StringType(required=True)
