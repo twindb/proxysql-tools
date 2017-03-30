@@ -81,13 +81,16 @@ lint: ## check style with flake8
 	flake8 proxysql_tools tests
 
 test: ## run tests quickly with the default Python
-	py.test --flakes --full-trace --verbose --cache-clear tests/
+	pytest -xv --cov-report term-missing --cov=./proxysql_tools tests/unit
 
-test-all: ## run tests on every Python version with tox
+test-integration: ## run integration tests
+	py.test tests/integration/
+
+test-all: ## run tests on every Python version with tox (must be run in Linux with docker)
 	tox
 
 coverage: ## check code coverage quickly with the default Python
-	py.test --cov-report term-missing --cov=./proxysql_tools tests
+	py.test --cov-report term-missing --cov=./proxysql_tools tests/unit
 
 .PHONY: docs
 docs: ## generate Sphinx HTML documentation, including API docs
