@@ -5,7 +5,7 @@ import pytest
 from docker.types import IPAMConfig, IPAMPool
 from proxysql_tools.entities.galera import GaleraNode
 from proxysql_tools.managers.proxysql_manager import ProxySQLManager
-from tests.library import (
+from tests.integration.library import (
     docker_client,
     docker_pull_image,
     eventually,
