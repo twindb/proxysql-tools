@@ -193,7 +193,7 @@ def deregister_unhealthy_backends(proxysql_man, galera_nodes, hostgroup_id,
 
         if not backend_found_in_cluster:
             log.warning('Backend not found in the cluster: '
-                        'hostgroup %d, %s:%d %s',
+                        'hostgroup %d, %s:%s %s',
                         hostgroup_id,
                         backend.hostname, backend.port,
                         backend.status)
