@@ -2,7 +2,7 @@ from click.testing import CliRunner
 
 from proxysql_tools.cli import main
 from proxysql_tools.managers.galera_manager import GaleraManager
-from tests.library import proxysql_tools_config
+from tests.integration.library import proxysql_tools_config
 
 
 def test__main_command_version_can_be_fetched():
