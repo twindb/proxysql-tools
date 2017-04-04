@@ -21,7 +21,7 @@ deploy:
   password:
     secure: aDLLv5BbnsLC5uukE5GaKjamjO51RrZuOhitG1PeRHz9LZ8orTfo4keFB/KD7Tgo07TMD1T/2nfYOPE2vfaFrJJo+NcKuV1u5yr8+2uY78Dvvvbn+PtYdB1GOaS+wDL5hvdVj9bf2wGF4HA9uPKtwmSuJlJ+mwRUYCk3ZJ+YH/Mhffa3mgp4CVX3IQ+lpEZaeu3zi33fwNlkKngtPDQ4lJslkHXpVq5SLLYvC0wlj0eE2uGK6woJbMO8XwmFC8K32/+fAhqsMZtGthCgIdICVGUwZWn7UAw+fvWyoks5ZlQC7+HtBTlVkfwDsBGjU46q4z5rlQD0kC+9HVP7kvmsJwA+qwxm0icQ+8okhVzaeKd2GMfVeCNhUoyn9UG5IV/mJJNs4ULcjTF6XocduRYrzVh5a4zHq5rPLW6DYP9Zd2l9KQHVRbyxX4U2c7haFpreYxEoZvVdlVnqfWublbbfWyYLQXxi+DC1yiYjHd8cjBwt+uykJqaN0cozPh13UqBRRLslKBx46gK34aBPP5+fY1n1zNyYYvEAStXbp4Vsyjr9sEiSoKS8EB6bRA+EuxtwEG1mybMTnU/AiDc7tq/tH3WcCGoQ9IOOt5a6qDfa+zO8Qd8z0PMkTsfmj1EylFpFWtxFfxnxxzrbxZPBzgpgQNPtSQWO3ZLBL3Khsr8WWl8=
   on:
-    condition: $TOXENV == py27
+    condition: $TOXENV == integration
     distributions: sdist bdist_wheel
     repo: twindb/proxysql-tools
     branch: master
