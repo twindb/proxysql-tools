@@ -54,7 +54,7 @@ bootstrap: ## bootstrap the development environment
 	pip install --editable .
 
 .PHONY: clean
-clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
+clean: clean-build clean-pyc clean-test clean-docs ## remove all build, test, coverage and Python artifacts
 
 .PHONY: clean-build
 clean-build: ## remove build artifacts
@@ -76,6 +76,10 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .tox/
 	rm -f .coverage
 	rm -fr htmlcov/
+
+
+clean-docs:
+	make -C docs clean
 
 lint: ## check style with flake8
 	flake8 proxysql_tools tests

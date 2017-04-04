@@ -94,6 +94,8 @@ def register_cluster_with_proxysql(proxy_cfg, galera_cfg):
         # If there are more than one nodes in the writer hostgroup then we
         # remove all but one.
         if len(writer_backends) > 1:
+            log.info('There are %d writers. Removing all but one.',
+                     len(writer_backends))
             for backend in writer_backends[1:]:
                 proxysql_man.deregister_backend(hostgroup_writer,
                                                 backend.hostname,
@@ -139,6 +141,9 @@ def register_cluster_with_proxysql(proxy_cfg, galera_cfg):
             for b in reader_backends:
                 if (b.hostname == writer_backend.hostname and
                         b.port == writer_backend.port):
+                    log.info("There is more than one backend registered "
+                             "in the reader hostgroup. We remove the ones "
+                             "that are also present in the writer hostgroup")
                     proxysql_man.deregister_backend(hostgroup_reader,
                                                     b.hostname, b.port)
 
@@ -187,6 +192,11 @@ def deregister_unhealthy_backends(proxysql_man, galera_nodes, hostgroup_id,
                     break
 
         if not backend_found_in_cluster:
+            log.warning('Backend not found in the cluster: '
+                        'hostgroup %d, %s:%d %s',
+                        hostgroup_id,
+                        backend.hostname, backend.port,
+                        backend.status)
             proxysql_man.deregister_backend(hostgroup_id, backend.hostname,
                                             backend.port)
 
