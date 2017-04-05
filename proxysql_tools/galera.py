@@ -229,21 +229,20 @@ def fetch_galera_manager(galera_cfg):
 
             return galera_man
         except ValueError as e:
-            log.error('Cluster host config option %s in invalid format. Should '
-                      'be in the format host:port,host:port.' % host_port)
             exception = e
-            err_msg = ('Cluster host config option %s in invalid format. Should '
-                       'be in the format host:port,host:port.' % host_port)
+            err_msg = ('Cluster host config option %s in invalid format. '
+                       'Correct format host:port,host:port.' % host_port)
+            log.error(err_msg)
         except GaleraNodeNonPrimary as e:
             exception = e
             err_msg = ('Cluster node %s:%s used for registration is '
                        'non-primary, skipping.' % (host, port))
+            log.error(err_msg)
         except GaleraNodeUnknownState as e:
-            log.error('Cluster node %s:%s used for registration is in unknown '
-                      'state, skipping.' % (host, port))
             exception = e
-            err_msg = ('Cluster node %s:%s used for registration is in unknown '
-                       'state, skipping.' % (host, port))
+            err_msg = ('Cluster node %s:%s used for registration is in '
+                       'unknown state, skipping.' % (host, port))
+            log.error(err_msg)
 
     if exception is not None:
         log.error(err_msg)
