@@ -2,6 +2,8 @@ import docker
 import json
 import socket
 import time
+import io
+from ConfigParser import ConfigParser
 
 from proxysql_tools.entities.galera import GaleraNode
 
@@ -139,3 +141,38 @@ def wait_for_cluster_nodes_to_become_healthy(percona_xtradb_cluster_info):
 
     # Allow all the cluster nodes to startup.
     eventually(check_started, retries=20, sleep_time=4)
+
+
+def proxysql_tools_config(proxysql_manager, cluster_host, cluster_port,
+                          cluster_user, cluster_pass, hostgroup_writer,
+                          hostgroup_reader, monitor_user, monitor_pass):
+    config_contents = """
+[proxysql]
+host={proxy_host}
+admin_port={proxy_port}
+admin_username={proxy_user}
+admin_password={proxy_pass}
+
+monitor_username={monitor_user}
+monitor_password={monitor_pass}
+
+[galera]
+cluster_host={cluster_host}:{cluster_port}
+cluster_username={cluster_user}
+cluster_password={cluster_pass}
+
+load_balancing_mode=singlewriter
+
+writer_hostgroup_id={writer_hostgroup}
+reader_hostgroup_id={reader_hostgroup}
+""".format(proxy_host=proxysql_manager.host, proxy_port=proxysql_manager.port,
+           proxy_user=proxysql_manager.user,
+           proxy_pass=proxysql_manager.password, monitor_user=monitor_user,
+           monitor_pass=monitor_pass, cluster_host=cluster_host,
+           cluster_port=cluster_port, cluster_user=cluster_user,
+           cluster_pass=cluster_pass, writer_hostgroup=hostgroup_writer,
+           reader_hostgroup=hostgroup_reader)
+
+    config = ConfigParser()
+    config.readfp(io.BytesIO(config_contents))
+    return config
