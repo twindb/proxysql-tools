@@ -13,7 +13,7 @@ ProxySQL Tools
         :target: https://codecov.io/gh/twindb/proxysql-tools
 
 .. image:: https://readthedocs.org/projects/proxysql-tools/badge/?version=master
-        :target: http://proxysql-tools.readthedocs.io/en/master/
+        :target: https://proxysql-tools.readthedocs.io
         :alt: Documentation Status
 
 
@@ -28,7 +28,9 @@ ProxySQL Tools
 Features
 --------
 
-* TODO
+* ProxySQL on AWS support
+* ProxySQL and Percona XtraDB Cluster integration
+* ProxySQL scheduler
 
 Credits
 -------

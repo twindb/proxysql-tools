@@ -54,7 +54,7 @@ bootstrap: ## bootstrap the development environment
 	pip install --editable .
 
 .PHONY: clean
-clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
+clean: clean-build clean-pyc clean-test clean-docs ## remove all build, test, coverage and Python artifacts
 
 .PHONY: clean-build
 clean-build: ## remove build artifacts
@@ -77,17 +77,24 @@ clean-test: ## remove test and coverage artifacts
 	rm -f .coverage
 	rm -fr htmlcov/
 
+
+clean-docs:
+	make -C docs clean
+
 lint: ## check style with flake8
 	flake8 proxysql_tools tests
 
 test: ## run tests quickly with the default Python
-	py.test --flakes --full-trace --verbose --cache-clear tests/
+	pytest -xv --cov-report term-missing --cov=./proxysql_tools tests/unit
 
-test-all: ## run tests on every Python version with tox
+test-integration: ## run integration tests
+	py.test tests/integration/
+
+test-all: ## run tests on every Python version with tox (must be run in Linux with docker)
 	tox
 
 coverage: ## check code coverage quickly with the default Python
-	py.test --cov-report term-missing --cov=./proxysql_tools tests
+	py.test --cov-report term-missing --cov=./proxysql_tools tests/unit
 
 .PHONY: docs
 docs: ## generate Sphinx HTML documentation, including API docs
