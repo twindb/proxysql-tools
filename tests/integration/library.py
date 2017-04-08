@@ -157,8 +157,7 @@ monitor_username={monitor_user}
 monitor_password={monitor_pass}
 
 [galera]
-cluster_host={cluster_host}
-cluster_port={cluster_port}
+cluster_host={cluster_host}:{cluster_port}
 cluster_username={cluster_user}
 cluster_password={cluster_pass}
 
