@@ -173,6 +173,9 @@ def deregister_unhealthy_backends(proxysql_man, galera_nodes, hostgroup_id,
         # Find the matching galera node and then see if the node state is
         # synced or donor/desynced. If not one of those two states then we
         # deregister the node from ProxySQL as well.
+        log.debug('Found backend in hostgroup %s: %s:%s, %s', hostgroup_id,
+                  backend.hostname, backend.port, backend.status)
+
         backend_node = None
         if backend.status == BACKEND_STATUS_ONLINE:
             for node in galera_nodes:
@@ -182,9 +185,9 @@ def deregister_unhealthy_backends(proxysql_man, galera_nodes, hostgroup_id,
 
             deregister_backend = False
             if backend_node is None:
-                log.warning('Backend not found in the cluster: '
-                            'hostgroup %s, %s:%s %s',
-                            hostgroup_id, backend.hostname, backend.port,
+                log.warning('Backend node %s:%s in hostgroup %s with status %s '
+                            'not found in the cluster',
+                            backend.hostname, backend.port, hostgroup_id,
                             backend.status)
                 deregister_backend = True
             elif backend_node.local_state not in desired_states:
