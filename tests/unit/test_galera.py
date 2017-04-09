@@ -79,8 +79,7 @@ def test__deregister_unhealthy_backends_deregisters_unhealthy_backends():
     backends = [healthy_backend, unhealthy_backend]
     hostgroup_id = 11
 
-    proxysql_man = ProxySQLManager(host='127.0.0.1', port=6032, user='username',
-                                   password='password')
+    proxysql_man = ProxySQLManager('127.0.0.1', 6032, 'username', 'password')
 
     (allow(proxysql_man)
         .fetch_backends
