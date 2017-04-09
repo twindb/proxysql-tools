@@ -77,7 +77,7 @@ def register_cluster_with_proxysql(proxy_cfg, galera_cfg):
 
         # Handle write backends
         writer_backends = deregister_unhealthy_backends(proxysql_man,
-                                                        galera_man.nodes,
+                                                        nodes_list,
                                                         hostgroup_writer,
                                                         [desired_state])
 
@@ -104,7 +104,7 @@ def register_cluster_with_proxysql(proxy_cfg, galera_cfg):
 
         # Now deregister all the unhealthy backends in reader hostgroup
         reader_backends = deregister_unhealthy_backends(proxysql_man,
-                                                        galera_man.nodes,
+                                                        nodes_list,
                                                         hostgroup_reader,
                                                         [desired_state])
 
