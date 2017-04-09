@@ -5,7 +5,8 @@ from doubles import allow
 from proxysql_tools.entities.galera import (
     GaleraConfig,
     GaleraNode,
-    LOCAL_STATE_SYNCED
+    LOCAL_STATE_SYNCED,
+    LOCAL_STATE_DONOR_DESYNCED
 )
 from proxysql_tools.entities.proxysql import (
     ProxySQLMySQLBackend,
@@ -52,13 +53,13 @@ def test__deregister_unhealthy_backends_deregisters_unhealthy_backends():
     healthy_node = GaleraNode({
         'host': '192.168.10.1',
         'port': 3306,
-        'local_state': 4
+        'local_state': LOCAL_STATE_SYNCED
     })
 
     unhealthy_node = GaleraNode({
         'host': '192.168.10.2',
         'port': 3306,
-        'local_state': 2
+        'local_state': LOCAL_STATE_DONOR_DESYNCED
     })
 
     healthy_backend = ProxySQLMySQLBackend({
