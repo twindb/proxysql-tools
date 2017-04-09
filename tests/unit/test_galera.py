@@ -10,7 +10,8 @@ from proxysql_tools.entities.galera import (
 )
 from proxysql_tools.entities.proxysql import (
     ProxySQLMySQLBackend,
-    BACKEND_STATUS_ONLINE
+    BACKEND_STATUS_ONLINE,
+    BACKEND_STATUS_OFFLINE_SOFT
 )
 from proxysql_tools.galera import (
     fetch_galera_manager,
@@ -87,8 +88,9 @@ def test__deregister_unhealthy_backends_deregisters_unhealthy_backends():
         .and_return(backends))
 
     (allow(proxysql_man)
-        .deregister_backend
-        .with_args(hostgroup_id, unhealthy_backend.hostname, unhealthy_backend.port)  # NOQA
+        .update_mysql_backend_status
+        .with_args(hostgroup_id, unhealthy_backend.hostname,
+                   unhealthy_backend.port, BACKEND_STATUS_OFFLINE_SOFT)
         .and_return(True))
 
     backends_list = deregister_unhealthy_backends(proxysql_man, galera_nodes,
