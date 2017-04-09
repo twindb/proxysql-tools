@@ -173,25 +173,33 @@ def deregister_unhealthy_backends(proxysql_man, galera_nodes, hostgroup_id,
         # Find the matching galera node and then see if the node state is
         # synced or donor/desynced. If not one of those two states then we
         # deregister the node from ProxySQL as well.
-        backend_found_in_cluster = False
+        backend_node = None
         if backend.status == BACKEND_STATUS_ONLINE:
             for node in galera_nodes:
-                if (node.host == backend.hostname and node.port == backend.port
-                        and node.local_state in desired_states):
-                    backend_found_in_cluster = True
+                if node.host == backend.hostname and node.port == backend.port:
+                    backend_node = node
                     break
 
-        if not backend_found_in_cluster:
-            log.warning('Backend not found in the cluster: '
-                        'hostgroup %s, %s:%s %s',
-                        hostgroup_id,
-                        backend.hostname, backend.port,
-                        backend.status)
-            proxysql_man.deregister_backend(hostgroup_id, backend.hostname,
-                                            backend.port)
+            deregister_backend = False
+            if backend_node is None:
+                log.warning('Backend not found in the cluster: '
+                            'hostgroup %s, %s:%s %s',
+                            hostgroup_id, backend.hostname, backend.port,
+                            backend.status)
+                deregister_backend = True
+            elif backend_node.local_state not in desired_states:
+                log.warning('Backend node %s:%s in hostgroup %s is in '
+                            'undesired state %s', backend.hostname,
+                            backend.port, hostgroup_id,
+                            backend_node.local_state)
+                deregister_backend = True
 
-            # Remove the backend from list of writer backends as well.
-            backend_list.remove(backend)
+            if deregister_backend:
+                proxysql_man.deregister_backend(hostgroup_id, backend.hostname,
+                                                backend.port)
+
+                # Remove the backend from list of backends as well.
+                backend_list.remove(backend)
 
     return backend_list
 
