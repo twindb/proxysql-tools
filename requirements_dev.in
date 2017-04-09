@@ -16,3 +16,4 @@ unittest2
 schematics
 codecov
 pytest-cov
+doubles
