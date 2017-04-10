@@ -118,3 +118,4 @@ class GaleraConfig(Model):
     cluster_username = StringType(required=True)
     cluster_password = StringType(required=True)
     load_balancing_mode = StringType(required=True)
+    writer_blacklist = StringType(default=None)
