@@ -47,6 +47,8 @@ def register_cluster_with_proxysql(proxy_cfg, galera_cfg):
                            if n.local_state == LOCAL_STATE_SYNCED]
     galera_nodes_desynced = [n for n in galera_man.nodes
                              if n.local_state == LOCAL_STATE_DONOR_DESYNCED]
+    nodes_blacklist = fetch_nodes_blacklisted_for_writers(galera_cfg,
+                                                          galera_man.nodes)
 
     # If we found no nodes in synced or donor/desynced state then we
     # cannot continue.
@@ -82,7 +84,8 @@ def register_cluster_with_proxysql(proxy_cfg, galera_cfg):
         writer_backends = deregister_unhealthy_backends(proxysql_man,
                                                         galera_man.nodes,
                                                         hostgroup_writer,
-                                                        [desired_state])
+                                                        [desired_state],
+                                                        nodes_blacklist)
 
         # If there are more than one nodes in the writer hostgroup then we
         # remove all but one.
@@ -95,8 +98,21 @@ def register_cluster_with_proxysql(proxy_cfg, galera_cfg):
                                                 backend.port)
         elif len(writer_backends) == 0:
             # If there are no backends registered in the writer hostgroup
-            # then we register one healthy galera node.
-            node = nodes_list[0]
+            # then we register one healthy galera node. We ignore any node
+            # defined in the blacklist.
+            node = None
+            for n in nodes_list:
+                if n in nodes_blacklist:
+                    continue
+
+                node = n
+                break
+
+            # If we are unable to find a healthy node after discounting the
+            # blacklisted nodes, then we ignore the blacklist.
+            if node is None:
+                node = nodes_list[0]
+
             proxysql_man.register_backend(hostgroup_writer,
                                           node.host, node.port)
 
@@ -153,7 +169,7 @@ def register_cluster_with_proxysql(proxy_cfg, galera_cfg):
 
 
 def deregister_unhealthy_backends(proxysql_man, galera_nodes, hostgroup_id,
-                                  desired_states):
+                                  desired_states, nodes_blacklist=None):
     """Remove backends in a particular hostgroup that are not in the Galera
     cluster or whose state is not in one of the desired states.
 
@@ -167,10 +183,15 @@ def deregister_unhealthy_backends(proxysql_man, galera_nodes, hostgroup_id,
     :param desired_states: Nodes not in this list of states are considered
         unhealthy.
     :type desired_states: list[str]
+    :param nodes_blacklist: List of Galera nodes that are blacklisted.
+    :type nodes_blacklist: list[GaleraNode]
     :return: A list of ProxySQL backends that correspond to the Galera nodes
         that are part of the cluster.
     :rtype: list[ProxySQLMySQLBackend]
     """
+    if nodes_blacklist is None:
+        nodes_blacklist = []
+
     backend_list = proxysql_man.fetch_backends(hostgroup_id)
     for backend in backend_list:
         # Find the matching galera node and then see if the node state is
@@ -206,6 +227,17 @@ def deregister_unhealthy_backends(proxysql_man, galera_nodes, hostgroup_id,
                 proxysql_man.update_mysql_backend_status(
                     hostgroup_id, backend.hostname, backend.port,
                     BACKEND_STATUS_OFFLINE_SOFT)
+
+                # Remove the backend from list of backends as well.
+                backend_list.remove(backend)
+            elif backend_node in nodes_blacklist:
+                log.warning('Backend node %s:%s in hostgroup %s with status %s'
+                            ' is blacklisted.',
+                            backend.hostname, backend.port, hostgroup_id,
+                            backend.status)
+
+                proxysql_man.deregister_backend(hostgroup_id, backend.hostname,
+                                                backend.port)
 
                 # Remove the backend from list of backends as well.
                 backend_list.remove(backend)
@@ -274,3 +306,32 @@ def fetch_galera_manager(galera_cfg):
     if exception is not None:
         log.error(err_msg)
         raise exception
+
+
+def fetch_nodes_blacklisted_for_writers(galera_cfg, galera_nodes):
+    """Finds the list of hosts that are blacklisted from becoming a writer.
+
+    :param galera_cfg: The Galera config object.
+    :type galera_cfg: GaleraConfig
+    :param galera_nodes: List of nodes in the Galera cluster.
+    :type galera_nodes: list[GaleraNode]
+    :return: A list of Galera nodes.
+    :rtype: list[GaleraNode]
+    """
+    nodes_list = []
+
+    if galera_cfg.writer_blacklist is None:
+        return nodes_list
+
+    for host_port in galera_cfg.writer_blacklist.split(','):
+        try:
+            host, port = [v.strip() for v in host_port.split(':')]
+
+            for node in galera_nodes:
+                if node.host == host and node.port == int(port):
+                    nodes_list.append(node)
+                    break
+        except ValueError:
+            continue
+
+    return nodes_list
