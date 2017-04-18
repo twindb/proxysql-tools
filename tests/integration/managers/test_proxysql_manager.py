@@ -2,7 +2,6 @@ import pytest
 
 from proxysql_tools.entities.proxysql import (
     BACKEND_STATUS_OFFLINE_SOFT,
-    BACKEND_STATUS_OFFLINE_HARD,
     ProxySQLMySQLBackend,
     ProxySQLMySQLUser
 )

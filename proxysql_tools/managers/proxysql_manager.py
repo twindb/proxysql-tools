@@ -6,7 +6,7 @@ from pymysql.err import OperationalError
 
 from proxysql_tools import log
 from proxysql_tools.entities.proxysql import (
-    ProxySQLMySQLBackend, ProxySQLMySQLUser, BACKEND_STATUS_OFFLINE_HARD
+    ProxySQLMySQLBackend, ProxySQLMySQLUser
 )
 
 PROXYSQL_CONNECT_TIMEOUT = 20
