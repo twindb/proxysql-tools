@@ -6,7 +6,7 @@ from pymysql.err import OperationalError
 
 from proxysql_tools import log
 from proxysql_tools.entities.proxysql import (
-    ProxySQLMySQLBackend, ProxySQLMySQLUser, BACKEND_STATUS_OFFLINE_HARD
+    ProxySQLMySQLBackend, ProxySQLMySQLUser
 )
 
 PROXYSQL_CONNECT_TIMEOUT = 20
@@ -115,9 +115,7 @@ class ProxySQLManager(object):
             log.info('Deregistering backend %s:%s in hostgroup %s' %
                      (backend.hostname, backend.port, backend.hostgroup_id))
 
-            return self.update_mysql_backend_status(
-                backend.hostgroup_id, backend.hostname, backend.port,
-                BACKEND_STATUS_OFFLINE_HARD)
+            return self.delete_mysql_backend(backend, proxy_conn)
 
     def update_mysql_backend_status(self, hostgroup_id, hostname, port,
                                     status):
@@ -372,6 +370,32 @@ class ProxySQLManager(object):
             log.debug('Executing query: %s' % sql)
 
             cursor.execute(sql)
+            cursor.execute('SAVE MYSQL SERVERS TO DISK')
+
+            if self.should_reload_runtime:
+                cursor.execute('LOAD MYSQL SERVERS TO RUNTIME')
+
+        return True
+
+    def delete_mysql_backend(self, backend, proxy_conn):
+        """Delete the MySQL backend registered with ProxySQL.
+
+        :param backend: The MySQL backend server.
+        :type backend: ProxySQLMySQLBackend
+        :param proxy_conn: A connection to ProxySQL.
+        :type proxy_conn: Connection
+        :return: True on success, False otherwise.
+        :rtype: bool
+        """
+        backend.validate()
+        with proxy_conn.cursor() as cursor:
+            sql = ("DELETE FROM mysql_servers "
+                   "WHERE hostgroup_id=%s AND hostname=%s AND port=%s")
+
+            log.debug('Executing query: %s' % sql)
+
+            cursor.execute(sql, (backend.hostgroup_id, backend.hostname,
+                                 backend.port))
             cursor.execute('SAVE MYSQL SERVERS TO DISK')
 
             if self.should_reload_runtime:
