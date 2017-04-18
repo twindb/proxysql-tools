@@ -2,7 +2,6 @@ import pytest
 
 from proxysql_tools.entities.proxysql import (
     BACKEND_STATUS_OFFLINE_SOFT,
-    BACKEND_STATUS_OFFLINE_HARD,
     ProxySQLMySQLBackend,
     ProxySQLMySQLUser
 )
@@ -96,7 +95,10 @@ def test__mysql_backend_can_be_deregistered(proxysql_manager):
         backend.hostgroup_id, backend.hostname, backend.port)
     backends_list = proxysql_manager.fetch_backends()
 
-    assert backends_list.pop().status == BACKEND_STATUS_OFFLINE_HARD
+    with proxysql_manager.get_connection() as conn:
+        assert not proxysql_manager.is_mysql_backend_registered(backend, conn)
+
+    assert len(backends_list) == 0
 
 
 def test__can_register_mysql_user(proxysql_manager):
