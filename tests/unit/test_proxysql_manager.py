@@ -53,3 +53,22 @@ def test__deregister_backend_does_not_delete_the_backend_if_not_registered():
 
     proxysql_man.deregister_backend(backend.hostgroup_id, backend.hostname,
                                     backend.port)
+
+
+def test_register_backend():
+    proxysql_man = ProxySQLManager('127.0.0.1', 6032, 'username', 'password')
+    backend = ProxySQLMySQLBackend({
+        'hostgroup_id': 10,
+        'hostname': 'dummy_host',
+        'port': 3306
+    })
+
+    (allow(proxysql_man)
+        .get_connection
+        .and_return(MagicMock()))
+
+    (expect(proxysql_man)
+        .insert_or_update_mysql_backend
+        .once())
+
+    proxysql_man.register_backend(backend.hostgroup_id, backend.hostname, backend.port)
