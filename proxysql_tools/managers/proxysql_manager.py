@@ -28,6 +28,7 @@ class ProxySQLManager(object):
         :param reload_runtime: Whether the ProxySQL runtime should be
             reloaded for the changes to take affect.
         :type reload_runtime: bool
+        :raise: ProxySQLAdminConnectionError
         """
         self.host = host
         self.port = int(port)
@@ -132,6 +133,7 @@ class ProxySQLManager(object):
         :type status: str
         :return: True on success, False otherwise.
         :rtype: bool
+        :raise: ProxySQLMySQLBackendUnregistered
         """
         backend = ProxySQLMySQLBackend()
         backend.hostgroup_id = hostgroup_id
