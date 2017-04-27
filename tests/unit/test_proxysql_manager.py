@@ -56,7 +56,7 @@ def test__deregister_backend_does_not_delete_the_backend_if_not_registered():
                                     backend.port)
 
 
-def test_register_backend():
+def test__register_backend():
     proxysql_man = ProxySQLManager('127.0.0.1', 6032, 'username', 'password')
     backend = ProxySQLMySQLBackend({
         'hostgroup_id': 10,
@@ -75,7 +75,7 @@ def test_register_backend():
     proxysql_man.register_backend(backend.hostgroup_id, backend.hostname, backend.port)
 
 
-def test_update_mysql_backend_status_if_backend_registered():
+def test__update_mysql_backend_status_not_called_if_backend_registered():
     proxysql_man = ProxySQLManager('127.0.0.1', 6032, 'username', 'password')
     backend = ProxySQLMySQLBackend({
         'hostgroup_id': 10,
@@ -97,7 +97,7 @@ def test_update_mysql_backend_status_if_backend_registered():
     proxysql_man.update_mysql_backend_status(backend.hostgroup_id, backend.hostname, backend.port, "dummy_status")
 
 
-def test_update_mysql_backend_status_if_backend_not_registered():
+def test__update_mysql_backend_status_not_called_if_backend_not_registered():
     proxysql_man = ProxySQLManager('127.0.0.1', 6032, 'username', 'password')
     backend = ProxySQLMySQLBackend({
         'hostgroup_id': 10,
@@ -120,7 +120,7 @@ def test_update_mysql_backend_status_if_backend_not_registered():
         proxysql_man.update_mysql_backend_status(backend.hostgroup_id, backend.hostname, backend.port, "dummy_status")
 
 
-def test_register_mysql_user_if_registered():
+def test__register_mysql_user_does_not_update_if_already_registered():
     proxysql_man = ProxySQLManager('127.0.0.1', 6032, 'username', 'password')
 
     (allow(proxysql_man)
@@ -138,7 +138,7 @@ def test_register_mysql_user_if_registered():
     assert proxysql_man.register_mysql_user("user", "pwd", 1)
 
 
-def test_register_mysql_user_if_not_registered():
+def test__register_mysql_user_if_not_registered():
     proxysql_man = ProxySQLManager('127.0.0.1', 6032, 'username', 'password')
 
     (allow(proxysql_man)

@@ -28,7 +28,6 @@ class ProxySQLManager(object):
         :param reload_runtime: Whether the ProxySQL runtime should be
             reloaded for the changes to take affect.
         :type reload_runtime: bool
-        :raise: ProxySQLAdminConnectionError
         """
         self.host = host
         self.port = int(port)
@@ -38,7 +37,11 @@ class ProxySQLManager(object):
         self.should_reload_runtime = reload_runtime
 
     def ping(self):
-        """Ping the ProxySQL instance to see if its alive."""
+        """Ping the ProxySQL instance to see if its alive.
+        :return: True on success
+        :rtype: bool
+        :raise: ProxySQLAdminConnectionError
+        """
         try:
             with self.get_connection() as proxy_conn:
                 with proxy_conn.cursor() as cursor:
