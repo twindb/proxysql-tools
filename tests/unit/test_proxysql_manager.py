@@ -75,7 +75,7 @@ def test__register_backend():
     proxysql_man.register_backend(backend.hostgroup_id, backend.hostname, backend.port)
 
 
-def test__update_mysql_backend_status_not_called_if_backend_registered():
+def test__update_mysql_backend_status_called_if_backend_registered():
     proxysql_man = ProxySQLManager('127.0.0.1', 6032, 'username', 'password')
     backend = ProxySQLMySQLBackend({
         'hostgroup_id': 10,
