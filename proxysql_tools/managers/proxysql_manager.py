@@ -37,7 +37,11 @@ class ProxySQLManager(object):
         self.should_reload_runtime = reload_runtime
 
     def ping(self):
-        """Ping the ProxySQL instance to see if its alive."""
+        """Ping the ProxySQL instance to see if its alive.
+        :return: True on success
+        :rtype: bool
+        :raise: ProxySQLAdminConnectionError
+        """
         try:
             with self.get_connection() as proxy_conn:
                 with proxy_conn.cursor() as cursor:
@@ -132,6 +136,7 @@ class ProxySQLManager(object):
         :type status: str
         :return: True on success, False otherwise.
         :rtype: bool
+        :raise: ProxySQLMySQLBackendUnregistered
         """
         backend = ProxySQLMySQLBackend()
         backend.hostgroup_id = hostgroup_id

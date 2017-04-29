@@ -97,6 +97,7 @@ class GaleraManager(object):
 
         :param node: The object that stores information on the Galera node.
         :type node: GaleraNode
+        :raises: GaleraNodeNonPrimary, GaleraNodeUnknownState
         """
         try:
             node.refresh_state()
