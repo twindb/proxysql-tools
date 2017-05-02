@@ -70,10 +70,8 @@ def network_interface_attached(network_interface):
 
 def detach_network_interface(network_interface):
 
-    client = boto3.client('ec2')
-
-    def get_attachment_id(interface):
-        response = client.describe_network_interfaces(
+    def get_attachment_id(boto_client, interface):
+        response = boto_client.describe_network_interfaces(
             NetworkInterfaceIds=[
                 interface
             ]
@@ -82,7 +80,7 @@ def detach_network_interface(network_interface):
 
     client = boto3.client('ec2')
     client.detach_network_interface(
-        AttachmentId=get_attachment_id(network_interface)
+        AttachmentId=get_attachment_id(client, network_interface)
     )
 
 
