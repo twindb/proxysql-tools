@@ -21,14 +21,14 @@ def test__get_network_interface_state(mocker):
     mock_boto3.client.assert_called_once_with('ec2')
 
 
-def test__network_interface_attached_if_network_state_is_attached(mocker):
+def test__network_interface_state_returns_true_if_attached(mocker):
     mock_get_interface_state = mocker.patch('proxysql_tools.aws.get_network_interface_state')
     mock_get_interface_state.return_value = 'attached'
     assert network_interface_attached('1.1.1.1')
 
 
-def test__network_interface_attached_if_network_state_is_not_attached(mocker):
-    mock_get_interface_state = mocker.patch('proxysql_tools.aws.get_network_interface_state')
+def test__network_interface_state_returns_false_if_not_attached(mocker):
+    mock_get_interface_state = mocker.patch('prgit oxysql_tools.aws.get_network_interface_state')
     mock_get_interface_state.return_value = 'detached'
     assert not network_interface_attached('1.1.1.1')
 
