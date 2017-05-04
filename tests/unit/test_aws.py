@@ -1,4 +1,3 @@
-import pytest
 from mock import MagicMock
 
 from proxysql_tools.aws import get_network_interface, get_network_interface_state, network_interface_attached, \
@@ -28,7 +27,7 @@ def test__network_interface_state_returns_true_if_attached(mocker):
 
 
 def test__network_interface_state_returns_false_if_not_attached(mocker):
-    mock_get_interface_state = mocker.patch('prgit oxysql_tools.aws.get_network_interface_state')
+    mock_get_interface_state = mocker.patch('proxysql_tools.aws.get_network_interface_state')
     mock_get_interface_state.return_value = 'detached'
     assert not network_interface_attached('1.1.1.1')
 
