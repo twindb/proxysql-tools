@@ -70,10 +70,8 @@ def network_interface_attached(network_interface):
 
 def detach_network_interface(network_interface):
 
-    client = boto3.client('ec2')
-
-    def get_attachment_id(interface):
-        response = client.describe_network_interfaces(
+    def get_attachment_id(boto_client, interface):
+        response = boto_client.describe_network_interfaces(
             NetworkInterfaceIds=[
                 interface
             ]
@@ -82,7 +80,7 @@ def detach_network_interface(network_interface):
 
     client = boto3.client('ec2')
     client.detach_network_interface(
-        AttachmentId=get_attachment_id(network_interface)
+        AttachmentId=get_attachment_id(client, network_interface)
     )
 
 
@@ -94,7 +92,7 @@ def ensure_network_interface_is_detached(network_interface):
         pass
 
 
-def attach_network_inetrface(network_interface, instance_id):
+def attach_network_interface(network_interface, instance_id):
     client = boto3.client('ec2')
     for _ in xrange(10):
         try:
@@ -164,7 +162,7 @@ def notify_master(cfg):
 
         ensure_network_interface_is_detached(network_interface)
 
-        attach_network_inetrface(network_interface, instance_id)
+        attach_network_interface(network_interface, instance_id)
 
         configure_local_interface(local_interface, ip, netmask)
     except NoOptionError as err:
