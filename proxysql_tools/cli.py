@@ -7,6 +7,7 @@ from schematics.exceptions import ModelValidationError, ModelConversionError
 
 import proxysql_tools.aws
 import proxysql_tools.galera
+import proxysql_tools.galera
 from proxysql_tools import setup_logging, log, __version__
 from proxysql_tools.entities.galera import GaleraConfig
 from proxysql_tools.entities.proxysql import ProxySQLConfig
@@ -14,6 +15,7 @@ from proxysql_tools.managers.proxysql_manager import (
     ProxySQLManager,
     ProxySQLAdminConnectionError
 )
+from proxysql_tools.util.bug1258464 import bug1258464
 
 pass_cfg = click.make_pass_decorator(ConfigParser, ensure=True)
 
@@ -130,3 +132,10 @@ def register(cfg):
         exit(1)
 
     log.info('Registration of Galera cluster nodes successful.')
+
+
+@galera.command()
+@pass_cfg
+def bug1258464killer(cfg):
+    bug1258464(cfg)
+    pass
