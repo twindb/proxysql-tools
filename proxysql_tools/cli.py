@@ -9,6 +9,7 @@ from pymysql import OperationalError
 from proxysql_tools import setup_logging, LOG, __version__
 from proxysql_tools.cli_entrypoint.galera import galera_register
 from proxysql_tools.proxysql.proxysql import ProxySQL
+from proxysql_tools.util.bug1258464 import bug1258464
 
 PASS_CFG = click.make_pass_decorator(ConfigParser, ensure=True)
 
@@ -103,3 +104,9 @@ def register(cfg):
 
     except OperationalError as err:
         LOG.error('Failed to talk to database: %s', err)
+
+
+@galera.command()
+@PASS_CFG
+def bug1258464killer(cfg):
+    bug1258464(cfg)
