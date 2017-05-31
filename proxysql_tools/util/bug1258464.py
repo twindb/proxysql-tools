@@ -33,5 +33,3 @@ def bug1258464(cfg):
                         with open('/var/run/mysqld/mysqld.pid', 'r') as f:
                             pid = f.readline()
                             os.kill(int(pid), signal.SIGKILL)
-
-            pass
