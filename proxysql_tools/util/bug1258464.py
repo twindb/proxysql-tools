@@ -26,7 +26,8 @@ def bug1258464(cfg):
                 if count > 100:
                     cursor.execute("SELECT COUNT (*)"
                                    "FROM information_schema.processlist"
-                                   "WHERE State = 'Waiting for table metadata lock'"
+                                   "WHERE State = "
+                                   "'Waiting for table metadata lock'"
                                    "AND Info LIKE 'ALTER TABLE%;")
                     count = cursor.fetchone()[0]
                     if count > 0:
