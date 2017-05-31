@@ -14,8 +14,8 @@ def bug1258464(cfg):
     node = GaleraNode()
     node.username = parser_my_cnf.get('client', 'user')
     node.password = parser_my_cnf.get('client', 'password')
-    node.password = parser.get('galera','cluster_host')
-    node.port = parser.get('galera','cluster_port')
+    node.password = parser.get('galera', 'cluster_host')
+    node.port = parser.get('galera', 'cluster_port')
     with node.get_connection() as conn:
             with conn.cursor() as cursor:
                 cursor.execute("SELECT COUNT(*)"
@@ -26,10 +26,12 @@ def bug1258464(cfg):
                 if count > 100:
                     cursor.execute("SELECT COUNT (*)"
                                    "FROM information_schema.processlist"
-                                   "WHERE State = 'Waiting for table metadata lock' AND"
-                                   "Info LIKE 'ALTER TABLE%;")
+                                   "WHERE State = 'Waiting for table metadata lock'"
+                                   "AND Info LIKE 'ALTER TABLE%;")
                     count = cursor.fetchone()[0]
                     if count > 0:
                         with open('/var/run/mysqld/mysqld.pid', 'r') as f:
                             pid = f.readline()
                             os.kill(int(pid), signal.SIGKILL)
+                        return True
+    return False

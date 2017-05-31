@@ -7,7 +7,6 @@ from schematics.exceptions import ModelValidationError, ModelConversionError
 
 import proxysql_tools.aws
 import proxysql_tools.galera
-import proxysql_tools.galera
 from proxysql_tools import setup_logging, log, __version__
 from proxysql_tools.entities.galera import GaleraConfig
 from proxysql_tools.entities.proxysql import ProxySQLConfig
