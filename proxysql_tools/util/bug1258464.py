@@ -1,38 +1,50 @@
 import os
+import platform
 import signal
 from ConfigParser import ConfigParser
-from proxysql_tools.entities.galera import GaleraNode
+import pymysql
+from pymysql.cursors import DictCursor
 
 
-def bug1258464(cfg):
-    parser = ConfigParser(allow_no_value=True)
-    parser.read(cfg)
+def kill_process(pid):
+    os.kill(pid, signal.SIGKILL)
 
+
+def get_pid(path):
     parser_my_cnf = ConfigParser(allow_no_value=True)
-    parser_my_cnf.read('/root/.my.cnf')
+    parser_my_cnf.read(path)
+    pid_file = parser_my_cnf.get('mysqld', 'pid-file')
+    with open(pid_file, 'r') as f:
+        pid = f.readline()
+        return int(pid)
 
-    node = GaleraNode()
-    node.username = parser_my_cnf.get('client', 'user')
-    node.password = parser_my_cnf.get('client', 'password')
-    node.password = parser.get('galera', 'cluster_host')
-    node.port = parser.get('galera', 'cluster_port')
-    with node.get_connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute("SELECT COUNT(*)"
-                               "FROM information_schema.processlist"
-                               "WHERE State = 'wsrep in pre-commit stage' AND"
-                               "Info = 'COMMIT'")
-                count = cursor.fetchone()[0]
-                if count > 100:
-                    cursor.execute("SELECT COUNT (*)"
-                                   "FROM information_schema.processlist"
-                                   "WHERE State = "
-                                   "'Waiting for table metadata lock'"
-                                   "AND Info LIKE 'ALTER TABLE%;")
-                    count = cursor.fetchone()[0]
-                    if count > 0:
-                        with open('/var/run/mysqld/mysqld.pid', 'r') as f:
-                            pid = f.readline()
-                            os.kill(int(pid), signal.SIGKILL)
-                        return True
+
+def get_my_cnf():
+    dist_name = platform.linux_distribution()[0]
+    if dist_name.upper() in ["DEBIAN", "UBUNTU"]:
+        return '/etc/mysql/my.cnf'
+    elif dist_name.upper() in ["RHEL", "CENTOS", "FEDORA"]:
+        return '/etc/my.cnf'
+
+
+def bug1258464(default_file):
+    db = pymysql.connect(read_default_file=default_file)
+    with db.cursor() as cursor:
+        cursor.execute("SELECT COUNT(*)"
+                       "FROM information_schema.processlist"
+                       "WHERE State = 'wsrep in pre-commit stage' AND"
+                       "Info = 'COMMIT'")
+        count_pre_commit = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT (*)"
+                           "FROM information_schema.processlist"
+                           "WHERE State = "
+                           "'Waiting for table metadata lock'"
+                           "AND Info LIKE 'ALTER TABLE%;")
+
+        count_waiting = cursor.fetchone()[0]
+        if count_pre_commit > 100 and count_waiting > 0:
+            my_cnf_path = get_my_cnf()
+            pid = get_pid(my_cnf_path)
+            kill_process(pid)
+            return True
     return False
