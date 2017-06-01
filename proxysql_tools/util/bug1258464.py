@@ -41,10 +41,10 @@ def bug1258464(default_file):
                            "AND Info = 'COMMIT'")
             count_pre_commit = cursor.fetchone()[0]
             cursor.execute("SELECT COUNT (*)"
-                               "FROM information_schema.processlist"
-                               "WHERE State = "
-                               "'Waiting for table metadata lock'"
-                               "AND Info LIKE 'ALTER TABLE%")
+                           "FROM information_schema.processlist"
+                           "WHERE State = "
+                           "'Waiting for table metadata lock'"
+                           "AND Info LIKE 'ALTER TABLE%")
             count_waiting = cursor.fetchone()[0]
             if count_pre_commit > 100 and count_waiting > 0:
                     my_cnf_path = get_my_cnf()
