@@ -134,7 +134,7 @@ def register(cfg):
 
 
 @galera.command()
-@click.option('--default-file', help='Path to my.cnf with custom settings')
+@click.option('--defaults-file', help='Path to my.cnf with custom settings')
 def bug1258464killer(default_file):
     if os.path.isfile(default_file):
         bug1258464(default_file)
