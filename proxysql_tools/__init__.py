@@ -5,7 +5,7 @@ __email__ = 'dev@twindb.com'
 __version__ = '0.2.14'
 
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 def setup_logging(logger, debug=False):     # pragma: no cover

@@ -11,7 +11,7 @@ import time
 from botocore.exceptions import ClientError
 from subprocess import Popen
 
-from proxysql_tools import log
+from proxysql_tools import LOG
 
 DEVICE_INDEX = 1
 
@@ -50,7 +50,7 @@ def get_network_interface_state(network_interface):
         NetworkInterfaceIds=[network_interface]
     )
     status = response['NetworkInterfaces'][0]['Attachment']['Status']
-    log.debug('Interface %s, status = %s' % (network_interface, status))
+    LOG.debug('Interface %s, status = %s' % (network_interface, status))
     return status
 
 
@@ -142,7 +142,7 @@ def notify_master(cfg):
                                                       'aws_secret_access_key')
         os.environ['AWS_DEFAULT_REGION'] = cfg.get('aws', 'aws_default_region')
     except NoOptionError:
-        log.error('aws_access_key_id, aws_secret_access_key and '
+        LOG.error('aws_access_key_id, aws_secret_access_key and '
                   'aws_default_region must be defined in '
                   'aws section of the config file.')
         exit(-1)
@@ -166,6 +166,6 @@ def notify_master(cfg):
 
         configure_local_interface(local_interface, ip, netmask)
     except NoOptionError as err:
-        log.error('virtual_ip and virtual_netmask must be defined in '
+        LOG.error('virtual_ip and virtual_netmask must be defined in '
                   'proxysql section of the config file.')
-        log.error(err)
+        LOG.error(err)

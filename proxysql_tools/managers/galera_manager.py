@@ -2,7 +2,7 @@ from schematics.exceptions import ModelValidationError
 
 from pymysql.err import OperationalError
 
-from proxysql_tools import log
+from proxysql_tools import LOG
 from proxysql_tools.entities.galera import GaleraNode, CLUSTER_STATUS_PRIMARY
 
 
@@ -61,12 +61,12 @@ class GaleraManager(object):
                     err_msg = ('Node %s:%s unknown status variable '
                                '"wsrep_incoming_addresses"')
 
-                    log.error(err_msg)
+                    LOG.error(err_msg)
                     raise GaleraNodeUnknownState(err_msg)
 
-                log.info('Node %s:%s wsrep_incoming_addresses:: %s' %
-                         (initial_node.host, initial_node.port,
-                          res['wsrep_incoming_addresses']))
+                LOG.debug('Node %s:%s wsrep_incoming_addresses:: %s' %
+                          (initial_node.host, initial_node.port,
+                           res['wsrep_incoming_addresses']))
 
                 for host_port in res['wsrep_incoming_addresses'].split(','):
                     host, port = host_port.split(':')
@@ -106,16 +106,20 @@ class GaleraManager(object):
                            'state %s' % (node.host, node.port,
                                          node.cluster_status))
 
-                log.error(err_msg)
+                LOG.error(err_msg)
                 raise GaleraNodeNonPrimary(err_msg)
-        except (ModelValidationError, OperationalError) as e:
+        except OperationalError as err:
+            LOG.error(err)
+            GaleraNodeNonPrimary(err)
+        except ModelValidationError as e:
             # The node state cannot be refreshed as some of the
             # properties of the node could not be fetched. We
             # should fail the discovery in such a case as this is
             # unexpected error.
-            log.error('Node %s:%s state could not be fetched' %
+            LOG.error('Node %s:%s state could not be fetched' %
                       (node.host, node.port))
-            raise GaleraNodeUnknownState(e.messages)
+            LOG.error(e)
+            raise GaleraNodeUnknownState(e)
 
     @staticmethod
     def nodes_in_same_cluster(node1, node2):

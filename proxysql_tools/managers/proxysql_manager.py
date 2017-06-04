@@ -4,7 +4,7 @@ import pymysql
 from pymysql.cursors import DictCursor
 from pymysql.err import OperationalError
 
-from proxysql_tools import log
+from proxysql_tools import LOG
 from proxysql_tools.entities.proxysql import (
     ProxySQLMySQLBackend, ProxySQLMySQLUser
 )
@@ -45,11 +45,11 @@ class ProxySQLManager(object):
         try:
             with self.get_connection() as proxy_conn:
                 with proxy_conn.cursor() as cursor:
-                    log.debug('Pinging ProxySQL to check if its alive.')
+                    LOG.debug('Pinging ProxySQL to check if its alive.')
 
                     cursor.execute('SELECT 1')
         except OperationalError as e:
-            log.error('Failed to connect to ProxySQL admin at %s:%s' %
+            LOG.error('Failed to connect to ProxySQL admin at %s:%s' %
                       (self.host, self.port))
 
             raise ProxySQLAdminConnectionError(e.message)
@@ -60,13 +60,13 @@ class ProxySQLManager(object):
         """Reload the ProxySQL runtime so that the changes take affect."""
         with self.get_connection() as proxy_conn:
             with proxy_conn.cursor() as cursor:
-                log.debug('Reloading changes into ProxySQL runtime.')
+                LOG.debug('Reloading changes into ProxySQL runtime.')
 
                 cursor.execute('LOAD MYSQL SERVERS TO RUNTIME')
                 cursor.execute('LOAD MYSQL USERS TO RUNTIME')
                 cursor.execute('LOAD MYSQL VARIABLES TO RUNTIME')
 
-    def register_backend(self, hostgroup_id, hostname, port):
+    def register_backend(self, hostgroup_id, hostname, port, comment=None):
         """Register a MySQL backend with ProxySQL.
 
         :param hostgroup_id: The ID of the hostgroup that the MySQL backend
@@ -76,6 +76,8 @@ class ProxySQLManager(object):
         :type hostname: str
         :param port: The port that the MySQL backend listens on.
         :type port: int
+        :param comment: Comment to add to mysql_servers table
+        :type comment: str
         :return: True on success, False otherwise.
         :rtype: bool
         """
@@ -83,9 +85,11 @@ class ProxySQLManager(object):
         backend.hostgroup_id = hostgroup_id
         backend.hostname = hostname
         backend.port = port
+        if comment:
+            backend.comment = comment
 
         with self.get_connection() as proxy_conn:
-            log.info('Registering backend %s:%s in hostgroup %s.' %
+            LOG.info('Registering backend %s:%s in hostgroup %s.' %
                      (backend.hostname, backend.port, backend.hostgroup_id))
 
             return self.insert_or_update_mysql_backend(backend, proxy_conn)
@@ -110,13 +114,13 @@ class ProxySQLManager(object):
 
         with self.get_connection() as proxy_conn:
             if not self.is_mysql_backend_registered(backend, proxy_conn):
-                log.debug('Backend %s:%s is not registered in hostgroup %s' %
+                LOG.debug('Backend %s:%s is not registered in hostgroup %s' %
                           (backend.hostname, backend.port,
                            backend.hostgroup_id))
 
                 return True
 
-            log.info('Deregistering backend %s:%s in hostgroup %s' %
+            LOG.info('Deregistering backend %s:%s in hostgroup %s' %
                      (backend.hostname, backend.port, backend.hostgroup_id))
 
             return self.delete_mysql_backend(backend, proxy_conn)
@@ -150,10 +154,10 @@ class ProxySQLManager(object):
                            (backend.hostname, backend.port,
                             backend.hostgroup_id))
 
-                log.error(err_msg)
+                LOG.error(err_msg)
                 raise ProxySQLMySQLBackendUnregistered(err_msg)
 
-            log.info('Updating backend %s:%s in hostgroup %s status to %s' %
+            LOG.info('Updating backend %s:%s in hostgroup %s status to %s' %
                      (backend.hostname, backend.port, backend.hostgroup_id,
                       backend.status))
 
@@ -202,13 +206,13 @@ class ProxySQLManager(object):
 
         with self.get_connection() as proxy_conn:
             if self.is_mysql_user_registered(user, proxy_conn):
-                log.debug('User %s already registered with default '
+                LOG.debug('User %s already registered with default '
                           'hostgroup %s' % (user.username,
                                             user.default_hostgroup))
 
                 return True
 
-            log.info('Registering user %s with default hostgroup %s' %
+            LOG.info('Registering user %s with default hostgroup %s' %
                      (user.username, user.default_hostgroup))
 
             return self.insert_or_update_mysql_user(user, proxy_conn)
@@ -372,7 +376,7 @@ class ProxySQLManager(object):
             sql = ("REPLACE INTO mysql_servers(%s) VALUES(%s)" %
                    (', '.join(col_expressions), ', '.join(val_expressions)))
 
-            log.debug('Executing query: %s' % sql)
+            LOG.debug('Executing query: %s' % sql)
 
             cursor.execute(sql)
             cursor.execute('SAVE MYSQL SERVERS TO DISK')
@@ -397,7 +401,7 @@ class ProxySQLManager(object):
             sql = ("DELETE FROM mysql_servers "
                    "WHERE hostgroup_id=%s AND hostname=%s AND port=%s")
 
-            log.debug('Executing query: %s' % sql)
+            LOG.debug('Executing query: %s' % sql)
 
             cursor.execute(sql, (backend.hostgroup_id, backend.hostname,
                                  backend.port))
@@ -430,7 +434,7 @@ class ProxySQLManager(object):
             sql = ("REPLACE INTO mysql_users(%s) VALUES(%s)" %
                    (', '.join(col_expressions), ', '.join(val_expressions)))
 
-            log.debug('Executing query: %s' % sql)
+            LOG.debug('Executing query: %s' % sql)
 
             cursor.execute(sql)
             cursor.execute('SAVE MYSQL USERS TO DISK')
