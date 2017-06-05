@@ -110,7 +110,7 @@ class GaleraManager(object):
                 raise GaleraNodeNonPrimary(err_msg)
         except OperationalError as err:
             LOG.error(err)
-            GaleraNodeNonPrimary(err)
+            raise GaleraNodeNonPrimary(err)
         except ModelValidationError as e:
             # The node state cannot be refreshed as some of the
             # properties of the node could not be fetched. We

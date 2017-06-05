@@ -26,8 +26,6 @@ def register_cluster_with_proxysql(proxy_cfg, galera_cfg):
     :type proxy_cfg: ProxySQLConfig
     :param galera_cfg: The Galera config object.
     :type galera_cfg: GaleraConfig
-    :return: Returns True on success, False otherwise.
-    :rtype: bool
     """
     hostgroup_writer = galera_cfg.writer_hostgroup_id
     hostgroup_reader = galera_cfg.reader_hostgroup_id

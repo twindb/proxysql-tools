@@ -1,3 +1,4 @@
+"""proxysql_tools module"""
 import logging
 
 __author__ = """TwinDB Development Team"""
@@ -9,6 +10,7 @@ LOG = logging.getLogger(__name__)
 
 
 def setup_logging(logger, debug=False):     # pragma: no cover
+    """Configure logging"""
 
     fmt_str = "%(asctime)s: %(levelname)s:" \
               " %(module)s.%(funcName)s():%(lineno)d: %(message)s"

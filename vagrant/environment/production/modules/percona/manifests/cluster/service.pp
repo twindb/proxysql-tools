@@ -14,6 +14,11 @@ class percona::cluster::service ($ensure="running", $bootstrap=false) {
             start => $service_start,
     }
 
+    mysql_user { 'root@192.168.90.%':
+        ensure        => 'present',
+        password_hash => '*81F5E21E35407D884A6CD4A731AEBFB6AF209E1B', # root
+    }
+
     mysql_user { 'proxysql_user@%':
         ensure        => 'present',
         password_hash => '*BF27B4C7AAD278126E228AA8427806E870F64F39',

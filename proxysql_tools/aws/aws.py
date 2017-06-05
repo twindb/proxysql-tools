@@ -1,15 +1,12 @@
 import os
-from ConfigParser import NoOptionError
-
-import boto3
-import netifaces
-
-import requests
-
 import time
-
-from botocore.exceptions import ClientError
+from ConfigParser import NoOptionError
 from subprocess import Popen
+
+import netifaces
+import requests
+import boto3
+from botocore.exceptions import ClientError
 
 from proxysql_tools import LOG
 
@@ -50,7 +47,7 @@ def get_network_interface_state(network_interface):
         NetworkInterfaceIds=[network_interface]
     )
     status = response['NetworkInterfaces'][0]['Attachment']['Status']
-    LOG.debug('Interface %s, status = %s' % (network_interface, status))
+    LOG.debug('Interface %s, status = %s', network_interface, status)
     return status
 
 
