@@ -40,3 +40,9 @@ def test_register_backend(proxysql):
     backend = ProxySQLMySQLBackend('192.168.90.2', hostgroup_id=10)
     proxysql.register_backend(backend)
     proxysql.deregister_backend(backend)
+
+
+def test_writer(proxysql):
+    backend = ProxySQLMySQLBackend('192.168.90.2', hostgroup_id=10)
+    proxysql.register_backend(backend)
+    assert backend == proxysql.find_backends(10)[0]

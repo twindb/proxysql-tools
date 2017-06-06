@@ -37,7 +37,8 @@ def test_wsrep_local_state(mock_status, galera_node):
     :param galera_node: GaleraNode instance
     :type galera_node: GaleraNode
     """
-    assert galera_node.wsrep_local_state
+    mock_status.return_value = '4'
+    assert galera_node.wsrep_local_state == 4
     mock_status.assert_called_once_with('wsrep_local_state')
 
 

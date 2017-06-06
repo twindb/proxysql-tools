@@ -15,20 +15,7 @@ def galera_node1():
 
 @pytest.fixture
 def galera_cluster():
-    hosts = [
-        (
-            '192.168.90.2',
-            3306
-        ),
-        (
-            '192.168.90.3',
-            3306
-        ),
-        (
-            '192.168.90.4',
-            3306
-        )
-    ]
+    hosts = "192.168.90.2:3306,192.168.90.3:3306,192.168.90.4:3306"
     return GaleraCluster(hosts, password='root')
 
 

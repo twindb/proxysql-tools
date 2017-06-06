@@ -5,6 +5,7 @@ import pymysql
 from pymysql.cursors import DictCursor
 
 from proxysql_tools import LOG
+from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
 
 PROXYSQL_CONNECT_TIMEOUT = 20
 
@@ -59,6 +60,20 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
         self.use_ssl = bool(use_ssl)
         self.max_latency_ms = int(max_latency_ms)
         self.comment = comment
+
+    def __eq__(self, other):
+        try:
+            return self.hostgroup_id == other.hostgroup_id and \
+                   self.hostname == other.hostname and \
+                   self.port == other.port
+        except AttributeError:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return "%d__%s__%d" % (self.hostgroup_id, self.hostname, self.port)
 
 
 class ProxySQLMySQLUser(object):  # pylint: disable=too-many-instance-attributes,too-few-public-methods
@@ -165,7 +180,7 @@ class ProxySQL(object):
             LOG.debug('ProxySQL %s:%d is dead', self.host, self.port)
             return False
 
-    def execute(self, query):
+    def execute(self, query, *args):
         """Execute query in ProxySQL.
 
         :param query: Query to execute.
@@ -176,7 +191,7 @@ class ProxySQL(object):
         """
         with self._connect() as conn:
             cursor = conn.cursor()
-            cursor.execute(query)
+            cursor.execute(query, *args)
             return cursor.fetchall()
 
     def reload_runtime(self):
@@ -234,6 +249,64 @@ class ProxySQL(object):
                           port=int(backend.port))
         self.execute(query)
         self.reload_runtime()
+
+    def find_backends(self, hostgroup_id):
+        """
+        Get writer from mysql_servers
+
+        :param hostgroup_id: writer hostgroup_id
+        :type hostgroup_id: int
+        :return: Writer MySQL backend or None if doesn't exist
+        :rtype: ProxySQLMySQLBackend
+        :raise: ProxySQLBackendNotFound
+        """
+        result = self.execute('SELECT `hostgroup_id`, `hostname`, '
+                              '`port`, `status`, `weight`, `compression`, '
+                              '`max_connections`, `max_replication_lag`, '
+                              '`use_ssl`, `max_latency_ms`, `comment`'
+                              ' FROM `mysql_servers`'
+                              ' WHERE hostgroup_id = %s', hostgroup_id)
+
+        backends = []
+        for row in result:
+            backend = ProxySQLMySQLBackend(row['hostname'],
+                                           hostgroup_id=row['hostgroup_id'],
+                                           port=row['port'],
+                                           status=row['status'],
+                                           weight=row['weight'],
+                                           compression=row['compression'],
+                                           max_connections=
+                                           row['max_connections'],
+                                           max_replication_lag=
+                                           row['max_replication_lag'],
+                                           use_ssl=row['use_ssl'],
+                                           max_latency_ms=
+                                           row['max_latency_ms'],
+                                           comment=row['comment'])
+            backends.append(backend)
+        if backends:
+            return backends
+        else:
+            raise ProxySQLBackendNotFound('Can not find any backends')
+
+    def backend_registered(self, backend):
+        """
+        Check if backend is registered.
+
+        :param backend: ProxySQLMySQLBackend instance
+        :return: True if registered, False otherwise
+        :rtype: bool
+        """
+        result = self.execute('SELECT `hostgroup_id`, `hostname`, '
+                              '`port`'
+                              ' FROM `mysql_servers`'
+                              ' WHERE hostgroup_id = %s '
+                              ' AND `hostname` = %s '
+                              ' AND `port` = %s',
+                              backend.hostgroup_id,
+                              backend.hostname,
+                              backend.port)
+        return result != ()
 
     @contextmanager
     def _connect(self):

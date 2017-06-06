@@ -5,6 +5,14 @@ import pymysql
 from pymysql.cursors import DictCursor
 
 
+class GaleraNodeState(object):
+    PRIMARY = 1
+    JOINER = 2
+    JOINED = 3
+    SYNCED = 4
+    DONOR = 5
+
+
 class GaleraNode(object):
     """
     GaleraNode class describes a single node in Galera Cluster.
@@ -38,7 +46,7 @@ class GaleraNode(object):
     @property
     def wsrep_local_state(self):
         """Internal Galera Cluster FSM state number."""
-        return self._status('wsrep_local_state')
+        return int(self._status('wsrep_local_state'))
 
     @property
     def wsrep_cluster_name(self):
@@ -87,3 +95,6 @@ class GaleraNode(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def __str__(self):
+        return "%s:%d" % (self.host, self.port)
