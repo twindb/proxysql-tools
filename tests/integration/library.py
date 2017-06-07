@@ -143,7 +143,7 @@ def wait_for_cluster_nodes_to_become_healthy(percona_xtradb_cluster_info):
     eventually(check_started, retries=20, sleep_time=4)
 
 
-def proxysql_tools_config(proxysql_manager, cluster_host, cluster_port,
+def proxysql_tools_config(proxysql_instance, cluster_host, cluster_port,
                           cluster_user, cluster_pass, hostgroup_writer,
                           hostgroup_reader, monitor_user, monitor_pass):
     config_contents = """
@@ -165,9 +165,9 @@ load_balancing_mode=singlewriter
 
 writer_hostgroup_id={writer_hostgroup}
 reader_hostgroup_id={reader_hostgroup}
-""".format(proxy_host=proxysql_manager.host, proxy_port=proxysql_manager.port,
-           proxy_user=proxysql_manager.user,
-           proxy_pass=proxysql_manager.password, monitor_user=monitor_user,
+""".format(proxy_host=proxysql_instance.host, proxy_port=proxysql_instance.port,
+           proxy_user=proxysql_instance.user,
+           proxy_pass=proxysql_instance.password, monitor_user=monitor_user,
            monitor_pass=monitor_pass, cluster_host=cluster_host,
            cluster_port=cluster_port, cluster_user=cluster_user,
            cluster_pass=cluster_pass, writer_hostgroup=hostgroup_writer,

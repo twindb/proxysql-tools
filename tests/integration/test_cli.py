@@ -1,9 +1,9 @@
 from click.testing import CliRunner
 
 from proxysql_tools.cli import main
-from proxysql_tools.managers.galera_manager import GaleraManager
 from tests.integration.library import proxysql_tools_config
-
+import pymysql
+from pymysql.cursors import DictCursor
 
 def test__main_command_version_can_be_fetched():
     runner = CliRunner()
@@ -11,40 +11,42 @@ def test__main_command_version_can_be_fetched():
     assert result.exit_code == 0
 
 
-def test__ping_command_can_be_executed(proxysql_manager, tmpdir):
-    config = proxysql_tools_config(proxysql_manager, '127.0.0.1', '3306',
+def test__ping_command_can_be_executed(proxysql_instance, tmpdir):
+    config = proxysql_tools_config(proxysql_instance, '127.0.0.1', '3306',
                                    'user', 'pass', 10, 11, 'monitor',
                                    'monitor')
     config_file = str(tmpdir.join('proxysql-tool.cfg'))
     with open(config_file, 'w') as fh:
         config.write(fh)
-
     runner = CliRunner()
     result = runner.invoke(main, ['--config', config_file, 'ping'])
     assert result.exit_code == 0
 
 
 def test__galera_register_command_can_register_cluster_with_proxysql(
-        percona_xtradb_cluster_node, proxysql_manager, tmpdir):
+        percona_xtradb_cluster_node, proxysql_instance, tmpdir):
     hostgroup_writer = 10
     hostgroup_reader = 11
 
-    # To start off there should be no nodes in the hostgroups
-    assert len(proxysql_manager.fetch_backends(hostgroup_writer)) == 0
-    assert len(proxysql_manager.fetch_backends(hostgroup_reader)) == 0
-
-    galera_man = GaleraManager(
-        percona_xtradb_cluster_node.host, percona_xtradb_cluster_node.port,
-        percona_xtradb_cluster_node.username,
-        percona_xtradb_cluster_node.password
-    )
-    galera_man.discover_cluster_nodes()
-
-    # Validate that there is one healthy node in the cluster
-    assert len(galera_man.nodes) == 1
+    connection = pymysql.connect(host=proxysql_instance.host, port=proxysql_instance.port,
+                           user=proxysql_instance.user, passwd=proxysql_instance.password,
+                           connect_timeout=20,
+                           cursorclass=DictCursor)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT COUNT(*) FROM mysql_servers '
+                           ' WHERE hostgroup_id = %s ', hostgroup_writer)
+            count = cursor.fetchone()[0]
+            assert int(count) == 0
+            cursor.execute('SELECT COUNT(*) FROM mysql_servers '
+                           ' WHERE hostgroup_id = %s ', hostgroup_reader)
+            count = cursor.fetchone()[0]
+            assert int(count) == 0
+    finally:
+        connection.close()
 
     # Setup the config object
-    config = proxysql_tools_config(proxysql_manager,
+    config = proxysql_tools_config(proxysql_instance,
                                    percona_xtradb_cluster_node.host,
                                    percona_xtradb_cluster_node.port,
                                    percona_xtradb_cluster_node.username,
@@ -61,10 +63,19 @@ def test__galera_register_command_can_register_cluster_with_proxysql(
                                   'galera', 'register'])
     assert result.exit_code == 0
 
-    writer_backends = proxysql_manager.fetch_backends(hostgroup_writer)
-    reader_backends = proxysql_manager.fetch_backends(hostgroup_reader)
-
-    assert len(writer_backends) == len(reader_backends) == 1
-    assert writer_backends[0].hostname == reader_backends[0].hostname
-    assert writer_backends[0].port == reader_backends[0].port
-    assert writer_backends[0].status == reader_backends[0].status
+    connection = pymysql.connect(host=proxysql_instance.host, port=proxysql_instance.port,
+                           user=proxysql_instance.user, passwd=proxysql_instance.password,
+                           connect_timeout=20,
+                           cursorclass=DictCursor)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT COUNT(*) FROM mysql_servers '
+                           ' WHERE hostgroup_id = %s ', hostgroup_writer)
+            count = cursor.fetchone()[0]
+            assert int(count) == 1
+            cursor.execute('SELECT COUNT(*) FROM mysql_servers '
+                           ' WHERE hostgroup_id = %s ', hostgroup_reader)
+            count = cursor.fetchone()[0]
+            assert int(count) == 1
+    finally:
+        connection.close()

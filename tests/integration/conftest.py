@@ -3,8 +3,8 @@ import pprint
 import pytest
 
 from docker.types import IPAMConfig, IPAMPool
-from proxysql_tools.entities.galera import GaleraNode
-from proxysql_tools.managers.proxysql_manager import ProxySQLManager
+from proxysql_tools.galera.galera_node import GaleraNode
+from proxysql_tools.proxysql.proxysql import ProxySQL
 from tests.integration.library import (
     docker_client,
     docker_pull_image,
@@ -173,18 +173,14 @@ def proxysql_container(proxysql_config_contents, tmpdir, container_network):
 
 
 @pytest.fixture
-def proxysql_manager(proxysql_container):
-    manager = ProxySQLManager(host=proxysql_container['ip'],
+def proxysql_instance(proxysql_container):
+    connection = ProxySQL(host=proxysql_container['ip'],
                               port=PROXYSQL_ADMIN_PORT,
                               user=PROXYSQL_ADMIN_USER,
                               password=PROXYSQL_ADMIN_PASSWORD)
 
     def check_started():
-        with manager.get_connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute('SELECT 1')
-
-        return True
+        return connection.ping()
 
     # Allow ProxySQL to startup completely. The problem is that ProxySQL starts
     # listening to the admin port before it has initialized completely which
@@ -192,7 +188,7 @@ def proxysql_manager(proxysql_container):
     # OperationalError: (2013, 'Lost connection to MySQL server during query')
     eventually(check_started, retries=15, sleep_time=4)
 
-    return manager
+    return connection
 
 
 @pytest.yield_fixture
@@ -280,10 +276,7 @@ def percona_xtradb_cluster_node(percona_xtradb_cluster_one_node):
     })
 
     def check_started():
-        with node.get_connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute('SELECT 1')
-
+        node.execute('SELECT 1')
         return True
 
     # Allow the cluster node to startup completely.
