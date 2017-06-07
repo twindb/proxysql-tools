@@ -5,7 +5,7 @@ import time
 import io
 from ConfigParser import ConfigParser
 
-from proxysql_tools.entities.galera import GaleraNode
+from proxysql_tools.galera.galera_node import GaleraNode
 
 
 def docker_client():
@@ -133,10 +133,7 @@ def wait_for_cluster_nodes_to_become_healthy(percona_xtradb_cluster_info):
                 'username': 'root',
                 'password': container_info['root_password']
             })
-            with node.get_connection() as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute('SELECT 1')
-
+            node.execute('SELECT 1')
         return True
 
     # Allow all the cluster nodes to startup.
