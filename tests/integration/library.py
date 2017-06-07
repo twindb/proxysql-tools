@@ -9,7 +9,7 @@ from proxysql_tools.galera.galera_node import GaleraNode
 
 
 def docker_client():
-    return docker.from_env()
+    return docker.DockerClient(version="auto")
 
 
 def docker_pull_image(image):
