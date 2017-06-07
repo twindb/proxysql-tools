@@ -44,3 +44,4 @@ typing==3.6.1             # via sphinx
 urllib3==1.21.1           # via requests
 virtualenv==15.1.0        # via tox
 wrapt==1.10.10            # via astroid
+docker==2.3.0
