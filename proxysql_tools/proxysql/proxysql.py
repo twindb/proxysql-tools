@@ -250,12 +250,14 @@ class ProxySQL(object):
         self.execute(query)
         self.reload_runtime()
 
-    def find_backends(self, hostgroup_id):
+    def find_backends(self, hostgroup_id, status=None):
         """
         Get writer from mysql_servers
 
         :param hostgroup_id: writer hostgroup_id
         :type hostgroup_id: int
+        :param status: Look only for backends in this status
+        :type status: BackendStatus
         :return: Writer MySQL backend or None if doesn't exist
         :rtype: ProxySQLMySQLBackend
         :raise: ProxySQLBackendNotFound
@@ -283,6 +285,8 @@ class ProxySQL(object):
                                            max_latency_ms=
                                            row['max_latency_ms'],
                                            comment=row['comment'])
+            if status and backend.status != status:
+                continue
             backends.append(backend)
         if backends:
             return backends
@@ -302,11 +306,24 @@ class ProxySQL(object):
                               ' FROM `mysql_servers`'
                               ' WHERE hostgroup_id = %s '
                               ' AND `hostname` = %s '
-                              ' AND `port` = %s',
-                              backend.hostgroup_id,
-                              backend.hostname,
-                              backend.port)
+                              ' AND `port` = %s', (
+                                    backend.hostgroup_id,
+                                    backend.hostname,
+                                    backend.port)
+                              )
         return result != ()
+
+    def set_status(self, backend, status):
+        self.execute('UPDATE `mysql_servers` SET `status` = %s '
+                     ' WHERE hostgroup_id = %s '
+                     ' AND `hostname` = %s '
+                     ' AND `port` = %s', (
+                        status,
+                        backend.hostgroup_id,
+                        backend.hostname,
+                        backend.port)
+                     )
+        self.reload_runtime()
 
     @contextmanager
     def _connect(self):
