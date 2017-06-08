@@ -3,7 +3,9 @@ from click.testing import CliRunner
 from proxysql_tools.cli import main
 from tests.integration.library import proxysql_tools_config
 import pymysql
+import time
 from pymysql.cursors import DictCursor
+
 
 def test__main_command_version_can_be_fetched():
     runner = CliRunner()
@@ -36,11 +38,11 @@ def test__galera_register_command_can_register_cluster_with_proxysql(
         with connection.cursor() as cursor:
             cursor.execute('SELECT COUNT(*) FROM mysql_servers '
                            ' WHERE hostgroup_id = %s ', hostgroup_writer)
-            count = cursor.fetchone()[0]
+            count = cursor.fetchone().values()[0]
             assert int(count) == 0
             cursor.execute('SELECT COUNT(*) FROM mysql_servers '
                            ' WHERE hostgroup_id = %s ', hostgroup_reader)
-            count = cursor.fetchone()[0]
+            count = cursor.fetchone().values()[0]
             assert int(count) == 0
     finally:
         connection.close()
@@ -49,7 +51,7 @@ def test__galera_register_command_can_register_cluster_with_proxysql(
     config = proxysql_tools_config(proxysql_instance,
                                    percona_xtradb_cluster_node.host,
                                    percona_xtradb_cluster_node.port,
-                                   percona_xtradb_cluster_node.username,
+                                   percona_xtradb_cluster_node.user,
                                    percona_xtradb_cluster_node.password,
                                    hostgroup_writer, hostgroup_reader,
                                    'monitor', 'monitor')

@@ -37,7 +37,7 @@ def test__register_cluster_with_proxysql_is_idempotent(
                            '`use_ssl`, `max_latency_ms`, `comment`'
                            ' FROM `mysql_servers`'
                            ' WHERE hostgroup_id = %s', hostgroup_writer)
-            row = cursor.fetchall()
+            row = cursor.fetchall()[0]
             backend_writer = ProxySQLMySQLBackend(row['hostname'],
                                            hostgroup_id=row['hostgroup_id'],
                                            port=row['port'],
@@ -58,7 +58,7 @@ def test__register_cluster_with_proxysql_is_idempotent(
                            '`use_ssl`, `max_latency_ms`, `comment`'
                            ' FROM `mysql_servers`'
                            ' WHERE hostgroup_id = %s', hostgroup_reader)
-            row = cursor.fetchall()
+            row = cursor.fetchall()[0]
             backend_reader = ProxySQLMySQLBackend(row['hostname'],
                                            hostgroup_id=row['hostgroup_id'],
                                            port=row['port'],
