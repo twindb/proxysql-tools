@@ -7,3 +7,4 @@ tox
 Sphinx
 pytest-cov
 mock
+docker

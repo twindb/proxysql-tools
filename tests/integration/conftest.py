@@ -3,6 +3,8 @@ import pprint
 import pytest
 
 from docker.types import IPAMConfig, IPAMPool
+
+from proxysql_tools import LOG, setup_logging
 from proxysql_tools.galera.galera_node import GaleraNode
 from proxysql_tools.proxysql.proxysql import ProxySQL
 from tests.integration.library import (
@@ -25,6 +27,8 @@ PROXYSQL_ADMIN_PASSWORD = 'admin'
 
 PXC_MYSQL_PORT = 3306
 PXC_ROOT_PASSWORD = 'r00t'
+
+setup_logging(LOG, debug=True)
 
 
 def pytest_runtest_logreport(report):
@@ -59,6 +63,7 @@ def debian_container():
     container = api.create_container(
         image=DEBIAN_IMAGE, labels=[CONTAINERS_FOR_TESTING_LABEL],
         command='/bin/sleep 36000')
+    LOG.debug('Starting container %s', container['Id'])
     api.start(container['Id'])
 
     container_info = client.containers.get(container['Id'])
@@ -165,7 +170,9 @@ def proxysql_container(proxysql_config_contents, tmpdir, container_network):
                                      ports=container_ports,
                                      host_config=host_config,
                                      networking_config=networking_config)
+    LOG.debug('Starting container %s', container['Id'])
     api.start(container['Id'])
+    # 1/0
 
     yield container_info
 
@@ -174,10 +181,11 @@ def proxysql_container(proxysql_config_contents, tmpdir, container_network):
 
 @pytest.fixture
 def proxysql_instance(proxysql_container):
+    LOG.debug("Container %r", proxysql_container)
     connection = ProxySQL(host=proxysql_container['ip'],
-                              port=PROXYSQL_ADMIN_PORT,
-                              user=PROXYSQL_ADMIN_USER,
-                              password=PROXYSQL_ADMIN_PASSWORD)
+                          port=PROXYSQL_ADMIN_PORT,
+                          user=PROXYSQL_ADMIN_USER,
+                          password=PROXYSQL_ADMIN_PASSWORD)
 
     def check_started():
         return connection.ping()

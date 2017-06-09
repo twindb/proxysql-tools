@@ -53,3 +53,7 @@ node proxysql {
 
     }
 }
+
+node docker {
+    include proxy::docker
+}

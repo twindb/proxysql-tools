@@ -1,5 +1,6 @@
 class proxy() {
     include proxy::proxysql_tools
+    # include proxy::docker
 
     package { 'epel-release':
         ensure => installed,

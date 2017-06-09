@@ -5,6 +5,7 @@ import time
 import io
 from ConfigParser import ConfigParser
 
+from proxysql_tools import LOG
 from proxysql_tools.galera.galera_node import GaleraNode
 
 
@@ -22,14 +23,7 @@ def docker_pull_image(image):
     api = client.api
 
     response = api.pull(image)
-    lines = [line for line in response.splitlines() if line]
-
-    # The last line of the pull operation contains the overall result of the
-    # pull operation.
-    pull_result = json.loads(lines[-1])
-    if "error" in pull_result:
-        raise Exception("Could not pull {}: {}".format(
-            image, pull_result["error"]))
+    LOG.debug('Response: %s', response)
 
 
 def get_unused_port():

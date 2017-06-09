@@ -1,13 +1,16 @@
 from click.testing import CliRunner
 
+import proxysql_tools
 from proxysql_tools.cli import main
 from tests.integration.library import proxysql_tools_config
 import pymysql
 from pymysql.cursors import DictCursor
 
+
 def test__main_command_version_can_be_fetched():
     runner = CliRunner()
     result = runner.invoke(main, ['--version'])
+    assert result.output == proxysql_tools.__version__ + '\n'
     assert result.exit_code == 0
 
 
