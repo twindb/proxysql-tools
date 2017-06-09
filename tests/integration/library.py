@@ -48,26 +48,15 @@ def is_port_reachable(host, port):
 def eventually(func, *args, **kwargs):
     retries = kwargs.pop('retries', 90)
     sleep_time = kwargs.pop('sleep_time', 0.5)
-    assert_val = kwargs.pop('assert_val', False)
 
-    last_ex = None
     for i in xrange(retries):
-        if i > 0:
+        if func(*args, **kwargs):
+            return
+        else:
+            LOG.info('Waiting for %s to return True', func)
             time.sleep(sleep_time)
 
-        try:
-            val = func(*args, **kwargs)
-            if assert_val:
-                assert val
-            return val
-        except Exception as e:
-            last_ex = e
-
-    if not last_ex:
-        last_ex = AssertionError('No result from %s' % func)
-
-    if last_ex:
-        raise last_ex
+    raise EnvironmentError('Function %s never returned True' % func)
 
 
 def create_percona_xtradb_cluster(container_image, container_labels,

@@ -1,6 +1,6 @@
 class proxy() {
     include proxy::proxysql_tools
-    # include proxy::docker
+    include proxy::base
 
     package { 'epel-release':
         ensure => installed,
@@ -8,17 +8,6 @@ class proxy() {
 
     package {
         'proxysql':
-            ensure  => installed;
-        'mysql':
-            ensure  => installed;
-        'python-pip':
-            ensure  => installed,
-            require => Package['epel-release'];
-        'python-devel':
-            ensure  => installed;
-        'openssl-devel':
-            ensure  => installed;
-        'vim':
             ensure  => installed;
     }
 

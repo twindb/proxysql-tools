@@ -22,6 +22,7 @@ def test__ping_command_can_be_executed(proxysql_instance, tmpdir):
     config_file = str(tmpdir.join('proxysql-tool.cfg'))
     with open(config_file, 'w') as fh:
         config.write(fh)
+        proxysql_tools.LOG.debug('proxysql-tools config: \n%s', config)
     runner = CliRunner()
     result = runner.invoke(main, ['--config', config_file, 'ping'])
     assert result.exit_code == 0

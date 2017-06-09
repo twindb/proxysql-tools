@@ -130,7 +130,8 @@ mysql_variables=
         sessions_sort=true
 }}""".format(admin_user=PROXYSQL_ADMIN_USER,
              admin_password=PROXYSQL_ADMIN_PASSWORD,
-             admin_port=PROXYSQL_ADMIN_PORT, client_port=PROXYSQL_CLIENT_PORT)
+             admin_port=PROXYSQL_ADMIN_PORT,
+             client_port=PROXYSQL_CLIENT_PORT)
 
 
 @pytest.yield_fixture
@@ -144,6 +145,7 @@ def proxysql_container(proxysql_config_contents, tmpdir, container_network):
     # Setup the ProxySQL config
     config = tmpdir.join('proxysql.cnf')
     config.write(proxysql_config_contents)
+    LOG.debug('ProxySQL Config:\n %s', proxysql_config_contents)
 
     # The ports that the ProxySQL container will be listening on inside the
     # container
@@ -188,7 +190,10 @@ def proxysql_instance(proxysql_container):
                           password=PROXYSQL_ADMIN_PASSWORD)
 
     def check_started():
-        return connection.ping()
+        LOG.debug('Checking if proxysql is up')
+        ret = connection.ping()
+        LOG.debug(ret)
+        return ret
 
     # Allow ProxySQL to startup completely. The problem is that ProxySQL starts
     # listening to the admin port before it has initialized completely which
