@@ -277,11 +277,10 @@ def percona_xtradb_cluster_one_node(container_network):
 
 @pytest.fixture
 def percona_xtradb_cluster_node(percona_xtradb_cluster_one_node):
-    node = GaleraNode({
-        'host': percona_xtradb_cluster_one_node[0]['ip'],
-        'username': 'root',
-        'password': PXC_ROOT_PASSWORD
-    })
+    node = GaleraNode(host=percona_xtradb_cluster_one_node[0]['ip'],
+                      user='root',
+                      password=PXC_ROOT_PASSWORD
+    )
 
     def check_started():
         node.execute('SELECT 1')

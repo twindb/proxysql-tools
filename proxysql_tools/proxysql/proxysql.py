@@ -7,7 +7,7 @@ from pymysql.cursors import DictCursor
 from proxysql_tools import LOG
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
 
-PROXYSQL_CONNECT_TIMEOUT = 20
+PROXYSQL_CONNECT_TIMEOUT = 30
 
 
 class BackendStatus(object):  # pylint: disable=too-few-public-methods
