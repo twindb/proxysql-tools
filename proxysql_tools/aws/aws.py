@@ -1,4 +1,5 @@
-import os
+# pylint: skip-file
+# import os
 import time
 from ConfigParser import NoOptionError
 from subprocess import Popen

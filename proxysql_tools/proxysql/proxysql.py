@@ -4,10 +4,10 @@ from contextlib import contextmanager
 import pymysql
 from pymysql.cursors import DictCursor
 
-from proxysql_tools import LOG
+from proxysql_tools import LOG, execute
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
 
-PROXYSQL_CONNECT_TIMEOUT = 30
+PROXYSQL_CONNECT_TIMEOUT = 20
 
 
 class BackendStatus(object):  # pylint: disable=too-few-public-methods
@@ -190,9 +190,7 @@ class ProxySQL(object):
         :rtype: dict
         """
         with self._connect() as conn:
-            cursor = conn.cursor()
-            cursor.execute(query, *args)
-            return cursor.fetchall()
+            return execute(conn, query, *args)
 
     def reload_runtime(self):
         """Reload the ProxySQL runtime configuration."""
@@ -306,23 +304,26 @@ class ProxySQL(object):
                               ' FROM `mysql_servers`'
                               ' WHERE hostgroup_id = %s '
                               ' AND `hostname` = %s '
-                              ' AND `port` = %s', (
-                                    backend.hostgroup_id,
-                                    backend.hostname,
-                                    backend.port)
-                              )
+                              ' AND `port` = %s',
+                              (
+                                  backend.hostgroup_id,
+                                  backend.hostname,
+                                  backend.port
+                              ))
         return result != ()
 
     def set_status(self, backend, status):
+        """Update status of a backend in ProxySQL"""
         self.execute('UPDATE `mysql_servers` SET `status` = %s '
                      ' WHERE hostgroup_id = %s '
                      ' AND `hostname` = %s '
-                     ' AND `port` = %s', (
-                        status,
-                        backend.hostgroup_id,
-                        backend.hostname,
-                        backend.port)
-                     )
+                     ' AND `port` = %s',
+                     (
+                         status,
+                         backend.hostgroup_id,
+                         backend.hostname,
+                         backend.port
+                     ))
         self.reload_runtime()
 
     @contextmanager

@@ -1,3 +1,6 @@
+"""Errors related to Galera"""
+
+
 class GaleraClusterError(Exception):
     """Base Galera Cluster Error"""
 

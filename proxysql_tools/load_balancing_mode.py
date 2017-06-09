@@ -1,3 +1,4 @@
+"""Module implements load balancing algorithms"""
 from pymysql import OperationalError
 
 from proxysql_tools import LOG
@@ -166,7 +167,7 @@ def register_readers(galera_cluster, proxysql,
                                  ignore_backend=writer_as_reader)
 
 
-def check_backend(backend, galera_cluster, proxysql, hostgroup_id, comment,
+def check_backend(backend, galera_cluster, proxysql, hostgroup_id, comment,  # pylint: disable=too-many-arguments
                   limit=None, ignore_backend=None,
                   recovered_hostgroup_id=None, recoverd_comment=None):
     """
@@ -250,7 +251,7 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, comment,
     return True
 
 
-def register_synced_backends(galera_cluster, proxysql,
+def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-many-arguments
                              hostgroup_id, comment=None, limit=None,
                              ignore_backend=None):
     """

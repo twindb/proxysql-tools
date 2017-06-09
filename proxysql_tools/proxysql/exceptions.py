@@ -1,3 +1,6 @@
+"""Errors related to ProxySQL"""
+
+
 class ProxySQLError(Exception):
     """Base ProxySQL Error"""
 

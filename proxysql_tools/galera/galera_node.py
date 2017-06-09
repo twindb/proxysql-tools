@@ -4,8 +4,11 @@ from contextlib import contextmanager
 import pymysql
 from pymysql.cursors import DictCursor
 
+from proxysql_tools import execute
 
-class GaleraNodeState(object):
+
+class GaleraNodeState(object):  # pylint: disable=too-few-public-methods
+    """State of Galera node http://bit.ly/2r1tUGB """
     PRIMARY = 1
     JOINER = 2
     JOINED = 3
@@ -64,9 +67,7 @@ class GaleraNode(object):
         :rtype: dict
         """
         with self._connect() as conn:
-            cursor = conn.cursor()
-            cursor.execute(query, *args)
-            return cursor.fetchall()
+            return execute(conn, query, *args)
 
     @contextmanager
     def _connect(self):

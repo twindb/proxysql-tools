@@ -24,3 +24,10 @@ def setup_logging(logger, debug=False):     # pragma: no cover
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
+
+
+def execute(conn, query, *args):
+    """Execute query in connection"""
+    cursor = conn.cursor()
+    cursor.execute(query, *args)
+    return cursor.fetchall()

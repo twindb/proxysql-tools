@@ -11,9 +11,10 @@ backports.functools-lru-cache==1.4  # via astroid, pylint
 backports.ssl-match-hostname==3.5.0.1  # via docker, websocket-client
 bumpversion==0.5.3
 certifi==2017.4.17        # via requests
-chardet==3.0.3            # via requests
+chardet==3.0.4            # via requests
+codecov==2.0.9
 configparser==3.5.0       # via pylint
-coverage==4.4.1           # via pytest-cov
+coverage==4.4.1           # via codecov, pytest-cov
 docker-pycreds==0.2.1     # via docker
 docker==2.3.0
 docutils==0.13.1          # via sphinx
@@ -37,7 +38,7 @@ pytest-cov==2.5.1
 pytest-mock==1.6.0
 pytest==3.1.1
 pytz==2017.2              # via babel
-requests==2.17.3          # via docker, sphinx
+requests==2.17.3          # via codecov, docker, sphinx
 singledispatch==3.4.0.3   # via astroid, pylint
 six==1.10.0               # via astroid, docker, docker-pycreds, mock, pylint, singledispatch, sphinx, websocket-client
 snowballstemmer==1.2.1    # via sphinx
