@@ -3,7 +3,8 @@ from click.testing import CliRunner
 import proxysql_tools
 from proxysql_tools.cli import main
 from proxysql_tools.proxysql.proxysql import ProxySQLMySQLBackend, BackendStatus
-from tests.integration.library import proxysql_tools_config, wait_for_cluster_nodes_to_become_healthy
+from tests.integration.library import proxysql_tools_config, \
+    wait_for_cluster_nodes_to_become_healthy, proxysql_tools_config_2
 import pymysql
 import time
 from pymysql.cursors import DictCursor
@@ -54,10 +55,17 @@ def test__galera_register_command_set_nodes_online(percona_xtradb_cluster_three_
     )
     proxysql_instance.register_backend(backend)
 
-    config = proxysql_tools_config(proxysql_instance, '127.0.0.1', '3306',
-                                   'user', 'pass', hostgroup_writer,
-                                   hostgroup_reader, 'monitor',
-                                   'monitor')
+    blacklist = '{}:3306'.format(percona_xtradb_cluster_three_node[2]['ip'])
+    nodes = [percona_xtradb_cluster_three_node[0]['ip'] + ':3306',
+             percona_xtradb_cluster_three_node[1]['ip'] + ':3306',
+             percona_xtradb_cluster_three_node[2]['ip'] + ':3306'
+             ]
+    config = proxysql_tools_config_2(proxysql_instance,
+                                     nodes,
+                                     'user', 'pass', hostgroup_writer,
+                                     hostgroup_reader,
+                                     blacklist, 'monitor',
+                                     'monitor')
     config_file = str(tmpdir.join('proxysql-tool.cfg'))
     with open(config_file, 'w') as fh:
         config.write(fh)
@@ -116,7 +124,7 @@ def test__galera_register_command_set_nodes_online(percona_xtradb_cluster_three_
                                            row['max_latency_ms'],
                                            comment=row['comment'])
                 assert backend.status == BackendStatus.online
-            
+
     finally:
         connection.close()
 
