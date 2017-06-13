@@ -111,11 +111,9 @@ def create_percona_xtradb_cluster(container_image, container_labels,
 def wait_for_cluster_nodes_to_become_healthy(percona_xtradb_cluster_info):
     def check_started():
         for container_info in percona_xtradb_cluster_info:
-            node = GaleraNode({
-                'host': container_info['ip'],
-                'username': 'root',
-                'password': container_info['root_password']
-            })
+            node = GaleraNode(host=container_info['ip'],
+                              user='root',
+                              password=container_info['root_password'])
             node.execute('SELECT 1')
         return True
 
