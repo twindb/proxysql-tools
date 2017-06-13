@@ -50,11 +50,15 @@ def eventually(func, *args, **kwargs):
     sleep_time = kwargs.pop('sleep_time', 0.5)
 
     for i in xrange(retries):
-        if func(*args, **kwargs):
-            return
-        else:
-            LOG.info('Waiting for %s to return True', func)
+        try:
+            if func(*args, **kwargs):
+                return
+            else:
+                LOG.info('Waiting for %s to return True', func)
+                time.sleep(sleep_time)
+        except Exception:
             time.sleep(sleep_time)
+            continue
 
     raise EnvironmentError('Function %s never returned True' % func)
 
