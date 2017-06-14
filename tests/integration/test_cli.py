@@ -62,7 +62,7 @@ def test__galera_register_command_set_nodes_online(percona_xtradb_cluster_three_
              ]
     config = proxysql_tools_config_2(proxysql_instance,
                                      nodes,
-                                     'user', 'pass', hostgroup_writer,
+                                     'root', 'r00t', hostgroup_writer,
                                      hostgroup_reader,
                                      blacklist, 'monitor',
                                      'monitor')
@@ -80,13 +80,13 @@ def test__galera_register_command_set_nodes_online(percona_xtradb_cluster_three_
                                cursorclass=DictCursor)
     try:
         with connection.cursor() as cursor:
-            result = cursor.execute('SELECT `hostgroup_id`, `hostname`, '
+            cursor.execute('SELECT `hostgroup_id`, `hostname`, '
                                   '`port`, `status`, `weight`, `compression`, '
                                   '`max_connections`, `max_replication_lag`, '
                                   '`use_ssl`, `max_latency_ms`, `comment`'
                                   ' FROM `mysql_servers`'
                                   ' WHERE hostgroup_id = %s', hostgroup_writer)
-            for row in result:
+            for row in cursor.fetchall():
                 backend = ProxySQLMySQLBackend(row['hostname'],
                                            hostgroup_id=row['hostgroup_id'],
                                            port=row['port'],
@@ -102,13 +102,13 @@ def test__galera_register_command_set_nodes_online(percona_xtradb_cluster_three_
                                            row['max_latency_ms'],
                                            comment=row['comment'])
                 assert backend.status == BackendStatus.online
-            result = cursor.execute('SELECT `hostgroup_id`, `hostname`, '
+            cursor.execute('SELECT `hostgroup_id`, `hostname`, '
                                   '`port`, `status`, `weight`, `compression`, '
                                   '`max_connections`, `max_replication_lag`, '
                                   '`use_ssl`, `max_latency_ms`, `comment`'
                                   ' FROM `mysql_servers`'
                                   ' WHERE hostgroup_id = %s', hostgroup_reader)
-            for row in result:
+            for row in cursor.fetchall():
                 backend = ProxySQLMySQLBackend(row['hostname'],
                                            hostgroup_id=row['hostgroup_id'],
                                            port=row['port'],
