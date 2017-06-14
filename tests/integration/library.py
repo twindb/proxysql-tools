@@ -63,6 +63,11 @@ def eventually(func, *args, **kwargs):
     raise EnvironmentError('Function %s never returned True' % func)
 
 
+def shutdown_container(id):
+    client = docker_client()
+    api = client.api
+    api.stop(id)
+
 def create_percona_xtradb_cluster(container_image, container_labels,
                                   container_info, container_ports,
                                   network_name, cluster_name):
