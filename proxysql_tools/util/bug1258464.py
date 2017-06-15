@@ -5,7 +5,7 @@ from ConfigParser import ConfigParser
 import pymysql
 from pymysql import OperationalError
 
-from proxysql_tools import log
+from proxysql_tools import LOG
 
 
 def kill_process(pid):
@@ -52,9 +52,9 @@ def bug1258464(default_file):
                     kill_process(pid)
                     return True
     except OperationalError as err:
-        log.error(str(err))
+        LOG.error(str(err))
     except OSError as err:
-        log.error(str(err))
+        LOG.error(str(err))
     except NotImplementedError as err:
-        log.error(str(err))
+        LOG.error(str(err))
     return False
