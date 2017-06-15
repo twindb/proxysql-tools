@@ -1,7 +1,6 @@
+#@IgnoreInspection BashAddShebang
 PyMySQL
 boto3
 click>=6.6
 netifaces
 requests
-retry
-schematics

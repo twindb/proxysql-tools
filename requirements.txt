@@ -4,19 +4,19 @@
 #
 #    pip-compile --no-index --output-file requirements.txt requirements.in
 #
-boto3==1.4.3
-botocore==1.4.93          # via boto3, s3transfer
+boto3==1.4.4
+botocore==1.5.64          # via boto3, s3transfer
+certifi==2017.4.17        # via requests
+chardet==3.0.4            # via requests
 click==6.7
-decorator==4.0.11         # via retry
 docutils==0.13.1          # via botocore
-futures==3.0.5            # via s3transfer
-jmespath==0.9.0           # via boto3, botocore
-netifaces==0.10.5
-py==1.4.32                # via retry
-pymysql==0.7.9
+futures==3.1.1            # via s3transfer
+idna==2.5                 # via requests
+jmespath==0.9.3           # via boto3, botocore
+netifaces==0.10.6
+pymysql==0.7.11
 python-dateutil==2.6.0    # via botocore
-requests==2.12.4
-retry==0.9.2
+requests==2.17.3
 s3transfer==0.1.10        # via boto3
-schematics==1.1.1
-six==1.10.0               # via python-dateutil, schematics
+six==1.10.0               # via python-dateutil
+urllib3==1.21.1           # via requests

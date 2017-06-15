@@ -1,0 +1,134 @@
+$script_centos = <<SCRIPT
+echo "Provisioning CentOS"
+
+if [[ $(cat /sys/class/net/enp0s8/operstate) != 'up' ]]; then
+    service network restart
+fi
+
+function install_package() {
+
+    for i in 1 2 3
+    do
+        yum -y install $1 && break
+    done
+}
+
+function install_puppet(){
+
+    # rpm -Uhv https://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm
+    rpm -Uvh https://yum.puppetlabs.com/puppetlabs-release-pc1-el-7.noarch.rpm
+    install_package puppet-agent
+
+}
+
+PUPPET=/opt/puppetlabs/bin/puppet
+test -x ${PUPPET} || install_puppet
+
+SCRIPT
+
+$script_debian = <<SCRIPT
+echo "Provisioning Debian"
+
+function install_repo() {
+
+    pkg_name=puppetlabs-release-pc1
+    dpkg -l ${pkg_name} || (
+        wget -O ${pkg_name}-jessie.deb https://apt.puppetlabs.com/${pkg_name}-jessie.deb
+        dpkg -i ${pkg_name}-jessie.deb
+        apt-get update
+    )
+}
+
+function install_puppet() {
+    dpkg -l puppet-agent || apt-get -y install puppet-agent
+}
+
+install_repo
+install_puppet
+
+SCRIPT
+
+$script_puppet_modules = <<SCRIPT
+
+p_modules="puppet-selinux
+puppet-proxysql
+puppetlabs-apt
+puppetlabs-mysql"
+
+for p in ${p_modules}
+do
+    puppet module list | grep -w ${p} || puppet module install ${p}
+done
+
+
+SCRIPT
+
+nodes = [
+    {
+        :hostname   => 'node1',
+        :ip         => '192.168.90.2',
+        :box        => 'bento/centos-7.3',
+        :ram        => 256,
+        :script     => $script_centos,
+    },
+    { :hostname   => 'node2',
+        :ip         => '192.168.90.3',
+        :box        => 'bento/centos-7.3',
+        :ram        => 256,
+        :script     => $script_centos,
+    },
+    { :hostname   => 'node3',
+        :ip         => '192.168.90.4',
+        :box        => 'bento/centos-7.3',
+        :ram        => 256,
+        :script     => $script_centos,
+    },
+    { :hostname   => 'proxysql',
+        :ip         => '192.168.90.5',
+        :box        => 'bento/centos-7.3',
+        :ram        => 256,
+        :script     => $script_centos,
+    },
+    { :hostname   => 'docker',
+            :ip         => '192.168.90.6',
+            :box        => 'bento/centos-7.3',
+            :ram        => 2048,
+            :script     => $script_centos,
+        },
+
+]
+
+VAGRANTFILE_API_VERSION = '2'
+
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+    nodes.each do |node|
+        config.vm.define node[:hostname] do |nodeconfig|
+            nodeconfig.vm.box = node[:box]
+            nodeconfig.vm.hostname = node[:hostname]
+            nodeconfig.vm.network :private_network, ip: node[:ip]
+            if node[:mysql_port]
+                nodeconfig.vm.network :forwarded_port, host: node[:mysql_port], guest: 3306
+            end
+
+            memory = node[:ram] ? node[:ram] : 256
+            nodeconfig.vm.provider :virtualbox do |vb|
+                vb.customize [
+                                 'modifyvm', :id,
+                                 '--cpuexecutioncap', '40',
+                                 '--memory', memory.to_s,
+                                 '--ioapic', 'on'
+                             ]
+
+            end
+            config.vm.provision 'shell', inline: node[:script]
+            config.vm.provision 'shell', inline: $script_puppet_modules
+            config.vm.provision :puppet do |puppet|
+                    puppet.environment_path = 'environment'
+                    puppet.environment = 'production'
+                    puppet.options = "--verbose"
+            end
+        end
+        config.vm.synced_folder '..', '/proxysql_tools'
+    end
+end
