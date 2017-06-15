@@ -92,7 +92,7 @@ nodes = [
     { :hostname   => 'docker',
             :ip         => '192.168.90.6',
             :box        => 'bento/centos-7.3',
-            :ram        => 256,
+            :ram        => 2048,
             :script     => $script_centos,
         },
 

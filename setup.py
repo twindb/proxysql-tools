@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import os
+
 from pip.req import parse_requirements
 from setuptools import setup, find_packages
+
+del os.link
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()

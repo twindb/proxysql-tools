@@ -18,4 +18,10 @@ class proxy::base () {
             ensure  => installed;
     }
 
+    package {
+        'tox':
+            ensure   => installed,
+            provider => pip,
+    }
+
 }
