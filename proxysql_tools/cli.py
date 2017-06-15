@@ -9,6 +9,7 @@ from pymysql import OperationalError
 from proxysql_tools import setup_logging, LOG, __version__
 from proxysql_tools.cli_entrypoint.galera import galera_register
 from proxysql_tools.proxysql.proxysql import ProxySQL
+from proxysql_tools.util.bug1258464 import bug1258464
 
 PASS_CFG = click.make_pass_decorator(ConfigParser, ensure=True)
 
@@ -103,3 +104,12 @@ def register(cfg):
 
     except OperationalError as err:
         LOG.error('Failed to talk to database: %s', err)
+
+
+@galera.command()
+@click.option('--defaults-file', help='Path to my.cnf with custom settings')
+def bug1258464killer(default_file):
+    if os.path.isfile(default_file):
+        bug1258464(default_file)
+    else:
+        LOG.error("Config file %s doesn't exist", default_file)
