@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import os
+
 from pip.req import parse_requirements
 from setuptools import setup, find_packages
+
+del os.link
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -18,7 +22,7 @@ test_requirements = [str(ir.req) for ir in
 
 setup(
     name='proxysql_tools',
-    version='0.2.14',
+    version='0.3.0',
     description="ProxySQL Tools",
     long_description=readme + '\n\n' + history,
     author="TwinDB Development Team",

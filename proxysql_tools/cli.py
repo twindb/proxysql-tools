@@ -1,22 +1,16 @@
+"""Entry points for proxysql-tools"""
+from __future__ import print_function
 import os
-from ConfigParser import ConfigParser
+from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 
 import click
+from pymysql import OperationalError
 
-from schematics.exceptions import ModelValidationError, ModelConversionError
+from proxysql_tools import setup_logging, LOG, __version__
+from proxysql_tools.cli_entrypoint.galera import galera_register
+from proxysql_tools.proxysql.proxysql import ProxySQL
 
-import proxysql_tools.aws
-import proxysql_tools.galera
-from proxysql_tools import setup_logging, log, __version__
-from proxysql_tools.entities.galera import GaleraConfig
-from proxysql_tools.entities.proxysql import ProxySQLConfig
-from proxysql_tools.managers.proxysql_manager import (
-    ProxySQLManager,
-    ProxySQLAdminConnectionError
-)
-from proxysql_tools.util.bug1258464 import bug1258464
-
-pass_cfg = click.make_pass_decorator(ConfigParser, ensure=True)
+PASS_CFG = click.make_pass_decorator(ConfigParser, ensure=True)
 
 
 @click.group(invoke_without_command=True)
@@ -27,9 +21,10 @@ pass_cfg = click.make_pass_decorator(ConfigParser, ensure=True)
               show_default=True)
 @click.option('--version', help='Show tool version and exit.', is_flag=True,
               default=False)
-@pass_cfg
+@PASS_CFG
 @click.pass_context
 def main(ctx, cfg, debug, config, version):
+    """proxysql-tool entrypoint"""
     if ctx.invoked_subcommand is None:
         if version:
             print(__version__)
@@ -38,105 +33,73 @@ def main(ctx, cfg, debug, config, version):
             print(ctx.get_help())
             exit(-1)
 
-    setup_logging(log, debug=debug)
+    setup_logging(LOG, debug=debug)
 
     if os.path.exists(config):
         cfg.read(config)
     else:
-        log.error("Config file %s doesn't exist", config)
+        LOG.error("Config file %s doesn't exist", config)
         exit(1)
 
 
 @main.command()
-@pass_cfg
+@PASS_CFG
 def ping(cfg):
     """Checks the health of ProxySQL."""
-    p_cfg = None
+    kwargs = {}
+    option_mapping = {
+        'host': 'host',
+        'port': 'admin_port',
+        'user': 'admin_username',
+        'password': 'admin_password'
+    }
 
-    cfg_opts = {item[0]: item[1] for item in cfg.items('proxysql')}
-    try:
-        p_cfg = ProxySQLConfig(cfg_opts)
-        p_cfg.validate()
+    for key in option_mapping:
+        try:
+            kwargs[key] = cfg.get('proxysql', option_mapping[key])
+        except NoOptionError:
+            pass
 
-        log.debug('Performing health check on ProxySQL instance at %s:%s' %
-                  (p_cfg.host, p_cfg.admin_port))
-
-        proxysql_man = ProxySQLManager(host=p_cfg.host,
-                                       port=p_cfg.admin_port,
-                                       user=p_cfg.admin_username,
-                                       password=p_cfg.admin_password)
-        proxysql_man.ping()
-    except ProxySQLAdminConnectionError:
-        log.error('ProxySQL ping failed. Unable to connect at %s:%s '
-                  'using username %s and password %s' %
-                  (p_cfg.host, p_cfg.admin_port,
-                   p_cfg.admin_username, "*" * len(p_cfg.admin_password)))
+    if ProxySQL(**kwargs).ping():
+        LOG.debug('ProxySQL is alive')
+        exit(0)
+    else:
+        LOG.debug('ProxySQL is dead')
         exit(1)
-    except (ModelValidationError, ModelConversionError) as e:
-        log.error('ProxySQL configuration options error: %s' % e)
-        exit(1)
-
-    log.info('ProxySQL ping on %s:%s successful.' %
-             (cfg_opts['host'], cfg_opts['admin_port']))
 
 
 @main.group()
-@pass_cfg
-def aws(cfg):
+def aws():
     """Commands to interact with ProxySQL on AWS."""
-    pass
 
 
 @aws.command()
-@pass_cfg
+@PASS_CFG
 def notify_master(cfg):
     """The notify_master script for keepalived."""
-    log.debug('Switching to master role and executing keepalived '
+    LOG.debug('Switching to master role and executing keepalived '
               'notify_master script.')
-    proxysql_tools.aws.notify_master(cfg)
+    aws.notify_master(cfg)
 
 
 @main.group()
-@pass_cfg
-def galera(cfg):
+def galera():
     """Commands for ProxySQL and Galera integration."""
-    pass
 
 
 @galera.command()
-@pass_cfg
+@PASS_CFG
 def register(cfg):
     """Registers Galera cluster nodes with ProxySQL."""
-    proxy_cfg = galera_cfg = None
 
-    proxy_options = {item[0]: item[1] for item in cfg.items('proxysql')}
     try:
-        proxy_cfg = ProxySQLConfig(proxy_options)
-        proxy_cfg.validate()
-    except ModelValidationError as e:
-        log.error('ProxySQL configuration options error: %s' % e)
+        galera_register(cfg)
+    except NotImplementedError as err:
+        LOG.error(err)
+        exit(1)
+    except (NoOptionError, NoSectionError) as err:
+        LOG.error('Failed to parse config: %s', err)
         exit(1)
 
-    galera_options = {item[0]: item[1] for item in cfg.items('galera')}
-    try:
-        galera_cfg = GaleraConfig(galera_options)
-        galera_cfg.validate()
-    except (ModelValidationError, ModelConversionError) as e:
-        log.error('Galera configuration options error: %s' % e)
-        exit(1)
-
-    if not proxysql_tools.galera.register_cluster_with_proxysql(proxy_cfg,
-                                                                galera_cfg):
-        log.error('Registration of Galera cluster nodes failed.')
-        exit(1)
-
-    log.info('Registration of Galera cluster nodes successful.')
-
-
-@galera.command()
-@click.option('--defaults-file', help='Path to my.cnf with custom settings')
-def bug1258464killer(default_file):
-    if os.path.isfile(default_file):
-        bug1258464(default_file)
-    else:
-        log.error("Config file %s doesn't exist", default_file)
+    except OperationalError as err:
+        LOG.error('Failed to talk to database: %s', err)

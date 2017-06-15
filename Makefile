@@ -35,13 +35,17 @@ help:
 virtualenv: ## create virtual environment typically used for development purposes
 	virtualenv env --setuptools --prompt='(twindb_proxysql_tools)'
 
+.PHONY: pip-tools
+pip-tools:
+	which pip-compile || pip install pip-tools
+
 .PHONY: rebuild-requirements
-rebuild-requirements: ## Rebuild requirements files requirements.txt and requirements_dev.txt
+rebuild-requirements: pip-tools ## Rebuild requirements files requirements.txt and requirements_dev.txt
 	pip-compile --verbose --no-index --output-file requirements.txt requirements.in
 	pip-compile --verbose --no-index --output-file requirements_dev.txt requirements_dev.in
 
 .PHONY: upgrade-requirements
-upgrade-requirements: ## Upgrade requirements
+upgrade-requirements: pip-tools## Upgrade requirements
 	pip-compile --upgrade --verbose --no-index --output-file requirements.txt requirements.in
 	pip-compile --upgrade --verbose --no-index --output-file requirements_dev.txt requirements_dev.in
 
@@ -82,7 +86,7 @@ clean-docs:
 	make -C docs clean
 
 lint: ## check style with flake8
-	flake8 proxysql_tools tests
+	pylint proxysql_tools
 
 test: ## run tests quickly with the default Python
 	pytest -xv --cov-report term-missing --cov=./proxysql_tools tests/unit

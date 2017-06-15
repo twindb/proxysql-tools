@@ -1,0 +1,35 @@
+[proxysql]
+# ProxySQL admin interface connectivity information
+host=127.0.0.1
+admin_port=6032
+admin_username=admin
+admin_password=admin
+
+# MySQL user used by ProxySQL monitoring module to monitor MySQL servers
+monitor_username=monitor
+monitor_password=monit0r
+
+
+[aws]
+aws_access_key_id=***
+aws_secret_access_key=***
+aws_default_region=us-west-2
+
+[galera]
+# Galera cluster related options for integration of galera with ProxySQL
+cluster_host=192.168.90.2:3306,192.168.90.3:3306,192.168.90.4:3306
+cluster_username=proxysql_user
+cluster_password=proxysql
+
+# Type of load balancing to configure in ProxySQL for the galera cluster.
+# Supported modes are: roundrobin, singlewriter
+load_balancing_mode=singlewriter
+
+# The host group that will contain the Galera node that receives writes.
+writer_hostgroup_id=10
+
+# The host group that will contain Galera node(s) that receive reads.
+reader_hostgroup_id=11
+
+# The nodes that are blacklisted from becoming a writer
+writer_blacklist=192.168.90.4:3306

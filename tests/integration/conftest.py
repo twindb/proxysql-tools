@@ -3,8 +3,10 @@ import pprint
 import pytest
 
 from docker.types import IPAMConfig, IPAMPool
-from proxysql_tools.entities.galera import GaleraNode
-from proxysql_tools.managers.proxysql_manager import ProxySQLManager
+
+from proxysql_tools import LOG, setup_logging
+from proxysql_tools.galera.galera_node import GaleraNode
+from proxysql_tools.proxysql.proxysql import ProxySQL
 from tests.integration.library import (
     docker_client,
     docker_pull_image,
@@ -25,6 +27,8 @@ PROXYSQL_ADMIN_PASSWORD = 'admin'
 
 PXC_MYSQL_PORT = 3306
 PXC_ROOT_PASSWORD = 'r00t'
+
+setup_logging(LOG, debug=True)
 
 
 def pytest_runtest_logreport(report):
@@ -59,6 +63,7 @@ def debian_container():
     container = api.create_container(
         image=DEBIAN_IMAGE, labels=[CONTAINERS_FOR_TESTING_LABEL],
         command='/bin/sleep 36000')
+    LOG.debug('Starting container %s', container['Id'])
     api.start(container['Id'])
 
     container_info = client.containers.get(container['Id'])
@@ -125,7 +130,8 @@ mysql_variables=
         sessions_sort=true
 }}""".format(admin_user=PROXYSQL_ADMIN_USER,
              admin_password=PROXYSQL_ADMIN_PASSWORD,
-             admin_port=PROXYSQL_ADMIN_PORT, client_port=PROXYSQL_CLIENT_PORT)
+             admin_port=PROXYSQL_ADMIN_PORT,
+             client_port=PROXYSQL_CLIENT_PORT)
 
 
 @pytest.yield_fixture
@@ -139,6 +145,7 @@ def proxysql_container(proxysql_config_contents, tmpdir, container_network):
     # Setup the ProxySQL config
     config = tmpdir.join('proxysql.cnf')
     config.write(proxysql_config_contents)
+    LOG.debug('ProxySQL Config:\n %s', proxysql_config_contents)
 
     # The ports that the ProxySQL container will be listening on inside the
     # container
@@ -165,7 +172,9 @@ def proxysql_container(proxysql_config_contents, tmpdir, container_network):
                                      ports=container_ports,
                                      host_config=host_config,
                                      networking_config=networking_config)
+    LOG.debug('Starting container %s', container['Id'])
     api.start(container['Id'])
+    # 1/0
 
     yield container_info
 
@@ -173,18 +182,18 @@ def proxysql_container(proxysql_config_contents, tmpdir, container_network):
 
 
 @pytest.fixture
-def proxysql_manager(proxysql_container):
-    manager = ProxySQLManager(host=proxysql_container['ip'],
-                              port=PROXYSQL_ADMIN_PORT,
-                              user=PROXYSQL_ADMIN_USER,
-                              password=PROXYSQL_ADMIN_PASSWORD)
+def proxysql_instance(proxysql_container):
+    LOG.debug("Container %r", proxysql_container)
+    connection = ProxySQL(host=proxysql_container['ip'],
+                          port=PROXYSQL_ADMIN_PORT,
+                          user=PROXYSQL_ADMIN_USER,
+                          password=PROXYSQL_ADMIN_PASSWORD)
 
     def check_started():
-        with manager.get_connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute('SELECT 1')
-
-        return True
+        LOG.debug('Checking if proxysql is up')
+        ret = connection.ping()
+        LOG.debug(ret)
+        return ret
 
     # Allow ProxySQL to startup completely. The problem is that ProxySQL starts
     # listening to the admin port before it has initialized completely which
@@ -192,7 +201,7 @@ def proxysql_manager(proxysql_container):
     # OperationalError: (2013, 'Lost connection to MySQL server during query')
     eventually(check_started, retries=15, sleep_time=4)
 
-    return manager
+    return connection
 
 
 @pytest.yield_fixture
@@ -273,17 +282,13 @@ def percona_xtradb_cluster_one_node(container_network):
 
 @pytest.fixture
 def percona_xtradb_cluster_node(percona_xtradb_cluster_one_node):
-    node = GaleraNode({
-        'host': percona_xtradb_cluster_one_node[0]['ip'],
-        'username': 'root',
-        'password': PXC_ROOT_PASSWORD
-    })
+    node = GaleraNode(host=percona_xtradb_cluster_one_node[0]['ip'],
+                      user='root',
+                      password=PXC_ROOT_PASSWORD
+    )
 
     def check_started():
-        with node.get_connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute('SELECT 1')
-
+        node.execute('SELECT 1')
         return True
 
     # Allow the cluster node to startup completely.
