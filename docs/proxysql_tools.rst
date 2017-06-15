@@ -1,37 +1,22 @@
-proxysql_tools package
-======================
+proxysql\_tools package
+=======================
 
 Subpackages
 -----------
 
 .. toctree::
 
-    proxysql_tools.entities
-    proxysql_tools.managers
+    proxysql_tools.aws
+    proxysql_tools.galera
+    proxysql_tools.proxysql
 
 Submodules
 ----------
 
-proxysql_tools.aws module
--------------------------
-
-.. automodule:: proxysql_tools.aws
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-proxysql_tools.cli module
--------------------------
+proxysql\_tools\.cli module
+---------------------------
 
 .. automodule:: proxysql_tools.cli
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-proxysql_tools.galera module
-----------------------------
-
-.. automodule:: proxysql_tools.galera
     :members:
     :undoc-members:
     :show-inheritance:

@@ -5,11 +5,12 @@ import time
 import io
 from ConfigParser import ConfigParser
 
-from proxysql_tools.entities.galera import GaleraNode
+from proxysql_tools import LOG
+from proxysql_tools.galera.galera_node import GaleraNode
 
 
 def docker_client():
-    return docker.from_env()
+    return docker.DockerClient(version="auto")
 
 
 def docker_pull_image(image):
@@ -22,14 +23,7 @@ def docker_pull_image(image):
     api = client.api
 
     response = api.pull(image)
-    lines = [line for line in response.splitlines() if line]
-
-    # The last line of the pull operation contains the overall result of the
-    # pull operation.
-    pull_result = json.loads(lines[-1])
-    if "error" in pull_result:
-        raise Exception("Could not pull {}: {}".format(
-            image, pull_result["error"]))
+    LOG.debug('Response: %s', response)
 
 
 def get_unused_port():
@@ -54,27 +48,25 @@ def is_port_reachable(host, port):
 def eventually(func, *args, **kwargs):
     retries = kwargs.pop('retries', 90)
     sleep_time = kwargs.pop('sleep_time', 0.5)
-    assert_val = kwargs.pop('assert_val', False)
 
-    last_ex = None
     for i in xrange(retries):
-        if i > 0:
-            time.sleep(sleep_time)
-
         try:
-            val = func(*args, **kwargs)
-            if assert_val:
-                assert val
-            return val
-        except Exception as e:
-            last_ex = e
+            if func(*args, **kwargs):
+                return
+            else:
+                LOG.info('Waiting for %s to return True', func)
+                time.sleep(sleep_time)
+        except Exception:
+            time.sleep(sleep_time)
+            continue
 
-    if not last_ex:
-        last_ex = AssertionError('No result from %s' % func)
+    raise EnvironmentError('Function %s never returned True' % func)
 
-    if last_ex:
-        raise last_ex
 
+def shutdown_container(id):
+    client = docker_client()
+    api = client.api
+    api.stop(id)
 
 def create_percona_xtradb_cluster(container_image, container_labels,
                                   container_info, container_ports,
@@ -128,22 +120,17 @@ def create_percona_xtradb_cluster(container_image, container_labels,
 def wait_for_cluster_nodes_to_become_healthy(percona_xtradb_cluster_info):
     def check_started():
         for container_info in percona_xtradb_cluster_info:
-            node = GaleraNode({
-                'host': container_info['ip'],
-                'username': 'root',
-                'password': container_info['root_password']
-            })
-            with node.get_connection() as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute('SELECT 1')
-
+            node = GaleraNode(host=container_info['ip'],
+                              user='root',
+                              password=container_info['root_password'])
+            node.execute('SELECT 1')
         return True
 
     # Allow all the cluster nodes to startup.
     eventually(check_started, retries=20, sleep_time=4)
 
 
-def proxysql_tools_config(proxysql_manager, cluster_host, cluster_port,
+def proxysql_tools_config(proxysql_instance, cluster_host, cluster_port,
                           cluster_user, cluster_pass, hostgroup_writer,
                           hostgroup_reader, monitor_user, monitor_pass):
     config_contents = """
@@ -165,11 +152,49 @@ load_balancing_mode=singlewriter
 
 writer_hostgroup_id={writer_hostgroup}
 reader_hostgroup_id={reader_hostgroup}
-""".format(proxy_host=proxysql_manager.host, proxy_port=proxysql_manager.port,
-           proxy_user=proxysql_manager.user,
-           proxy_pass=proxysql_manager.password, monitor_user=monitor_user,
+""".format(proxy_host=proxysql_instance.host, proxy_port=proxysql_instance.port,
+           proxy_user=proxysql_instance.user,
+           proxy_pass=proxysql_instance.password, monitor_user=monitor_user,
            monitor_pass=monitor_pass, cluster_host=cluster_host,
            cluster_port=cluster_port, cluster_user=cluster_user,
+           cluster_pass=cluster_pass, writer_hostgroup=hostgroup_writer,
+           reader_hostgroup=hostgroup_reader)
+
+    config = ConfigParser()
+    config.readfp(io.BytesIO(config_contents))
+    return config
+
+def proxysql_tools_config_2(proxysql_instance, cluster_nodes,
+                             cluster_user, cluster_pass,
+                             hostgroup_writer, hostgroup_reader, writer_blacklist,
+                             monitor_user, monitor_pass):
+
+    hosts = ','.join(cluster_nodes)
+    config_contents = """
+[proxysql]
+host={proxy_host}
+admin_port={proxy_port}
+admin_username={proxy_user}
+admin_password={proxy_pass}
+
+monitor_username={monitor_user}
+monitor_password={monitor_pass}
+
+[galera]
+cluster_host={hosts}
+cluster_username={cluster_user}
+cluster_password={cluster_pass}
+
+load_balancing_mode=singlewriter
+writer_blacklist={writer_blacklist}
+writer_hostgroup_id={writer_hostgroup}
+reader_hostgroup_id={reader_hostgroup}
+""".format(proxy_host=proxysql_instance.host, proxy_port=proxysql_instance.port,
+           proxy_user=proxysql_instance.user,
+           proxy_pass=proxysql_instance.password, monitor_user=monitor_user,
+           monitor_pass=monitor_pass, hosts=hosts,
+           cluster_user=cluster_user,
+           writer_blacklist=writer_blacklist,
            cluster_pass=cluster_pass, writer_hostgroup=hostgroup_writer,
            reader_hostgroup=hostgroup_reader)
 
