@@ -1,8 +1,6 @@
 import pytest
-from doubles import allow, expect
 from mock import mock_open, mock
-from pymysql import Connection, OperationalError
-from pymysql.cursors import DictCursor
+from pymysql import OperationalError
 
 from proxysql_tools.util.bug1258464 import get_my_cnf, get_pid, bug1258464
 
