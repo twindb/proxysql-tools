@@ -3,7 +3,7 @@ import logging
 
 __author__ = """TwinDB Development Team"""
 __email__ = 'dev@twindb.com'
-__version__ = '0.3.1'
+__version__ = '0.3.2'
 
 
 LOG = logging.getLogger(__name__)
