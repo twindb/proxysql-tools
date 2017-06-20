@@ -1,18 +1,11 @@
-pip
+#@IgnoreInspection BashAddShebang
 bumpversion
-wheel
-watchdog
-flake8
+pylint
 pytest>=2.9.0
-pytest-flakes
 pytest-mock
 tox
-coverage
 Sphinx
-cryptography
-PyYAML
-docker
-unittest2
-schematics
-codecov
 pytest-cov
+mock
+docker
+codecov

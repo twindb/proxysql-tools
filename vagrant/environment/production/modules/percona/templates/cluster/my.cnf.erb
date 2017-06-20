@@ -1,0 +1,46 @@
+[mysqld]
+datadir=/var/lib/mysql
+user=mysql
+log_error=<%= @hostname %>_error.log
+binlog_format=ROW
+wsrep_provider=/usr/lib64/libgalera_smm.so
+wsrep_cluster_address=gcomm://192.168.90.2,192.168.90.3,192.168.90.4
+wsrep_node_address=<%= @ipaddress_enp0s8 %>
+wsrep_slave_threads=2
+wsrep_cluster_name=LefredPXC
+#wsrep_sst_method=rsync
+wsrep_sst_method=xtrabackup-v2
+wsrep_sst_auth=root:
+#wsrep_provider_options = "pc.ignore_sb=true;gcache.size=64M"
+wsrep_node_name=<%= @hostname %>
+innodb_locks_unsafe_for_binlog=1
+innodb_autoinc_lock_mode=2
+innodb_log_file_size=64M
+bind-address=<%= @ipaddress_enp0s8 %>
+innodb_file_per_table=1
+log_slave_updates
+<% if has_variable?("mysql_version") and @mysql_version.to_s == "5.6" then %>
+<% if has_variable?("perconaserverid") and @perconaserverid.to_s != "undef" then %>server-id=<%= @perconaserverid %> <% end %>
+#support GTID
+enforce_gtid_consistency=1
+gtid_mode=on
+<% end %>
+log-bin=<%= @hostname %>-bin
+
+
+
+
+[mysql]
+user=root
+prompt="<%= @hostname %> mysql> "
+
+[sst]
+streamfmt=xbstream
+
+[xtrabackup]
+compress
+compact
+parallel=2
+compress-threads=2
+rebuild-threads=2
+
