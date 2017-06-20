@@ -54,7 +54,16 @@ def singlewriter(galera_cluster, proxysql,
     writer_as_reader = writer
     writer_as_reader.hostgroup_id = reader_hostgroup_id
 
-    if len(readers) > 2 and proxysql.backend_registered(writer_as_reader):
+    is_readers_offline = False
+    if writer_as_reader in readers:
+        readers_without_writer = readers[:]
+        readers_without_writer.remove(writer_as_reader)
+
+        is_readers_offline = all(x.status == BackendStatus.offline_soft
+                                 for x in readers_without_writer)
+
+    if len(readers) > 2 and proxysql.backend_registered(writer_as_reader) \
+        and not is_readers_offline:
         proxysql.deregister_backend(writer_as_reader)
 
 
