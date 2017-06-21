@@ -116,7 +116,7 @@ def bug1258464killer(default_file):
     it will kill the node. This command workarounds a known bug
     https://bugs.launchpad.net/percona-xtradb-cluster/+bug/1258464
     """
-    if os.path.isfile(default_file):
+    if default_file and os.path.isfile(default_file):
         bug1258464(default_file)
     else:
-        LOG.error("Config file %s doesn't exist", default_file)
+        bug1258464('/root/.my.cnf')
