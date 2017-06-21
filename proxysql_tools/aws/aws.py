@@ -1,5 +1,5 @@
 # pylint: skip-file
-# import os
+import os
 import time
 from ConfigParser import NoOptionError
 from subprocess import Popen
@@ -124,7 +124,7 @@ def configure_local_interface(local_interface, ip, netmask):
             return
 
 
-def notify_master(cfg):
+def aws_notify_master(cfg):
     """The function moves network interface to local instance and brings it up.
     Steps:
 
