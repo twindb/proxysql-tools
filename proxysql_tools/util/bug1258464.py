@@ -54,7 +54,9 @@ def bug1258464(default_file):
     https://bugs.launchpad.net/percona-xtradb-cluster/+bug/1258464
     and if yes, kill the node.
 
-    :param default_file: Path to my.cnf"""
+    :param default_file: Path to my.cnf
+    :return: True if it killed the node.
+    :rtype: bool"""
     try:
         connection = pymysql.connect(read_default_file=default_file)
         with connection.cursor() as cursor:
@@ -73,9 +75,11 @@ def bug1258464(default_file):
                 my_cnf_path = get_my_cnf()
                 pid = get_pid(my_cnf_path)
                 kill_process(pid)
+                return True
     except OperationalError as err:
         LOG.error(str(err))
     except OSError as err:
         LOG.error(str(err))
     except NotImplementedError as err:
         LOG.error(str(err))
+    return False
