@@ -43,20 +43,6 @@ def main(ctx, cfg, debug, config, version):
         LOG.error("Config file %s doesn't exist", config)
         exit(1)
 
-@main.command()
-@click.option('--default-file', help='Path to my.cnf with custom settings')
-def bug1258464killer(default_file):
-    """
-    bug1258464killer checks status of a local Galera node
-    and if a) There are stuck COMMIT queries and b) There is an ALTER TABLE
-    it will kill the node. This command workarounds a known bug
-    https://bugs.launchpad.net/percona-xtradb-cluster/+bug/1258464
-    """
-    if os.path.isfile(default_file):
-        bug1258464(default_file)
-    else:
-        LOG.error("Config file %s doesn't exist", default_file)
-
 
 @main.command()
 @PASS_CFG
@@ -119,3 +105,18 @@ def register(cfg):
 
     except OperationalError as err:
         LOG.error('Failed to talk to database: %s', err)
+
+
+@galera.command()
+@click.option('--default-file', help='Path to my.cnf with custom settings')
+def bug1258464killer(default_file):
+    """
+    bug1258464killer checks status of a local Galera node
+    and if a) There are stuck COMMIT queries and b) There is an ALTER TABLE
+    it will kill the node. This command workarounds a known bug
+    https://bugs.launchpad.net/percona-xtradb-cluster/+bug/1258464
+    """
+    if os.path.isfile(default_file):
+        bug1258464(default_file)
+    else:
+        LOG.error("Config file %s doesn't exist", default_file)
