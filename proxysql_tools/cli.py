@@ -7,6 +7,7 @@ import click
 from pymysql import OperationalError
 
 from proxysql_tools import setup_logging, LOG, __version__
+from proxysql_tools.aws.aws import aws_notify_master
 from proxysql_tools.cli_entrypoint.galera import galera_register
 from proxysql_tools.proxysql.proxysql import ProxySQL
 from proxysql_tools.util.bug1258464 import bug1258464
@@ -80,7 +81,7 @@ def notify_master(cfg):
     """The notify_master script for keepalived."""
     LOG.debug('Switching to master role and executing keepalived '
               'notify_master script.')
-    aws.notify_master(cfg)
+    aws_notify_master(cfg)
 
 
 @main.group()
