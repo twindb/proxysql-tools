@@ -110,6 +110,12 @@ def register(cfg):
 @PASS_CFG
 @click.option('--default-file', help='Path to my.cnf with custom settings')
 def bug1258464killer(default_file):
+    """
+    bug1258464killer checks status of a local Galera node
+    and if a) There are stuck COMMIT queries and b) There is an ALTER TABLE
+    it will kill the node. This command workarounds a known bug
+    https://bugs.launchpad.net/percona-xtradb-cluster/+bug/1258464
+    """
     if os.path.isfile(default_file):
         bug1258464(default_file)
     else:
