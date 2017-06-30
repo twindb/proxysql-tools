@@ -12,6 +12,7 @@ Contents:
    modules
    contributing
    authors
+   development
 
 Indices and tables
 ==================
