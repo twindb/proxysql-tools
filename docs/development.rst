@@ -25,10 +25,10 @@ or:
 3. Start release branch using git-flow:
 ::
 
-  git flow release start 0.3.5
+  git flow release start <version>
   bumpversion patch | minor | major
-  git flow release finish 0.3.5
-  Tag commit message "Release 0.3.5"
+  git flow release finish <version>
+  Tag commit message "Release <version>"
 
 4. Push:
 ::
