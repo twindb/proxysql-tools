@@ -25,3 +25,4 @@ deploy:
     distributions: sdist bdist_wheel
     repo: twindb/proxysql-tools
     branch: master
+  skip_upload_docs: true

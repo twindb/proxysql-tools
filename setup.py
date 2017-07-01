@@ -22,7 +22,7 @@ test_requirements = [str(ir.req) for ir in
 
 setup(
     name='proxysql_tools',
-    version='0.3.7',
+    version='0.3.8',
     description="ProxySQL Tools",
     long_description=readme + '\n\n' + history,
     author="TwinDB Development Team",
