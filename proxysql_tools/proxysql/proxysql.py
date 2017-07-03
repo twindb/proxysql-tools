@@ -72,8 +72,32 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def __str__(self):
+    def __repr__(self):
         return "%d__%s__%d" % (self.hostgroup_id, self.hostname, self.port)
+
+    def __str__(self):
+        return "hostgroup_id={hostgroup_id}, " \
+               "hostname={hostname}, " \
+               "port={port}, " \
+               "status={status}, " \
+               "weight={weight}, " \
+               "compression={compression}, " \
+               "max_connections={max_connections}, " \
+               "max_replication_lag={max_replication_lag}, " \
+               "use_ssl={use_ssl}, " \
+               "max_latency_ms={max_latency_ms}, " \
+               "comment={comment}".format(
+                hostgroup_id=self.hostgroup_id,
+                hostname=self.hostname,
+                port=self.port,
+                status=self.status,
+                weight=self.weight,
+                compression=self.compression,
+                max_connections=self.max_connections,
+                max_replication_lag=self.max_replication_lag,
+                use_ssl=self.use_ssl,
+                max_latency_ms=self.max_latency_ms,
+                comment=self.comment)
 
 
 class ProxySQLMySQLUser(object):  # pylint: disable=too-many-instance-attributes,too-few-public-methods
@@ -257,7 +281,7 @@ class ProxySQL(object):
         :param status: Look only for backends in this status
         :type status: BackendStatus
         :return: Writer MySQL backend or None if doesn't exist
-        :rtype: ProxySQLMySQLBackend
+        :rtype: list(ProxySQLMySQLBackend)
         :raise: ProxySQLBackendNotFound
         """
         result = self.execute('SELECT `hostgroup_id`, `hostname`, '

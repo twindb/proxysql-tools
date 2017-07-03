@@ -9,6 +9,7 @@ from pymysql import OperationalError
 from proxysql_tools import setup_logging, LOG, __version__
 from proxysql_tools.aws.aws import aws_notify_master
 from proxysql_tools.cli_entrypoint.galera import galera_register
+from proxysql_tools.galera.server import server_status
 from proxysql_tools.proxysql.proxysql import ProxySQL
 from proxysql_tools.util.bug1258464 import bug1258464
 
@@ -123,3 +124,26 @@ def bug1258464killer(default_file):
             LOG.error('File not found : %s', default_file)
     else:
         bug1258464('/root/.my.cnf')
+
+
+@galera.group()
+def server():
+    """Commands to manipulate MySQL servers."""
+
+
+@server.command()
+@PASS_CFG
+def status(cfg):
+    """Show status of MySQL backends."""
+
+    try:
+        server_status(cfg)
+    except NotImplementedError as err:
+        LOG.error(err)
+        exit(1)
+    except (NoOptionError, NoSectionError) as err:
+        LOG.error('Failed to parse config: %s', err)
+        exit(1)
+
+    except OperationalError as err:
+        LOG.error('Failed to talk to database: %s', err)
