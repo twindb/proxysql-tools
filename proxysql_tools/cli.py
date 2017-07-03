@@ -123,3 +123,30 @@ def bug1258464killer(default_file):
             LOG.error('File not found : %s', default_file)
     else:
         bug1258464('/root/.my.cnf')
+
+
+@galera.group()
+def user():
+    """Commands for ProxySQL users"""
+
+
+@user.command()
+@PASS_CFG
+def list(cfg):
+    kwargs = {}
+    option_mapping = {
+        'host': 'host',
+        'port': 'admin_port',
+        'user': 'admin_username',
+        'password': 'admin_password'
+    }
+
+    for key in option_mapping:
+        try:
+            kwargs[key] = cfg.get('proxysql', option_mapping[key])
+        except NoOptionError:
+            pass
+
+    users = ProxySQL(**kwargs).get_users()
+    for user in users:
+        print (user)
