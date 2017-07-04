@@ -10,6 +10,7 @@ from proxysql_tools import setup_logging, LOG, __version__
 from proxysql_tools.aws.aws import aws_notify_master
 from proxysql_tools.cli_entrypoint.galera import galera_register
 from proxysql_tools.galera.server import server_status
+from proxysql_tools.galera.user import get_users
 from proxysql_tools.proxysql.proxysql import ProxySQL
 from proxysql_tools.util.bug1258464 import bug1258464
 
@@ -156,20 +157,4 @@ def user():
 @user.command()
 @PASS_CFG
 def list(cfg):
-    kwargs = {}
-    option_mapping = {
-        'host': 'host',
-        'port': 'admin_port',
-        'user': 'admin_username',
-        'password': 'admin_password'
-    }
-
-    for key in option_mapping:
-        try:
-            kwargs[key] = cfg.get('proxysql', option_mapping[key])
-        except NoOptionError:
-            pass
-
-    users = ProxySQL(**kwargs).get_users()
-    for user in users:
-        print (user)
+    get_users(cfg)

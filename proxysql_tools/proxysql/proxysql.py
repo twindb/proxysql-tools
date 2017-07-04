@@ -175,6 +175,7 @@ class ProxySQLMySQLUser(object):  # pylint: disable=too-many-instance-attributes
         def __str__(self):
             return "%s %s %d %d %d " % (self.user, self.password, self.active, self.use_ssl, self.default_hostgroup)
 
+
 class ProxySQL(object):
     """
     ProxySQL describes a single ProxySQL instance.
@@ -238,7 +239,7 @@ class ProxySQL(object):
                                      password=row['password'],
                                      active=row['active'],
                                      use_ssl=row['use_ssl'],
-                                     default_hostgroup=row['default_hostgrup'],
+                                     default_hostgroup=row['default_hostgroup'],
                                      default_schema=row['default_schema'],
                                      schema_locked=row['schema_locked'],
                                      transaction_persistent=row['transaction_persistent'],
