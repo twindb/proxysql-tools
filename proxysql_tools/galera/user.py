@@ -22,7 +22,7 @@ def get_users(cfg):
     users = ProxySQL(**kwargs).get_users()
 
     table = PrettyTable(['username', 'password', 'active',
-                         'use_ssl','default_hostgroup', 'default_schema',
+                         'use_ssl', 'default_hostgroup', 'default_schema',
                          'schema_locked', 'transaction_persistent',
                          'transaction_persistent', 'backend',
                          'frontend', 'max_connections'])

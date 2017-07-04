@@ -172,9 +172,6 @@ class ProxySQLMySQLUser(object):  # pylint: disable=too-many-instance-attributes
         self.frontend = frontend
         self.max_connections = int(max_connections)
 
-        def __str__(self):
-            return "%s %s %d %d %d " % (self.user, self.password, self.active, self.use_ssl, self.default_hostgroup)
-
 
 class ProxySQL(object):
     """
