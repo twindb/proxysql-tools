@@ -24,7 +24,7 @@ def get_users(cfg):
     table = PrettyTable(['username', 'password', 'active',
                          'use_ssl', 'default_hostgroup', 'default_schema',
                          'schema_locked', 'transaction_persistent',
-                         'transaction_persistent', 'backend',
+                         'fast_forward', 'backend',
                          'frontend', 'max_connections'])
     for user in users:
         table.add_row([
