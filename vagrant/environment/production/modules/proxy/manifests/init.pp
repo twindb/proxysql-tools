@@ -2,10 +2,6 @@ class proxy() {
     include proxy::proxysql_tools
     include proxy::base
 
-    package { 'epel-release':
-        ensure => installed,
-    }
-
     package {
         'proxysql':
             ensure  => installed;
