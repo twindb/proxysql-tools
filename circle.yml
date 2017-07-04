@@ -1,8 +1,8 @@
 machine:
   pre:
-    - apt-get remove mysql-apt-config
-    - apt-get update
-    - apt-get install docker-engine
-    - service docker restart
+    - sudo apt-get remove mysql-apt-config
+    - sudo apt-get update
+    - sudo apt-get install docker-engine
+    - sudo service docker restart
   services:
     - docker
