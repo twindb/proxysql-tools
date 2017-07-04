@@ -1,7 +1,7 @@
 version: 2
 jobs:
   build:
-    working_directory: ~/proxysql_tools
+    working_directory: ~/proxysql-tools
     docker:
         - image: centos:7
     steps:
