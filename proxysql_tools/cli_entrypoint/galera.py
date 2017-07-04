@@ -5,6 +5,7 @@ from proxysql_tools import LOG
 from proxysql_tools.galera.galera_cluster import GaleraCluster
 from proxysql_tools.load_balancing_mode import singlewriter
 from proxysql_tools.proxysql.proxysql import ProxySQL, ProxySQLMySQLBackend
+from proxysql_tools.util import get_proxysql_options
 
 
 def galera_register(cfg):
@@ -24,27 +25,7 @@ def galera_register(cfg):
     galera_cluster = GaleraCluster(cfg.get('galera', 'cluster_host'),
                                    **kwargs)
 
-    kwargs = {}
-    try:
-        kwargs['host'] = cfg.get('proxysql', 'host')
-    except NoOptionError:
-        pass
-    try:
-        kwargs['port'] = cfg.get('proxysql', 'admin_port')
-    except NoOptionError:
-        pass
-    try:
-        kwargs['user'] = cfg.get('proxysql', 'admin_username')
-    except NoOptionError:
-        pass
-    try:
-        kwargs['password'] = cfg.get('proxysql', 'admin_password')
-    except NoOptionError:
-        pass
-    try:
-        kwargs['socket'] = cfg.get('proxysql', 'admin_socket')
-    except NoOptionError:
-        pass
+    kwargs = get_proxysql_options(cfg)
     LOG.debug('ProxySQL config %r', kwargs)
     proxysql = ProxySQL(**kwargs)
 
