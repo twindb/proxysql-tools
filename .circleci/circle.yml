@@ -1,0 +1,9 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/proxysql_tools
+    docker:
+        - image: centos:7
+    steps:
+        - checkout
+        - run: tox
