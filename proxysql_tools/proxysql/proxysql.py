@@ -226,7 +226,7 @@ class ProxySQL(object):
         """
         Get mysql users
         :return: List of users or empty list
-        :rtype: ProxySQLMySQLUser
+        :rtype: list(ProxySQLMySQLUser)
         """
         query = "SELECT * FROM mysql_users;"
         result = self.execute(query)

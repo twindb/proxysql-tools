@@ -154,7 +154,8 @@ def user():
     """Commands for ProxySQL users"""
 
 
-@user.command()
+@user.command(name='list')
 @PASS_CFG
-def list(cfg):
+def user_list(cfg):
+    """Get user list for MySQL backends."""
     get_users(cfg)
