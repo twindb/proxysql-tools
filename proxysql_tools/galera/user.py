@@ -3,12 +3,11 @@ from __future__ import print_function
 from ConfigParser import NoOptionError
 
 from prettytable import PrettyTable
-from proxysql_tools.proxysql.proxysql import ProxySQL
+from proxysql_tools.proxysql.proxysql import ProxySQL, ProxySQLMySQLUser
 
 
-def get_users(cfg):
-    """Print list of MySQL users from mysql_users"""
-
+def proxysql_connection_params(cfg):
+    """Get ProxySQL connection params from config"""
     opts_mapping = {
         'host': 'host',
         'port': 'admin_port',
@@ -21,7 +20,11 @@ def get_users(cfg):
             args[key] = cfg.get('proxysql', opts_mapping[key])
         except NoOptionError:
             pass
+    return args
 
+def get_users(cfg):
+    """Print list of MySQL users from mysql_users"""
+    args = proxysql_connection_params(cfg)
     users = ProxySQL(**args).get_users()
 
     table = PrettyTable(['username', 'password', 'active',
@@ -45,3 +48,22 @@ def get_users(cfg):
             user.max_connections
         ])
     print(table)
+
+
+def create_user(cfg, username, password, active, use_ssl,
+                default_hostgroup, default_schema, schema_locked,
+                transaction_persistent, fast_forward,
+                backend, frontend, max_connections):
+
+    user = ProxySQLMySQLUser(user=username, password=password,
+                             active=active,use_ssl=use_ssl,
+                             default_hostgroup=default_hostgroup,
+                             default_schema=default_schema,
+                             schema_locked=schema_locked,
+                             transaction_persistent=transaction_persistent,
+                             backend=backend, frontend=frontend,
+                             fast_forward=fast_forward,
+                             max_connections=max_connections)
+    args = proxysql_connection_params(cfg)
+
+    pass
