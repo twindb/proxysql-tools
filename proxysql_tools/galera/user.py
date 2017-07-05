@@ -3,24 +3,21 @@ from __future__ import print_function
 from ConfigParser import NoOptionError
 
 from prettytable import PrettyTable
+
+from proxysql_tools import OPTIONS_MAPPING
 from proxysql_tools.proxysql.proxysql import ProxySQL, ProxySQLMySQLUser
 
 
 def proxysql_connection_params(cfg):
     """Get ProxySQL connection params from config"""
-    opts_mapping = {
-        'host': 'host',
-        'port': 'admin_port',
-        'user': 'admin_username',
-        'password': 'admin_password'
-    }
     args = {}
-    for key in opts_mapping:
+    for key in OPTIONS_MAPPING:
         try:
-            args[key] = cfg.get('proxysql', opts_mapping[key])
+            args[key] = cfg.get('proxysql', OPTIONS_MAPPING[key])
         except NoOptionError:
             pass
     return args
+
 
 def get_users(cfg):
     """Print list of MySQL users from mysql_users"""
@@ -65,5 +62,5 @@ def create_user(cfg, username, password, active, use_ssl,
                              fast_forward=fast_forward,
                              max_connections=max_connections)
     args = proxysql_connection_params(cfg)
-
+    ProxySQL(**args).add_user(user)
     pass
