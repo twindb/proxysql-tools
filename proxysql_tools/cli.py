@@ -149,6 +149,7 @@ def status(cfg):
     except OperationalError as err:
         LOG.error('Failed to talk to database: %s', err)
 
+
 @galera.group()
 def user():
     """Commands for ProxySQL users"""
@@ -159,3 +160,20 @@ def user():
 def user_list(cfg):
     """Get user list for MySQL backends."""
     get_users(cfg)
+
+
+@user.command()
+@click.argument('username')
+@click.argument('password', promt=True,
+                hide_input=True, confirmation_prompt=False)
+@click.option('--active', default=False, help='Is user active')
+@click.option('--use_ssl', default=False, help='Use SSL for user')
+@click.option('--default_hostgroup', default=0,
+              help='Default hostgroup for user')
+@click.option('--default_schema', default='information_schema',
+              help='Default shema for user')
+@click.option('--schema_locked', default=False, help='Is schema locked')
+
+@PASS_CFG
+def create(cfg, username):
+    pass
