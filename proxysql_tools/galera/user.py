@@ -1,4 +1,5 @@
 """MySQL user commands"""
+from __future__ import print_function
 from ConfigParser import NoOptionError
 
 from prettytable import PrettyTable
@@ -8,16 +9,16 @@ from proxysql_tools.proxysql.proxysql import ProxySQL
 def get_users(cfg):
     """Print list of MySQL users from mysql_users"""
 
-    option_mapping = {
+    opts_mapping = {
         'host': 'host',
         'port': 'admin_port',
         'user': 'admin_username',
         'password': 'admin_password'
     }
     args = {}
-    for key in option_mapping:
+    for key in opts_mapping:
         try:
-            args[key] = cfg.get('proxysql', option_mapping[key])
+            args[key] = cfg.get('proxysql', opts_mapping[key])
         except NoOptionError:
             pass
 
