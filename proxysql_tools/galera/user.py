@@ -49,6 +49,6 @@ def get_users(cfg):
 
 def create_user(cfg, kwargs):
     """Create user for MySQL backend"""
-    user = ProxySQLMySQLUser(kwargs)
+    user = ProxySQLMySQLUser(**kwargs)
     args = proxysql_connection_params(cfg)
     ProxySQL(**args).add_user(user)
