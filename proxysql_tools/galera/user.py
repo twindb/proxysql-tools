@@ -6,7 +6,7 @@ from prettytable import PrettyTable
 from proxysql_tools.proxysql.proxysql import ProxySQL
 
 
-def get_users(cfg):
+def get_users(cfg): # pylint: disable=duplicate-code
     """Print list of MySQL users from mysql_users"""
 
     opts_mapping = {
@@ -15,6 +15,7 @@ def get_users(cfg):
         'user': 'admin_username',
         'password': 'admin_password'
     }
+
     args = {}
     for key in opts_mapping:
         try:
