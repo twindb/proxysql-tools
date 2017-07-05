@@ -1,5 +1,4 @@
 """MySQL user commands"""
-# pylint: disable=duplicate-code
 from __future__ import print_function
 from ConfigParser import NoOptionError
 
@@ -11,10 +10,10 @@ def get_users(cfg):
     """Print list of MySQL users from mysql_users"""
 
     opts_mapping = {
-        'host': 'host',
-        'port': 'admin_port',
-        'user': 'admin_username',
-        'password': 'admin_password'
+        'host': 'host',  # pylint: disable=duplicate-code
+        'port': 'admin_port',  # pylint: disable=duplicate-code
+        'user': 'admin_username',  # pylint: disable=duplicate-code
+        'password': 'admin_password'  # pylint: disable=duplicate-code
     }
 
     args = {}
