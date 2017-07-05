@@ -6,7 +6,7 @@ from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 import click
 from pymysql import OperationalError
 
-from proxysql_tools import setup_logging, LOG, __version__
+from proxysql_tools import setup_logging, LOG, __version__, OPTIONS_MAPPING
 from proxysql_tools.aws.aws import aws_notify_master
 from proxysql_tools.cli_entrypoint.galera import galera_register
 from proxysql_tools.galera.server import server_status
@@ -51,16 +51,10 @@ def main(ctx, cfg, debug, config, version):
 def ping(cfg):
     """Checks the health of ProxySQL."""
     kwargs = {}
-    option_mapping = {
-        'host': 'host',
-        'port': 'admin_port',
-        'user': 'admin_username',
-        'password': 'admin_password'
-    }
 
-    for key in option_mapping:
+    for key in OPTIONS_MAPPING:
         try:
-            kwargs[key] = cfg.get('proxysql', option_mapping[key])
+            kwargs[key] = cfg.get('proxysql', OPTIONS_MAPPING[key])
         except NoOptionError:
             pass
 
