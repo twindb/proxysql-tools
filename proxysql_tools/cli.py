@@ -164,7 +164,7 @@ def user_list(cfg):
 
 @user.command()
 @click.argument('username')
-@click.argument('password', promt=True, hide_input=True,
+@click.option('--password', prompt=True, hide_input=True,
                 confirmation_prompt=False)
 @click.option('--active', default=False,
               help='Is user active')
