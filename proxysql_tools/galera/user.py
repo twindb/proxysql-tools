@@ -1,4 +1,5 @@
 """MySQL user commands"""
+# pylint: disable=duplicate-code
 from __future__ import print_function
 from ConfigParser import NoOptionError
 
@@ -6,7 +7,7 @@ from prettytable import PrettyTable
 from proxysql_tools.proxysql.proxysql import ProxySQL
 
 
-def get_users(cfg): # pylint: disable=duplicate-code
+def get_users(cfg):
     """Print list of MySQL users from mysql_users"""
 
     opts_mapping = {
