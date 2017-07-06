@@ -186,7 +186,16 @@ def create(cfg, username, password, active, use_ssl,
            transaction_persistent, fast_forward,
            backend, frontend, max_connections):
     """Add user of MySQL backend to ProxySQL"""
-    create_user(cfg, username, password, active, use_ssl,
-                default_hostgroup, default_schema, schema_locked,
-                transaction_persistent, fast_forward,
-                backend, frontend, max_connections)
+    kwargs = {
+        'user': username,
+        'active': active,
+        'default_hostgroup': default_hostgroup,
+        'default_schema': default_schema,
+        'schema_locked': schema_locked,
+        'transaction_persistent': transaction_persistent,
+        'backend': backend,
+        'fast_forward': fast_forward,
+        'max_connections': max_connections
+    }
+
+    create_user(cfg, kwargs)

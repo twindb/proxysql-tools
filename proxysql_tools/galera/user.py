@@ -47,20 +47,9 @@ def get_users(cfg):
     print(table)
 
 
-def create_user(cfg, username, password, active, use_ssl,
-                default_hostgroup, default_schema, schema_locked,
-                transaction_persistent, fast_forward,
-                backend, frontend, max_connections):
-
-    user = ProxySQLMySQLUser(user=username, password=password,
-                             active=active,use_ssl=use_ssl,
-                             default_hostgroup=default_hostgroup,
-                             default_schema=default_schema,
-                             schema_locked=schema_locked,
-                             transaction_persistent=transaction_persistent,
-                             backend=backend, frontend=frontend,
-                             fast_forward=fast_forward,
-                             max_connections=max_connections)
+def create_user(cfg, kwargs):
+    """Create user for MySQL backend"""
+    user = ProxySQLMySQLUser(kwargs)
     args = proxysql_connection_params(cfg)
     ProxySQL(**args).add_user(user)
     pass
