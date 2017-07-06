@@ -181,19 +181,22 @@ def user_list(cfg):
 @click.option('--max_connections', default=10000,
               help='Max connection for this user')
 @PASS_CFG
-def create(cfg, username, password, active, use_ssl,
+def create(cfg, username, password, active, use_ssl,  # pylint: disable=too-many-arguments
            default_hostgroup, default_schema, schema_locked,
            transaction_persistent, fast_forward,
            backend, frontend, max_connections):
     """Add user of MySQL backend to ProxySQL"""
     kwargs = {
         'user': username,
+        'password': password,
+        'use_ssl': use_ssl,
         'active': active,
         'default_hostgroup': default_hostgroup,
         'default_schema': default_schema,
         'schema_locked': schema_locked,
         'transaction_persistent': transaction_persistent,
         'backend': backend,
+        'frontend': frontend,
         'fast_forward': fast_forward,
         'max_connections': max_connections
     }

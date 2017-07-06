@@ -52,4 +52,3 @@ def create_user(cfg, kwargs):
     user = ProxySQLMySQLUser(kwargs)
     args = proxysql_connection_params(cfg)
     ProxySQL(**args).add_user(user)
-    pass
