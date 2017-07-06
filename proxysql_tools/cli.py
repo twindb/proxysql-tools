@@ -159,7 +159,7 @@ def user_list(cfg):
 @user.command()
 @click.argument('username')
 @click.option('--password', prompt=True, hide_input=True,
-                confirmation_prompt=False)
+              confirmation_prompt=False)
 @click.option('--active', default=False,
               help='Is user active')
 @click.option('--use_ssl', default=False,
@@ -185,8 +185,8 @@ def create(cfg, username, password, active, use_ssl,
            default_hostgroup, default_schema, schema_locked,
            transaction_persistent, fast_forward,
            backend, frontend, max_connections):
-
+    """Add user of MySQL backend to ProxySQL"""
     create_user(cfg, username, password, active, use_ssl,
-           default_hostgroup, default_schema, schema_locked,
-           transaction_persistent, fast_forward,
-           backend, frontend, max_connections)
+                default_hostgroup, default_schema, schema_locked,
+                transaction_persistent, fast_forward,
+                backend, frontend, max_connections)
