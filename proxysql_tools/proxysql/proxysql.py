@@ -272,11 +272,11 @@ class ProxySQL(object):
         self.reload_runtime()
 
     def delete_user(self, username):
-        """Delete MySQL user
+        """Delete MySQL user`
         :param username: username of user
         :type username: str
         """
-        self.execute('DELETE FROM mysql_servers WHERE username = %s',
+        self.execute('DELETE FROM mysql_servers WHERE `username` = %s',
                      (
                          username
                      ))
