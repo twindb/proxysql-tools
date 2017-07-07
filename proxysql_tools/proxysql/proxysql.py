@@ -276,7 +276,7 @@ class ProxySQL(object):
         :param username: username of user
         :type username: str
         """
-        self.execute('DELETE FROM mysql_servers WHERE username = = %s',
+        self.execute('DELETE FROM mysql_servers WHERE username = %s',
                      (
                          username
                      ))
