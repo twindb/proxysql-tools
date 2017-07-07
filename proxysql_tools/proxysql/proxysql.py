@@ -271,6 +271,17 @@ class ProxySQL(object):
         self.execute(query)
         self.reload_runtime()
 
+    def delete_user(self, username):
+        """Delete MySQL user
+        :param username: username of user
+        :type username: str
+        """
+        self.execute('DELETE FROM mysql_servers WHERE username = = %s',
+                     (
+                         username
+                     ))
+        self.reload_runtime()
+
     def register_backend(self, backend):
         """Register Galera node in ProxySQL
 
