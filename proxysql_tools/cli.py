@@ -10,7 +10,7 @@ from proxysql_tools import setup_logging, LOG, __version__, OPTIONS_MAPPING
 from proxysql_tools.aws.aws import aws_notify_master
 from proxysql_tools.cli_entrypoint.galera import galera_register
 from proxysql_tools.galera.server import server_status
-from proxysql_tools.galera.user import get_users
+from proxysql_tools.galera.user import get_users, create_user
 from proxysql_tools.proxysql.proxysql import ProxySQL
 from proxysql_tools.util.bug1258464 import bug1258464
 
@@ -143,6 +143,7 @@ def status(cfg):
     except OperationalError as err:
         LOG.error('Failed to talk to database: %s', err)
 
+
 @galera.group()
 def user():
     """Commands for ProxySQL users"""
@@ -153,3 +154,51 @@ def user():
 def user_list(cfg):
     """Get user list for MySQL backends."""
     get_users(cfg)
+
+
+@user.command()
+@click.argument('username')
+@click.option('--password', prompt=True, hide_input=True,
+              confirmation_prompt=False)
+@click.option('--active', default=False,
+              help='Is user active')
+@click.option('--use_ssl', default=False,
+              help='Use SSL for user')
+@click.option('--default_hostgroup', default=0,
+              help='Default hostgroup for user')
+@click.option('--default_schema', default='information_schema',
+              help='Default shema for user')
+@click.option('--schema_locked', default=False,
+              help='Is schema locked')
+@click.option('--transaction_persistent', default=False,
+              help='Is transaction persistent')
+@click.option('--fast_forward', default=False,
+              help='Is fast forward')
+@click.option('--backend', default=False,
+              help='Is user backend')
+@click.option('--frontend', default=True,
+              help='Is user frontend')
+@click.option('--max_connections', default=10000,
+              help='Max connection for this user')
+@PASS_CFG
+def create(cfg, username, password, active, use_ssl,  # pylint: disable=too-many-arguments
+           default_hostgroup, default_schema, schema_locked,
+           transaction_persistent, fast_forward,
+           backend, frontend, max_connections):
+    """Add user of MySQL backend to ProxySQL"""
+    kwargs = {
+        'user': username,
+        'password': password,
+        'use_ssl': use_ssl,
+        'active': active,
+        'default_hostgroup': default_hostgroup,
+        'default_schema': default_schema,
+        'schema_locked': schema_locked,
+        'transaction_persistent': transaction_persistent,
+        'backend': backend,
+        'frontend': frontend,
+        'fast_forward': fast_forward,
+        'max_connections': max_connections
+    }
+
+    create_user(cfg, kwargs)
