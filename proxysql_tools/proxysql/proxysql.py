@@ -250,11 +250,10 @@ class ProxySQL(object):
     def get_users(self):
         """
         Get mysql users
-
         :return: List of users or empty list
         :rtype: list(ProxySQLMySQLUser)
         """
-        query = "SELECT * FROM mysql_users"
+        query = "SELECT * FROM mysql_users;"
         result = self.execute(query)
         users = []
         for row in result:
@@ -272,6 +271,41 @@ class ProxySQL(object):
                                      max_connections=row['max_connections'])
             users.append(user)
         return users
+
+    def add_user(self, user):
+        """Add MySQL user
+        :param user: user for add
+        :type user: ProxySQLMySQLUser
+        """
+        query = "REPLACE INTO mysql_users(`username`, `password`, `active`, " \
+                "`use_ssl`, `default_hostgroup`, `default_schema`, `schema_locked`, " \
+                "`transaction_persistent`, `fast_forward`, `backend`, `frontend`, " \
+                "`max_connections`)" \
+                "VALUES('{username}', '{password}', {active}, {use_ssl}, " \
+                "{default_hostgroup}, '{default_schema}', {schema_locked}," \
+                "{transaction_persistent}, {fast_forward}, {backend}, {frontend}," \
+                "{max_connections})" \
+                "".format(username=user.user, password=user.password,
+                          active=int(user.active), use_ssl=int(user.active),
+                          default_hostgroup=int(user.default_hostgroup),
+                          default_schema=user.default_schema,
+                          schema_locked=int(user.schema_locked),
+                          transaction_persistent=int(user.transaction_persistent),
+                          fast_forward=int(user.fast_forward), backend=int(user.backend),
+                          frontend=int(user.frontend), max_connections=user.max_connections)
+        self.execute(query)
+        self.reload_runtime()
+
+    def delete_user(self, username):
+        """Delete MySQL user`
+        :param username: username of user
+        :type username: str
+        """
+        self.execute('DELETE FROM mysql_servers WHERE `username` = %s',
+                     (
+                         username
+                     ))
+        self.reload_runtime()
 
     def register_backend(self, backend):
         """Register Galera node in ProxySQL

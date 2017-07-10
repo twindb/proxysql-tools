@@ -4,20 +4,24 @@ from ConfigParser import NoOptionError
 
 from prettytable import PrettyTable
 
-from proxysql_tools import OPTIONS_MAPPING, LOG
-from proxysql_tools.proxysql.proxysql import ProxySQL
+from proxysql_tools import OPTIONS_MAPPING
+from proxysql_tools.proxysql.proxysql import ProxySQL, ProxySQLMySQLUser
 
 
-def get_users(cfg):
-    """Print list of MySQL users from mysql_users"""
-
+def proxysql_connection_params(cfg):
+    """Get ProxySQL connection params from config"""
     args = {}
     for key in OPTIONS_MAPPING:
         try:
             args[key] = cfg.get('proxysql', OPTIONS_MAPPING[key])
         except NoOptionError:
             pass
+    return args
 
+
+def get_users(cfg):
+    """Print list of MySQL users from mysql_users"""
+    args = proxysql_connection_params(cfg)
     users = ProxySQL(**args).get_users()
 
     table = PrettyTable(['username', 'password', 'active',
@@ -40,7 +44,17 @@ def get_users(cfg):
             user.frontend,
             user.max_connections
         ])
-    if users:
-        print(table)
-    else:
-        LOG.warning('There are no users.')
+    print(table)
+
+
+def create_user(cfg, kwargs):
+    """Create user for MySQL backend"""
+    user = ProxySQLMySQLUser(**kwargs)
+    args = proxysql_connection_params(cfg)
+    ProxySQL(**args).add_user(user)
+
+
+def delete_user(cfg, username):
+    """Delete user from MySQL backend"""
+    args = proxysql_connection_params(cfg)
+    ProxySQL(**args).delete_user(username)
