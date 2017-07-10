@@ -145,6 +145,7 @@ def status(cfg):
     except MySQLError as err:
         LOG.error('Failed to talk to database: %s', err)
 
+
 @server.command()
 @click.argument('ip_address', required=True)
 @click.argument('port', required=False, type=int, default=3306)
@@ -188,6 +189,7 @@ def set_sync(cfg, ip_address, port):
     except ProxySQLBackendNotFound as err:
         LOG.error(err)
 
+
 @galera.group()
 def user():
     """Commands for ProxySQL users"""
@@ -201,7 +203,7 @@ def user_list(cfg):
 
 
 @user.command()
-@click.argument('username')
+@click.argument('username', required=True)
 @click.option('--password', help='User password',
               type=str)
 @click.option('--active', default=False,
@@ -248,7 +250,7 @@ def create(cfg, username, password, active, use_ssl,  # pylint: disable=too-many
 
 
 @user.command()
-@click.argument('username')
+@click.argument('username', required=True)
 @click.option('--password', prompt=True,
               confirmation_prompt=False, hide_input=True)
 @PASS_CFG
@@ -262,7 +264,7 @@ def set_password(cfg, username, password):
 
 
 @user.command()
-@click.argument('username')
+@click.argument('username', required=True)
 @PASS_CFG
 def delete(cfg, username):
     """Delete MySQL backend user by username"""
