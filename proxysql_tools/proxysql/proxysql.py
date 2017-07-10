@@ -270,8 +270,7 @@ class ProxySQL(object):
                           frontend=int(user.frontend), max_connections=user.max_connections)
         self.execute(query)
         self.reload_runtime()
-        
-        
+
     def register_backend(self, backend):
         """Register Galera node in ProxySQL
 
