@@ -246,7 +246,13 @@ def create(cfg, username, password, active, use_ssl,  # pylint: disable=too-many
         'fast_forward': fast_forward,
         'max_connections': max_connections
     }
-    create_user(cfg, kwargs)
+    try:
+        create_user(cfg, kwargs)
+    except MySQLError as err:
+        LOG.error('Failed to talk to database: %s', err)
+    except (NoOptionError, NoSectionError) as err:
+        LOG.error('Failed to parse config: %s', err)
+        exit(1)
 
 
 @user.command()
@@ -261,6 +267,11 @@ def set_password(cfg, username, password):
     except ProxySQLUserNotFound:
         LOG.error("User not found")
         exit(1)
+    except MySQLError as err:
+        LOG.error('Failed to talk to database: %s', err)
+    except (NoOptionError, NoSectionError) as err:
+        LOG.error('Failed to parse config: %s', err)
+        exit(1)
 
 
 @user.command()
@@ -268,4 +279,10 @@ def set_password(cfg, username, password):
 @PASS_CFG
 def delete(cfg, username):
     """Delete MySQL backend user by username"""
-    delete_user(cfg, username)
+    try:
+        delete_user(cfg, username)
+    except MySQLError as err:
+        LOG.error('Failed to talk to database: %s', err)
+    except (NoOptionError, NoSectionError) as err:
+        LOG.error('Failed to parse config: %s', err)
+        exit(1)
