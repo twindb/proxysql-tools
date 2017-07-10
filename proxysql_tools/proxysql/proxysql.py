@@ -225,10 +225,11 @@ class ProxySQL(object):
     def get_users(self):
         """
         Get mysql users
+
         :return: List of users or empty list
         :rtype: list(ProxySQLMySQLUser)
         """
-        query = "SELECT * FROM mysql_users;"
+        query = "SELECT * FROM mysql_users"
         result = self.execute(query)
         users = []
         for row in result:

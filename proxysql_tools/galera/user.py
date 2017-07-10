@@ -4,7 +4,7 @@ from ConfigParser import NoOptionError
 
 from prettytable import PrettyTable
 
-from proxysql_tools import OPTIONS_MAPPING
+from proxysql_tools import OPTIONS_MAPPING, LOG
 from proxysql_tools.proxysql.proxysql import ProxySQL
 
 
@@ -40,4 +40,7 @@ def get_users(cfg):
             user.frontend,
             user.max_connections
         ])
-    print(table)
+    if users:
+        print(table)
+    else:
+        LOG.warning('There are no users.')
