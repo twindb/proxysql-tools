@@ -11,8 +11,8 @@ from proxysql_tools.aws.aws import aws_notify_master
 from proxysql_tools.cli_entrypoint.galera import galera_register
 from proxysql_tools.galera.server import server_status, \
     server_set_wsrep_desync
-from proxysql_tools.galera.user import get_users, create_user, delete_user
-from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
+from proxysql_tools.galera.user import get_users, create_user, delete_user, change_password
+from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, ProxySQLUserNotFound
 from proxysql_tools.proxysql.proxysql import ProxySQL
 from proxysql_tools.util.bug1258464 import bug1258464
 
@@ -202,8 +202,8 @@ def user_list(cfg):
 
 @user.command()
 @click.argument('username')
-@click.option('--password', prompt=True, hide_input=True,
-              confirmation_prompt=False)
+@click.option('--password', help='User password',
+              type=str)
 @click.option('--active', default=False,
               help='Is user active')
 @click.option('--use_ssl', default=False,
@@ -244,8 +244,20 @@ def create(cfg, username, password, active, use_ssl,  # pylint: disable=too-many
         'fast_forward': fast_forward,
         'max_connections': max_connections
     }
-
     create_user(cfg, kwargs)
+
+
+@user.command()
+@click.argument('username')
+@click.option('--password', prompt=True,
+              confirmation_prompt=False, hide_input=True)
+@PASS_CFG
+def set_password(cfg, username, password):
+    try:
+        change_password(cfg, username, password)
+    except ProxySQLUserNotFound:
+        LOG.error("User not found")
+        exit(1)
 
 
 @user.command()

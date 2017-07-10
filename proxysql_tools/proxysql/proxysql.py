@@ -5,7 +5,7 @@ import pymysql
 from pymysql.cursors import DictCursor
 
 from proxysql_tools import LOG, execute
-from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
+from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, ProxySQLUserNotFound
 
 PROXYSQL_CONNECT_TIMEOUT = 20
 
@@ -271,6 +271,20 @@ class ProxySQL(object):
                                      max_connections=row['max_connections'])
             users.append(user)
         return users
+
+    def get_user(self, username):
+        """
+        Get user by usernamed
+        :param username: Username
+        :return: User information
+        :rtype: ProxySQLMySQLUser
+        :raise: ProxySQLUserNotFound
+        """
+        result = self.execute('SELECT * FROM mysql_users WHERE username = %s',(username))
+        if not result:
+            raise ProxySQLUserNotFound
+        else:
+            return result[0]
 
     def add_user(self, user):
         """Add MySQL user

@@ -54,6 +54,14 @@ def create_user(cfg, kwargs):
     ProxySQL(**args).add_user(user)
 
 
+def change_password(cfg, username, password):
+    """Change user password"""
+    args = proxysql_connection_params(cfg)
+    user = ProxySQL(**args).get_user(username)
+    user.password = password
+    ProxySQL(**args).add_user(user)
+
+
 def delete_user(cfg, username):
     """Delete user from MySQL backend"""
     args = proxysql_connection_params(cfg)
