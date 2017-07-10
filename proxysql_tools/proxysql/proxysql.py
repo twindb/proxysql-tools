@@ -60,6 +60,7 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
         self.use_ssl = bool(use_ssl)
         self.max_latency_ms = int(max_latency_ms)
         self.comment = comment
+        self._connection = None
 
     def __eq__(self, other):
         try:
@@ -98,6 +99,30 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
                    use_ssl=self.use_ssl,
                    max_latency_ms=self.max_latency_ms,
                    comment=self.comment)
+
+    def connect(self, username, password):
+        """
+        Make a MySQL connection to the backend.
+
+        :param username: MySQL user.
+        :param password: MySQL password.
+        """
+        self._connection = pymysql.connect(host=self.hostname,
+                                           port=self.port,
+                                           user=username,
+                                           passwd=password,
+                                           cursorclass=DictCursor)
+
+    def execute(self, query, *args):
+        """Execute query in MySQL Backend.
+
+        :param query: Query to execute.
+        :type query: str
+        :return: Query result or None if the query is not supposed
+            to return result
+        :rtype: dict
+        """
+        return execute(self._connection, query, *args)
 
 
 class ProxySQLMySQLUser(object):  # pylint: disable=too-many-instance-attributes,too-few-public-methods
