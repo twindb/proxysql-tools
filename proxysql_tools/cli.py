@@ -10,7 +10,7 @@ from proxysql_tools import setup_logging, LOG, __version__, OPTIONS_MAPPING
 from proxysql_tools.aws.aws import aws_notify_master
 from proxysql_tools.cli_entrypoint.galera import galera_register
 from proxysql_tools.galera.server import server_status
-from proxysql_tools.galera.user import get_users, create_user
+from proxysql_tools.galera.user import get_users, create_user, delete_user
 from proxysql_tools.proxysql.proxysql import ProxySQL
 from proxysql_tools.util.bug1258464 import bug1258464
 
@@ -202,3 +202,11 @@ def create(cfg, username, password, active, use_ssl,  # pylint: disable=too-many
     }
 
     create_user(cfg, kwargs)
+
+
+@user.command()
+@click.argument('username')
+@PASS_CFG
+def delete(cfg, username):
+    """Delete MySQL backend user by username"""
+    delete_user(cfg, username)
