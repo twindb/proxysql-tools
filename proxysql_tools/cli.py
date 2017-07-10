@@ -253,6 +253,7 @@ def create(cfg, username, password, active, use_ssl,  # pylint: disable=too-many
               confirmation_prompt=False, hide_input=True)
 @PASS_CFG
 def set_password(cfg, username, password):
+    """Change password of exists MySQL user"""
     try:
         change_password(cfg, username, password)
     except ProxySQLUserNotFound:
