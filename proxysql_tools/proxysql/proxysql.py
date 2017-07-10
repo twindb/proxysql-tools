@@ -280,7 +280,7 @@ class ProxySQL(object):
         :rtype: ProxySQLMySQLUser
         :raise: ProxySQLUserNotFound
         """
-        result = self.execute('SELECT * FROM mysql_users WHERE username = %s',(username))
+        result = self.execute('SELECT * FROM mysql_users WHERE username = %s', (username))
         if not result:
             raise ProxySQLUserNotFound
         else:
