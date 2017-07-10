@@ -6,10 +6,11 @@ from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 import click
 from pymysql import OperationalError
 
-from proxysql_tools import setup_logging, LOG, __version__
+from proxysql_tools import setup_logging, LOG, __version__, OPTIONS_MAPPING
 from proxysql_tools.aws.aws import aws_notify_master
 from proxysql_tools.cli_entrypoint.galera import galera_register
 from proxysql_tools.galera.server import server_status
+from proxysql_tools.galera.user import get_users
 from proxysql_tools.proxysql.proxysql import ProxySQL
 from proxysql_tools.util.bug1258464 import bug1258464
 
@@ -50,16 +51,10 @@ def main(ctx, cfg, debug, config, version):
 def ping(cfg):
     """Checks the health of ProxySQL."""
     kwargs = {}
-    option_mapping = {
-        'host': 'host',
-        'port': 'admin_port',
-        'user': 'admin_username',
-        'password': 'admin_password'
-    }
 
-    for key in option_mapping:
+    for key in OPTIONS_MAPPING:
         try:
-            kwargs[key] = cfg.get('proxysql', option_mapping[key])
+            kwargs[key] = cfg.get('proxysql', OPTIONS_MAPPING[key])
         except NoOptionError:
             pass
 
@@ -147,3 +142,14 @@ def status(cfg):
 
     except OperationalError as err:
         LOG.error('Failed to talk to database: %s', err)
+
+@galera.group()
+def user():
+    """Commands for ProxySQL users"""
+
+
+@user.command(name='list')
+@PASS_CFG
+def user_list(cfg):
+    """Get user list for MySQL backends."""
+    get_users(cfg)

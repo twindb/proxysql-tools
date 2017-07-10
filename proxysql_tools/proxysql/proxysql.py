@@ -222,6 +222,32 @@ class ProxySQL(object):
         self.execute('LOAD MYSQL USERS TO RUNTIME')
         self.execute('LOAD MYSQL VARIABLES TO RUNTIME')
 
+    def get_users(self):
+        """
+        Get mysql users
+
+        :return: List of users or empty list
+        :rtype: list(ProxySQLMySQLUser)
+        """
+        query = "SELECT * FROM mysql_users"
+        result = self.execute(query)
+        users = []
+        for row in result:
+            user = ProxySQLMySQLUser(user=row['username'],
+                                     password=row['password'],
+                                     active=row['active'],
+                                     use_ssl=row['use_ssl'],
+                                     default_hostgroup=row['default_hostgroup'],
+                                     default_schema=row['default_schema'],
+                                     schema_locked=row['schema_locked'],
+                                     transaction_persistent=row['transaction_persistent'],
+                                     fast_forward=row['fast_forward'],
+                                     backend=row['backend'],
+                                     frontend=row['frontend'],
+                                     max_connections=row['max_connections'])
+            users.append(user)
+        return users
+
     def register_backend(self, backend):
         """Register Galera node in ProxySQL
 
