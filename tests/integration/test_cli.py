@@ -610,7 +610,7 @@ def test__galera_server_set_desync(percona_xtradb_cluster_three_node,
 
     result = runner.invoke(main,
                            ['--config', config_file, 'galera', 'server', 'set_desync',
-                            percona_xtradb_cluster_three_node[1]['ip'], 3306]
+                            percona_xtradb_cluster_three_node[1]['ip'], '3306']
                            )
     assert result.exit_code == 0
 
@@ -684,7 +684,7 @@ def test__galera_server_set_sync(percona_xtradb_cluster_three_node,
 
     result = runner.invoke(main,
                            ['--config', config_file, 'galera', 'server', 'set_sync',
-                            percona_xtradb_cluster_three_node[1]['ip'], 3306]
+                            percona_xtradb_cluster_three_node[1]['ip'], '3306']
                            )
     assert result.exit_code == 0
 
