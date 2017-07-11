@@ -186,16 +186,36 @@ class ProxySQLMySQLUser(object):  # pylint: disable=too-many-instance-attributes
                  max_connections=10000):
         self.user = user
         self.password = password
-        self.active = active
-        self.use_ssl = use_ssl
+        self.active = bool(active)
+        self.use_ssl = bool(use_ssl)
         self.default_hostgroup = int(default_hostgroup)
         self.default_schema = default_schema
-        self.schema_locked = schema_locked
-        self.transaction_persistent = transaction_persistent
-        self.fast_forward = fast_forward
-        self.backend = backend
-        self.frontend = frontend
+        self.schema_locked = bool(schema_locked)
+        self.transaction_persistent = bool(transaction_persistent)
+        self.fast_forward = bool(fast_forward)
+        self.backend = bool(backend)
+        self.frontend = bool(frontend)
         self.max_connections = int(max_connections)
+
+    def __eq__(self, other):
+        try:
+            return self.user == other.user and \
+                   self.password == other.password and \
+                   self.active == other.active  and \
+                   self.default_hostgroup == other.default_hostgroup and \
+                   self.default_schema == other.default_schema and \
+                   self.schema_locked == other.schema_locked and \
+                   self.transaction_persistent == other.transaction_persistent and \
+                   self.fast_forward == other.fast_forward and \
+                   self.backend == other.backend and \
+                   self.frontend == other.frontend and \
+                   self.max_connections == other.max_connections
+        except AttributeError:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
 
 
 class ProxySQL(object):
@@ -297,10 +317,10 @@ class ProxySQL(object):
         query = "REPLACE INTO mysql_users(`username`, `password`, `active`, " \
                 "`use_ssl`, `default_hostgroup`, `default_schema`, `schema_locked`, " \
                 "`transaction_persistent`, `fast_forward`, `backend`, `frontend`, " \
-                "`max_connections`)" \
+                "`max_connections`) " \
                 "VALUES('{username}', '{password}', {active}, {use_ssl}, " \
-                "{default_hostgroup}, '{default_schema}', {schema_locked}," \
-                "{transaction_persistent}, {fast_forward}, {backend}, {frontend}," \
+                "{default_hostgroup}, '{default_schema}', {schema_locked}, " \
+                "{transaction_persistent}, {fast_forward}, {backend}, {frontend}, " \
                 "{max_connections})" \
                 "".format(username=user.user, password=user.password,
                           active=int(user.active), use_ssl=int(user.active),

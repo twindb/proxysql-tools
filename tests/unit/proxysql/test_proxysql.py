@@ -255,10 +255,43 @@ def test_find_backends_raises(mock_execute, proxysql):
         proxysql.find_backends(10)
 
 
+@pytest.mark.parametrize('response, user',[
+    (
+        [{
+            u'username': 'foo',
+            u'password': 'bar',
+            u'active': False,
+            u'use_ssl': False,
+            u'default_hostgroup': 0,
+            u'default_schema': 'information_schema',
+            u'schema_locked': False,
+            u'transaction_persistent': False,
+            u'fast_forward': False,
+            u'backend': False,
+            u'frontend': True,
+            u'max_connections': '10000'
+        }]
+        ,
+        ProxySQLMySQLUser(user='foo', password='bar')
+    )
+])
 @mock.patch.object(ProxySQL, 'execute')
-def test_get_users(mock_execute, proxysql):
+def test_get_users(mock_execute, proxysql, response, user):
     query = "SELECT * FROM mysql_users;"
-    mock_execute.return_value = []
-    assert proxysql.get_users() == []
+    mock_execute.return_value = response
+    assert proxysql.get_users()[0] == user
     mock_execute.assert_called_once_with(query)
 
+
+@pytest.mark.parametrize('query',[
+    (
+        "REPLACE INTO mysql_users(`username`, `password`, `active`, `use_ssl`, `default_hostgroup`, `default_schema`, `schema_locked`, `transaction_persistent`, `fast_forward`, `backend`, `frontend`, `max_connections`) VALUES('foo', 'bar', 0, 0, 0, 'information_schema', 0, 0, 0, 0, 1, 10000)"
+    )
+])
+@mock.patch.object(ProxySQL, 'reload_runtime')
+@mock.patch.object(ProxySQL, 'execute')
+def test_add_user(mock_execute, mock_runtime, query, proxysql):
+    user = ProxySQLMySQLUser(user='foo', password='bar')
+    proxysql.add_user(user)
+    mock_execute.assert_called_once_with(query)
+    mock_runtime.assert_called_once_with()
