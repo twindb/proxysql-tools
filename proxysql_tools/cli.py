@@ -61,7 +61,7 @@ def ping(cfg):
     kwargs = {}
     for key in kwargs_maps:
         try:
-            kwargs[key] = cfg.get('proxysql', OPTIONS_MAPPING[key])
+            kwargs[key] = cfg.get('proxysql', kwargs_maps[key])
         except NoOptionError:
             pass
 
