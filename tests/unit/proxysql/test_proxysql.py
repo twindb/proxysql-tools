@@ -295,3 +295,13 @@ def test_add_user(mock_execute, mock_runtime, query, proxysql):
     proxysql.add_user(user)
     mock_execute.assert_called_once_with(query)
     mock_runtime.assert_called_once_with()
+
+
+@mock.patch.object(ProxySQL, 'reload_runtime')
+@mock.patch.object(ProxySQL, 'execute')
+def test_delete_user(mock_execute, mock_runtime, proxysql):
+    user = ProxySQLMySQLUser(user='foo', password='bar')
+    proxysql.delete_user('test')
+    query = "DELETE FROM mysql_users WHERE username='test'"
+    mock_execute.assert_called_once_with(query)
+    mock_runtime.assert_called_once_with()

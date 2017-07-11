@@ -338,10 +338,8 @@ class ProxySQL(object):
         :param username: username of user
         :type username: str
         """
-        self.execute('DELETE FROM mysql_servers WHERE `username` = %s',
-                     (
-                         username
-                     ))
+        self.execute("DELETE FROM mysql_users WHERE username='{username}'"
+                     .format(username=username))
         self.reload_runtime()
 
     def register_backend(self, backend):
