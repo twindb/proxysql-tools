@@ -305,3 +305,10 @@ def test_delete_user(mock_execute, mock_runtime, proxysql):
     query = "DELETE FROM mysql_users WHERE username='test'"
     mock_execute.assert_called_once_with(query)
     mock_runtime.assert_called_once_with()
+
+@mock.patch.object(ProxySQL, 'execute')
+def test_get_user(mock_execute, proxysql):
+    user = ProxySQLMySQLUser(user='foo', password='bar')
+    proxysql.get_user('test')
+    query = "SELECT * FROM mysql_users WHERE username = 'test'"
+    mock_execute.assert_called_once_with(query)
