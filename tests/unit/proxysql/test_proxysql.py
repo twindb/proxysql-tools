@@ -3,7 +3,7 @@ import pytest
 from pymysql import OperationalError
 from pymysql.cursors import DictCursor
 
-from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
+from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, ProxySQLUserNotFound
 from proxysql_tools.proxysql.proxysql import BackendStatus, ProxySQLMySQLBackend, \
     ProxySQLMySQLUser, ProxySQL
 
@@ -310,5 +310,16 @@ def test_delete_user(mock_execute, mock_runtime, proxysql):
 def test_get_user(mock_execute, proxysql):
     user = ProxySQLMySQLUser(user='foo', password='bar')
     proxysql.get_user('test')
+    query = "SELECT * FROM mysql_users WHERE username = 'test'"
+    mock_execute.assert_called_once_with(query)
+
+
+@mock.patch.object(ProxySQL, 'execute')
+def test_get_user_if_user_does_not_exist(mock_execute, proxysql):
+    user = ProxySQLMySQLUser(user='foo', password='bar')
+    mock_execute.return_value = []
+    with pytest.raises(ProxySQLUserNotFound):
+        proxysql.get_user('test')
+
     query = "SELECT * FROM mysql_users WHERE username = 'test'"
     mock_execute.assert_called_once_with(query)
