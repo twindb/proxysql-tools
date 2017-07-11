@@ -56,7 +56,8 @@ def bug1258464(default_file):
 
     :param default_file: Path to my.cnf
     :return: True if it killed the node.
-    :rtype: bool"""
+    :rtype: bool
+    """
     try:
         connection = pymysql.connect(read_default_file=default_file)
         with connection.cursor() as cursor:

@@ -31,10 +31,3 @@ def execute(conn, query, *args):
     cursor = conn.cursor()
     cursor.execute(query, *args)
     return cursor.fetchall()
-
-OPTIONS_MAPPING = {
-    'host': 'host',
-    'port': 'admin_port',
-    'user': 'admin_username',
-    'password': 'admin_password'
-}

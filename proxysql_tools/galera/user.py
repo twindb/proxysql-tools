@@ -1,27 +1,15 @@
 """MySQL user commands"""
 from __future__ import print_function
-from ConfigParser import NoOptionError
 
 from prettytable import PrettyTable
 
-from proxysql_tools import OPTIONS_MAPPING
 from proxysql_tools.proxysql.proxysql import ProxySQL, ProxySQLMySQLUser
-
-
-def proxysql_connection_params(cfg):
-    """Get ProxySQL connection params from config"""
-    args = {}
-    for key in OPTIONS_MAPPING:
-        try:
-            args[key] = cfg.get('proxysql', OPTIONS_MAPPING[key])
-        except NoOptionError:
-            pass
-    return args
+from proxysql_tools.util import get_proxysql_options
 
 
 def get_users(cfg):
     """Print list of MySQL users from mysql_users"""
-    args = proxysql_connection_params(cfg)
+    args = get_proxysql_options(cfg)
     users = ProxySQL(**args).get_users()
 
     table = PrettyTable(['username', 'password', 'active',
@@ -50,13 +38,13 @@ def get_users(cfg):
 def create_user(cfg, kwargs):
     """Create user for MySQL backend"""
     user = ProxySQLMySQLUser(**kwargs)
-    args = proxysql_connection_params(cfg)
+    args = get_proxysql_options(cfg)
     ProxySQL(**args).add_user(user)
 
 
 def change_password(cfg, username, password):
     """Change user password"""
-    args = proxysql_connection_params(cfg)
+    args = get_proxysql_options(cfg)
     user = ProxySQL(**args).get_user(username)
     user.password = password
     ProxySQL(**args).add_user(user)
@@ -64,5 +52,5 @@ def change_password(cfg, username, password):
 
 def delete_user(cfg, username):
     """Delete user from MySQL backend"""
-    args = proxysql_connection_params(cfg)
+    args = get_proxysql_options(cfg)
     ProxySQL(**args).delete_user(username)
