@@ -614,6 +614,11 @@ def test__galera_server_set_desync(percona_xtradb_cluster_three_node,
                            )
     assert result.exit_code == 0
 
+    result = runner.invoke(main,
+                           ['--config', config_file, 'galera', 'register']
+                           )
+    assert result.exit_code == 0
+    
     connection = pymysql.connect(
         host=proxysql_instance.host,
         port=proxysql_instance.port,
@@ -685,6 +690,11 @@ def test__galera_server_set_sync(percona_xtradb_cluster_three_node,
     result = runner.invoke(main,
                            ['--config', config_file, 'galera', 'server', 'set_sync',
                             percona_xtradb_cluster_three_node[1]['ip'], '3306']
+                           )
+    assert result.exit_code == 0
+
+    result = runner.invoke(main,
+                           ['--config', config_file, 'galera', 'register']
                            )
     assert result.exit_code == 0
 
