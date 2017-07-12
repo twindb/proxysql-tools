@@ -287,7 +287,20 @@ class ProxySQL(object):
         if not result:
             raise ProxySQLUserNotFound
         else:
-            return result[0]
+            row = result[0]
+            user = ProxySQLMySQLUser(user=row['username'],
+                                     password=row['password'],
+                                     active=row['active'],
+                                     use_ssl=row['use_ssl'],
+                                     default_hostgroup=row['default_hostgroup'],
+                                     default_schema=row['default_schema'],
+                                     schema_locked=row['schema_locked'],
+                                     transaction_persistent=row['transaction_persistent'],
+                                     fast_forward=row['fast_forward'],
+                                     backend=row['backend'],
+                                     frontend=row['frontend'],
+                                     max_connections=row['max_connections'])
+            return user
 
     def add_user(self, user):
         """Add MySQL user
@@ -318,7 +331,7 @@ class ProxySQL(object):
         :param username: username of user
         :type username: str
         """
-        self.execute('DELETE FROM mysql_servers WHERE `username` = %s',
+        self.execute('DELETE FROM mysql_users WHERE `username` = %s',
                      (
                          username
                      ))
