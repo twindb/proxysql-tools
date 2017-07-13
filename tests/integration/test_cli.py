@@ -11,6 +11,19 @@ import pymysql
 from pymysql.cursors import DictCursor
 
 
+def test__ping_command_can_be_executed_sdsad(proxysql_instance, tmpdir):
+    config = proxysql_tools_config(proxysql_instance, '127.0.0.1', '3306',
+                                   'user', 'pass', 10, 11, 'monitor',
+                                   'monitor')
+    config_file = str(tmpdir.join('proxysql-tool.cfg'))
+    with open(config_file, 'w') as fh:
+        config.write(fh)
+        proxysql_tools.LOG.debug('proxysql-tools config: \n%s', config)
+    runner = CliRunner()
+    result = runner.invoke(main, ['--config', config_file, 'galera', 'user', 'modify', 'fff'])
+    assert result.exit_code == 0
+
+
 def test__main_command_version_can_be_fetched():
     runner = CliRunner()
     result = runner.invoke(main, ['--version'])
@@ -839,6 +852,25 @@ def test__galera_user_set_password_if_user_is_not_exist(proxysql_instance, tmpdi
     assert result.exit_code == 1
 
 
+def test__galera_user_list_can_be_executed(proxysql_instance, tmpdir):
+    config = proxysql_tools_config(proxysql_instance, '127.0.0.1', '3306',
+                                   'user', 'pass', 10, 11, 'monitor',
+                                   'monitor')
+    config_file = str(tmpdir.join('proxysql-tool.cfg'))
+    with open(config_file, 'w') as fh:
+        config.write(fh)
+        proxysql_tools.LOG.debug('proxysql-tools config: \n%s', config)
+    runner = CliRunner()
+    result = runner.invoke(main,
+                           ['--config', config_file, 'galera', 'user', 'create', 'foo']
+                           )
+    assert result.exit_code == 0
+    result = runner.invoke(main,
+                           ['--config', config_file, 'galera', 'user', 'list']
+                           )
+    assert result.exit_code == 0
+
+
 def test__galera_user_delete(proxysql_instance, tmpdir):
     config = proxysql_tools_config(proxysql_instance, '127.0.0.1', '3306',
                                    'user', 'pass', 10, 11, 'monitor',
@@ -889,3 +921,5 @@ def test__galera_user_delete(proxysql_instance, tmpdir):
 
     finally:
         connection.close()
+
+
