@@ -211,24 +211,24 @@ def user_list(cfg):
 @click.argument('username', required=True)
 @click.option('--password', help='User password',
               type=str)
-@click.option('--active', default=False,
+@click.option('--active', default=False, is_flag=True,
               help='Is user active')
-@click.option('--use_ssl', default=False,
+@click.option('--use_ssl', default=False, is_flag=True,
               help='Use SSL for user')
 @click.option('--default_hostgroup', default=0,
               help='Default hostgroup for user')
 @click.option('--default_schema', default='information_schema',
               help='Default shema for user')
-@click.option('--schema_locked', default=False,
+@click.option('--schema_locked', default=False, is_flag=True,
               help='Is schema locked')
 @click.option('--transaction_persistent', default=False,
-              help='Is transaction persistent')
+              is_flag=True, help='Is transaction persistent')
 @click.option('--fast_forward', default=False,
-              help='Is fast forward')
+              is_flag=True, help='Is fast forward')
 @click.option('--backend', default=False,
-              help='Is user backend')
+              is_flag=True, help='Is user backend')
 @click.option('--frontend', default=True,
-              help='Is user frontend')
+              is_flag=True, help='Is user frontend')
 @click.option('--max_connections', default=10000,
               help='Max connection for this user')
 @PASS_CFG
