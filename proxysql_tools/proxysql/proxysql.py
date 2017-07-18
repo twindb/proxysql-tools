@@ -275,7 +275,7 @@ class ProxySQL(object):
 
     def get_user(self, username):
         """
-        Get user by usernamed
+        Get user by username
 
         :param username: Username
         :return: User information

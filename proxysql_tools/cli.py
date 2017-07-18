@@ -188,6 +188,7 @@ def set_sync(cfg, ip_address, port):
     except ProxySQLBackendNotFound as err:
         LOG.error(err)
 
+
 @galera.group()
 def user():
     """Commands for ProxySQL users"""
@@ -201,29 +202,31 @@ def user_list(cfg):
 
 
 @user.command()
-@click.argument('username')
+@click.argument('username', required=True)
 @click.option('--password', help='User password',
               type=str)
-@click.option('--active', default=False,
-              help='Is user active')
-@click.option('--use_ssl', default=False,
-              help='Use SSL for user')
+@click.option('--active', default=False, is_flag=True,
+              help='Is user active', show_default=True)
+@click.option('--use_ssl', default=False, is_flag=True,
+              help='Use SSL for user', show_default=True)
 @click.option('--default_hostgroup', default=0,
-              help='Default hostgroup for user')
+              help='Default hostgroup for user', show_default=True)
 @click.option('--default_schema', default='information_schema',
-              help='Default shema for user')
-@click.option('--schema_locked', default=False,
-              help='Is schema locked')
+              help='Default shema for user', show_default=True)
+@click.option('--schema_locked', default=False, is_flag=True,
+              help='Is schema locked', show_default=True)
 @click.option('--transaction_persistent', default=False,
-              help='Is transaction persistent')
-@click.option('--fast_forward', default=False,
-              help='Is fast forward')
-@click.option('--backend', default=False,
-              help='Is user backend')
-@click.option('--frontend', default=True,
-              help='Is user frontend')
+              is_flag=True, help='Is transaction persistent',
+              show_default=True)
+@click.option('--fast_forward', default=False, show_default=True,
+              is_flag=True, help='Is fast forward')
+@click.option('--backend', default=True, show_default=True,
+              is_flag=True, help='Is user backend')
+@click.option('--frontend', default=True, show_default=True,
+              is_flag=True, help='Is user frontend')
 @click.option('--max_connections', default=10000,
-              help='Max connection for this user')
+              help='Max connection for this user',
+              show_default=True)
 @PASS_CFG
 def create(cfg, username, password, active, use_ssl,  # pylint: disable=too-many-arguments
            default_hostgroup, default_schema, schema_locked,
