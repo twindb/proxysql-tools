@@ -76,7 +76,7 @@ def create_user(cfg, kwargs):
 def change_password(cfg, username, password):
     """Change user password"""
     password = get_encrypred_password(cfg,
-                                      password['password'])
+                                      password)
     args = proxysql_connection_params(cfg)
     user = ProxySQL(**args).get_user(username)
     user.password = password

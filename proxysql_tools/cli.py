@@ -204,7 +204,7 @@ def user_list(cfg):
 @user.command()
 @click.argument('username', required=True)
 @click.option('--password', help='User password',
-              type=str)
+              type=str, default='')
 @click.option('--active/--no-active', default=False, is_flag=True,
               help='Is user active', show_default=True)
 @click.option('--use_ssl/--no-use_ssl', default=False, is_flag=True,
