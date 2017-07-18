@@ -270,6 +270,7 @@ class ProxySQL(object):
     def get_users(self):
         """
         Get mysql users
+
         :return: List of users or empty list
         :rtype: list(ProxySQLMySQLUser)
         """
@@ -295,6 +296,10 @@ class ProxySQL(object):
     def get_user(self, username):
         """
         Get user by username
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
         :param username: Username
         :return: User information
         :rtype: ProxySQLMySQLUser
@@ -321,7 +326,9 @@ class ProxySQL(object):
             return user
 
     def add_user(self, user):
-        """Add MySQL user
+        """
+        Add MySQL user
+
         :param user: user for add
         :type user: ProxySQLMySQLUser
         """
@@ -345,7 +352,9 @@ class ProxySQL(object):
         self.reload_runtime()
 
     def delete_user(self, username):
-        """Delete MySQL user`
+        """
+        Delete MySQL user
+
         :param username: username of user
         :type username: str
         """

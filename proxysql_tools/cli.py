@@ -210,27 +210,34 @@ def user_list(cfg):
 @user.command()
 @click.argument('username', required=True)
 @click.option('--password', help='User password',
-              type=str)
-@click.option('--active', default=False, is_flag=True,
-              help='Is user active')
-@click.option('--use_ssl', default=False, is_flag=True,
-              help='Use SSL for user')
+              type=str, default='')
+@click.option('--active/--no-active', default=False, is_flag=True,
+              help='Is user active', show_default=True)
+@click.option('--use_ssl/--no-use_ssl', default=False, is_flag=True,
+              help='Use SSL for user', show_default=True)
 @click.option('--default_hostgroup', default=0,
-              help='Default hostgroup for user')
+              help='Default hostgroup for user', show_default=True)
 @click.option('--default_schema', default='information_schema',
-              help='Default shema for user')
-@click.option('--schema_locked', default=False, is_flag=True,
-              help='Is schema locked')
-@click.option('--transaction_persistent', default=False,
-              is_flag=True, help='Is transaction persistent')
-@click.option('--fast_forward', default=False,
+              help='Default shema for user', show_default=True)
+@click.option('--schema_locked/--no-schema_locked',
+              default=False, is_flag=True,
+              help='Is schema locked', show_default=True)
+@click.option('--transaction_persistent/--no-transaction_persistent',
+              default=False,
+              is_flag=True, help='Is transaction persistent',
+              show_default=True)
+@click.option('--fast_forward/--no-fast_forward', default=False,
+              show_default=True,
               is_flag=True, help='Is fast forward')
-@click.option('--backend', default=False,
+@click.option('--backend/--no-backend', default=True,
+              show_default=True,
               is_flag=True, help='Is user backend')
-@click.option('--frontend', default=True,
+@click.option('--frontend/--no-frontend', default=True,
+              show_default=True,
               is_flag=True, help='Is user frontend')
 @click.option('--max_connections', default=10000,
-              help='Max connection for this user')
+              help='Max connection for this user',
+              show_default=True)
 @PASS_CFG
 def create(cfg, username, password, active, use_ssl,  # pylint: disable=too-many-arguments
            default_hostgroup, default_schema, schema_locked,
@@ -276,6 +283,32 @@ def set_password(cfg, username, password):
         LOG.error('Failed to talk to database: %s', err)
     except (NoOptionError, NoSectionError) as err:
         LOG.error('Failed to parse config: %s', err)
+        exit(1)
+
+
+def validate_password(ctx, param, value):  # pylint: disable=unused-argument
+    """CHeck password value and confirm again if it's empty."""
+    if not value:
+        password = raw_input("Repeat for confirmation: ")
+        if password == '':
+            return password
+        else:
+            raise click.BadParameter('Passwords do not match')
+    return value
+
+
+@user.command()
+@click.argument('username')
+@click.option('--password', prompt=True, hide_input=True,
+              confirmation_prompt=True, default='',
+              callback=validate_password)
+@PASS_CFG
+def set_password(cfg, username, password):
+    """Change password of exists MySQL user"""
+    try:
+        change_password(cfg, username, password)
+    except ProxySQLUserNotFound:
+        LOG.error("User not found")
         exit(1)
 
 
