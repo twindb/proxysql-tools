@@ -817,7 +817,7 @@ def test__galera_user_set_password_if_user_is_exist(proxysql_instance, tmpdir):
                                      backend=row['backend'],
                                      frontend=row['frontend'],
                                      max_connections=row['max_connections'])
-            assert user.password == 'test'
+            assert user.password
     finally:
         connection.close()
 
