@@ -258,8 +258,8 @@ def create(cfg, username, password, active, use_ssl,  # pylint: disable=too-many
 
 @user.command()
 @click.argument('username')
-@click.option('--password', prompt=True,
-              confirmation_prompt=False, hide_input=True)
+@click.option('--password', prompt=True, hide_input=True,
+              confirmation_prompt=True, default="")
 @PASS_CFG
 def set_password(cfg, username, password):
     """Change password of exists MySQL user"""
