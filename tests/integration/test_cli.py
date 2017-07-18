@@ -786,7 +786,8 @@ def test__galera_user_set_password_if_user_is_exist(proxysql_instance, tmpdir):
         connection.close()
 
     result = runner.invoke(main,
-                           ['--config', config_file, 'galera', 'user', 'set_password', 'foo'], input='test'
+                           ['--config', config_file, 'galera', 'user', 'set_password', 'foo'],
+                           input='test\ntest\n'
                            )
 
     assert result.exit_code == 0
@@ -832,7 +833,8 @@ def test__galera_user_set_password_if_user_is_not_exist(proxysql_instance, tmpdi
     runner = CliRunner()
 
     result = runner.invoke(main,
-                           ['--config', config_file, 'galera', 'user', 'set_password', 'foo'], input='test'
+                           ['--config', config_file, 'galera', 'user', 'set_password', 'foo'],
+                           input='test\ntest\n'
                            )
 
     assert result.exit_code == 1
