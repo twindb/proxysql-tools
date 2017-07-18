@@ -260,6 +260,7 @@ def create(cfg, username, password, active, use_ssl,  # pylint: disable=too-many
     }
     try:
         create_user(cfg, kwargs)
+        LOG.info('User %s successfully created', username)
     except MySQLError as err:
         LOG.error('Failed to talk to database: %s', err)
     except (NoOptionError, NoSectionError) as err:
@@ -288,6 +289,7 @@ def set_password(cfg, username, password):
     """Change password of exists MySQL user"""
     try:
         change_password(cfg, username, password)
+        LOG.info('Password for user %s changed', username)
     except ProxySQLUserNotFound:
         LOG.error("User not found")
         exit(1)
@@ -305,6 +307,7 @@ def delete(cfg, username):
     """Delete MySQL backend user by username"""
     try:
         delete_user(cfg, username)
+        LOG.info('User %s has deleted', username)
     except MySQLError as err:
         LOG.error('Failed to talk to database: %s', err)
     except (NoOptionError, NoSectionError) as err:
