@@ -3,6 +3,8 @@ from __future__ import print_function
 from ConfigParser import NoOptionError
 
 from prettytable import PrettyTable
+from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
+
 from proxysql_tools import LOG
 from proxysql_tools import OPTIONS_MAPPING
 from proxysql_tools.proxysql.proxysql import ProxySQL, ProxySQLMySQLUser, BackendStatus
@@ -21,16 +23,20 @@ def proxysql_connection_params(cfg):
 
 def get_encrypred_password(cfg, pwd):
     args = proxysql_connection_params(cfg)
-    proxysql = ProxySQL(**args)
-    writer_hostgroup_id = int(cfg.get('galera', 'writer_hostgroup_id'))
-    backends = proxysql.find_backends(writer_hostgroup_id,
-                                      BackendStatus.online)
-    cluster_username = cfg.get('galera', 'cluster_username')
-    cluster_pwd = cfg.get('galera', 'cluster_password')
-    backends[0].connect(cluster_username, cluster_pwd)
-    result = backends[0].execute('SELECT password(%s);', (
-        pwd))
-    return result[0].values()[0]
+    try:
+        proxysql = ProxySQL(**args)
+        writer_hostgroup_id = int(cfg.get('galera', 'writer_hostgroup_id'))
+
+        backends = proxysql.find_backends(writer_hostgroup_id,
+                                          BackendStatus.online)
+        cluster_username = cfg.get('galera', 'cluster_username')
+        cluster_pwd = cfg.get('galera', 'cluster_password')
+        backends[0].connect(cluster_username, cluster_pwd)
+        result = backends[0].execute('SELECT password(%s);', (
+            pwd))
+        return result[0].values()[0]
+    except ProxySQLBackendNotFound as err:
+        LOG.error('ProxySQL backends not found: %s', err)
 
 
 def get_users(cfg):

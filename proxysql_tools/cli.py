@@ -145,6 +145,7 @@ def status(cfg):
     except MySQLError as err:
         LOG.error('Failed to talk to database: %s', err)
 
+
 @server.command()
 @click.argument('ip_address', required=True)
 @click.argument('port', required=False, type=int, default=3306)
