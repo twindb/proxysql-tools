@@ -205,24 +205,29 @@ def user_list(cfg):
 @click.argument('username', required=True)
 @click.option('--password', help='User password',
               type=str)
-@click.option('--active', default=False, is_flag=True,
+@click.option('--active/--no-active', default=False, is_flag=True,
               help='Is user active', show_default=True)
-@click.option('--use_ssl', default=False, is_flag=True,
+@click.option('--use_ssl/--no-use_ssl', default=False, is_flag=True,
               help='Use SSL for user', show_default=True)
 @click.option('--default_hostgroup', default=0,
               help='Default hostgroup for user', show_default=True)
 @click.option('--default_schema', default='information_schema',
               help='Default shema for user', show_default=True)
-@click.option('--schema_locked', default=False, is_flag=True,
+@click.option('--schema_locked/--no-schema_locked',
+              default=False, is_flag=True,
               help='Is schema locked', show_default=True)
-@click.option('--transaction_persistent', default=False,
+@click.option('--transaction_persistent/--no-transaction_persistent',
+              default=False,
               is_flag=True, help='Is transaction persistent',
               show_default=True)
-@click.option('--fast_forward', default=False, show_default=True,
+@click.option('--fast_forward/--no-fast_forward', default=False,
+              show_default=True,
               is_flag=True, help='Is fast forward')
-@click.option('--backend', default=True, show_default=True,
+@click.option('--backend/--no-backend', default=True,
+              show_default=True,
               is_flag=True, help='Is user backend')
-@click.option('--frontend', default=True, show_default=True,
+@click.option('--frontend/--no-frontend', default=True,
+              show_default=True,
               is_flag=True, help='Is user frontend')
 @click.option('--max_connections', default=10000,
               help='Max connection for this user',
