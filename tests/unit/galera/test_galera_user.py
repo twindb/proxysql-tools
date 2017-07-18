@@ -11,10 +11,12 @@ def test_get_users(mock_users, config):
     mock_users.return_value = [ProxySQLMySQLUser()]
     get_users(config)
 
+
 @mock.patch.object(ProxySQL, 'add_user')
 def test_create_user(config):
     kwargs = {
-        'user': 'root'
+        'user': 'root',
+        'password': ''
     }
     create_user(config, kwargs)
     pass
@@ -22,13 +24,16 @@ def test_create_user(config):
 
 @mock.patch.object(ProxySQL, 'add_user')
 @mock.patch.object(ProxySQL, 'get_user')
-def test_change_password(mock_add_user, mock_get_user, config):
+@mock.patch('proxysql_tools.galera.user.get_encrypred_password')
+def test_change_password(mock_add_user, mock_get_user, mock_enc_pwd, config):
+    mock_get_user.return_value = ProxySQLMySQLUser()
     change_password(config, 'root', '1235')
 
 
 @mock.patch.object(ProxySQL, 'add_user')
 @mock.patch.object(ProxySQL, 'get_user')
-def test_change_password_raise(mock_add_user, mock_get_user, config):
+@mock.patch('proxysql_tools.galera.user.get_encrypred_password')
+def test_change_password_raise(mock_add_user, mock_get_user, mock_enc_pwd, config):
     mock_get_user.side_effect = ProxySQLUserNotFound
     with pytest.raises(ProxySQLUserNotFound):
         change_password(config, 'root', '1235')
