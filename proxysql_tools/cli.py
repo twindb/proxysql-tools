@@ -256,10 +256,21 @@ def create(cfg, username, password, active, use_ssl,  # pylint: disable=too-many
     create_user(cfg, kwargs)
 
 
+def validate_password(ctx, param, value):
+    if not value:
+        password = raw_input("Repeat for confirmation: ")
+        if password == '':
+            return password
+        else:
+            raise click.BadParameter('Passwords do not match')
+    return value
+
+
 @user.command()
 @click.argument('username')
 @click.option('--password', prompt=True, hide_input=True,
-              confirmation_prompt=True, default="")
+              confirmation_prompt=True, default='',
+              callback=validate_password)
 @PASS_CFG
 def set_password(cfg, username, password):
     """Change password of exists MySQL user"""
