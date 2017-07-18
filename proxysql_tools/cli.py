@@ -267,25 +267,6 @@ def create(cfg, username, password, active, use_ssl,  # pylint: disable=too-many
         exit(1)
 
 
-@user.command()
-@click.argument('username', required=True)
-@click.option('--password', prompt=True,
-              confirmation_prompt=False, hide_input=True)
-@PASS_CFG
-def set_password(cfg, username, password):
-    """Change password of exists MySQL user"""
-    try:
-        change_password(cfg, username, password)
-    except ProxySQLUserNotFound:
-        LOG.error("User not found")
-        exit(1)
-    except MySQLError as err:
-        LOG.error('Failed to talk to database: %s', err)
-    except (NoOptionError, NoSectionError) as err:
-        LOG.error('Failed to parse config: %s', err)
-        exit(1)
-
-
 def validate_password(ctx, param, value):  # pylint: disable=unused-argument
     """CHeck password value and confirm again if it's empty."""
     if not value:
@@ -309,6 +290,11 @@ def set_password(cfg, username, password):
         change_password(cfg, username, password)
     except ProxySQLUserNotFound:
         LOG.error("User not found")
+        exit(1)
+    except MySQLError as err:
+        LOG.error('Failed to talk to database: %s', err)
+    except (NoOptionError, NoSectionError) as err:
+        LOG.error('Failed to parse config: %s', err)
         exit(1)
 
 
