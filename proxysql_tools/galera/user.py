@@ -3,9 +3,11 @@ from __future__ import print_function
 from ConfigParser import NoOptionError
 
 from prettytable import PrettyTable
+from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
 
+from proxysql_tools import LOG
 from proxysql_tools import OPTIONS_MAPPING
-from proxysql_tools.proxysql.proxysql import ProxySQL, ProxySQLMySQLUser
+from proxysql_tools.proxysql.proxysql import ProxySQL, ProxySQLMySQLUser, BackendStatus
 
 
 def proxysql_connection_params(cfg):
@@ -19,11 +21,32 @@ def proxysql_connection_params(cfg):
     return args
 
 
+def get_encrypred_password(cfg, pwd):
+    """Encrypt password with MySQL function PASSWORD()."""
+    args = proxysql_connection_params(cfg)
+    try:
+        proxysql = ProxySQL(**args)
+        writer_hostgroup_id = int(cfg.get('galera', 'writer_hostgroup_id'))
+
+        backends = proxysql.find_backends(writer_hostgroup_id,
+                                          BackendStatus.online)
+        cluster_username = cfg.get('galera', 'cluster_username')
+        cluster_pwd = cfg.get('galera', 'cluster_password')
+        backends[0].connect(cluster_username, cluster_pwd)
+        result = backends[0].execute('SELECT password(%s);', (
+            pwd))
+        return result[0].values()[0]
+    except ProxySQLBackendNotFound as err:
+        LOG.error('ProxySQL backends not found: %s', err)
+
+
 def get_users(cfg):
     """Print list of MySQL users from mysql_users"""
     args = proxysql_connection_params(cfg)
     users = ProxySQL(**args).get_users()
-
+    if not users:
+        LOG.info('User list is empty')
+        return
     table = PrettyTable(['username', 'password', 'active',
                          'use_ssl', 'default_hostgroup', 'default_schema',
                          'schema_locked', 'transaction_persistent',
@@ -49,8 +72,21 @@ def get_users(cfg):
 
 def create_user(cfg, kwargs):
     """Create user for MySQL backend"""
-    user = ProxySQLMySQLUser(**kwargs)
     args = proxysql_connection_params(cfg)
+    if kwargs['password']:
+        kwargs['password'] = get_encrypred_password(cfg,
+                                                    kwargs['password'])
+    user = ProxySQLMySQLUser(**kwargs)
+    ProxySQL(**args).add_user(user)
+
+
+def change_password(cfg, username, password):
+    """Change user password"""
+    password = get_encrypred_password(cfg,
+                                      password)
+    args = proxysql_connection_params(cfg)
+    user = ProxySQL(**args).get_user(username)
+    user.password = password
     ProxySQL(**args).add_user(user)
 
 

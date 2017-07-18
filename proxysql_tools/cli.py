@@ -11,8 +11,8 @@ from proxysql_tools.aws.aws import aws_notify_master
 from proxysql_tools.cli_entrypoint.galera import galera_register
 from proxysql_tools.galera.server import server_status, \
     server_set_wsrep_desync
-from proxysql_tools.galera.user import get_users, create_user, delete_user
-from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
+from proxysql_tools.galera.user import get_users, create_user, delete_user, change_password
+from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, ProxySQLUserNotFound
 from proxysql_tools.proxysql.proxysql import ProxySQL
 from proxysql_tools.util.bug1258464 import bug1258464
 
@@ -145,6 +145,7 @@ def status(cfg):
     except MySQLError as err:
         LOG.error('Failed to talk to database: %s', err)
 
+
 @server.command()
 @click.argument('ip_address', required=True)
 @click.argument('port', required=False, type=int, default=3306)
@@ -188,6 +189,7 @@ def set_sync(cfg, ip_address, port):
     except ProxySQLBackendNotFound as err:
         LOG.error(err)
 
+
 @galera.group()
 def user():
     """Commands for ProxySQL users"""
@@ -201,29 +203,36 @@ def user_list(cfg):
 
 
 @user.command()
-@click.argument('username')
-@click.option('--password', prompt=True, hide_input=True,
-              confirmation_prompt=False)
-@click.option('--active', default=False,
-              help='Is user active')
-@click.option('--use_ssl', default=False,
-              help='Use SSL for user')
+@click.argument('username', required=True)
+@click.option('--password', help='User password',
+              type=str, default='')
+@click.option('--active/--no-active', default=False, is_flag=True,
+              help='Is user active', show_default=True)
+@click.option('--use_ssl/--no-use_ssl', default=False, is_flag=True,
+              help='Use SSL for user', show_default=True)
 @click.option('--default_hostgroup', default=0,
-              help='Default hostgroup for user')
+              help='Default hostgroup for user', show_default=True)
 @click.option('--default_schema', default='information_schema',
-              help='Default shema for user')
-@click.option('--schema_locked', default=False,
-              help='Is schema locked')
-@click.option('--transaction_persistent', default=False,
-              help='Is transaction persistent')
-@click.option('--fast_forward', default=False,
-              help='Is fast forward')
-@click.option('--backend', default=False,
-              help='Is user backend')
-@click.option('--frontend', default=True,
-              help='Is user frontend')
+              help='Default shema for user', show_default=True)
+@click.option('--schema_locked/--no-schema_locked',
+              default=False, is_flag=True,
+              help='Is schema locked', show_default=True)
+@click.option('--transaction_persistent/--no-transaction_persistent',
+              default=False,
+              is_flag=True, help='Is transaction persistent',
+              show_default=True)
+@click.option('--fast_forward/--no-fast_forward', default=False,
+              show_default=True,
+              is_flag=True, help='Is fast forward')
+@click.option('--backend/--no-backend', default=True,
+              show_default=True,
+              is_flag=True, help='Is user backend')
+@click.option('--frontend/--no-frontend', default=True,
+              show_default=True,
+              is_flag=True, help='Is user frontend')
 @click.option('--max_connections', default=10000,
-              help='Max connection for this user')
+              help='Max connection for this user',
+              show_default=True)
 @PASS_CFG
 def create(cfg, username, password, active, use_ssl,  # pylint: disable=too-many-arguments
            default_hostgroup, default_schema, schema_locked,
@@ -244,8 +253,33 @@ def create(cfg, username, password, active, use_ssl,  # pylint: disable=too-many
         'fast_forward': fast_forward,
         'max_connections': max_connections
     }
-
     create_user(cfg, kwargs)
+
+
+def validate_password(ctx, param, value):  # pylint: disable=unused-argument
+    """CHeck password value and confirm again if it's empty."""
+    if not value:
+        password = raw_input("Repeat for confirmation: ")
+        if password == '':
+            return password
+        else:
+            raise click.BadParameter('Passwords do not match')
+    return value
+
+
+@user.command()
+@click.argument('username')
+@click.option('--password', prompt=True, hide_input=True,
+              confirmation_prompt=True, default='',
+              callback=validate_password)
+@PASS_CFG
+def set_password(cfg, username, password):
+    """Change password of exists MySQL user"""
+    try:
+        change_password(cfg, username, password)
+    except ProxySQLUserNotFound:
+        LOG.error("User not found")
+        exit(1)
 
 
 @user.command()

@@ -5,7 +5,7 @@ import pymysql
 from pymysql.cursors import DictCursor
 
 from proxysql_tools import LOG, execute
-from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
+from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, ProxySQLUserNotFound
 
 PROXYSQL_CONNECT_TIMEOUT = 20
 
@@ -250,6 +250,7 @@ class ProxySQL(object):
     def get_users(self):
         """
         Get mysql users
+
         :return: List of users or empty list
         :rtype: list(ProxySQLMySQLUser)
         """
@@ -272,8 +273,41 @@ class ProxySQL(object):
             users.append(user)
         return users
 
+    def get_user(self, username):
+        """
+        Get user by username
+
+        :param username: Username
+        :return: User information
+        :rtype: ProxySQLMySQLUser
+        :raise: ProxySQLUserNotFound
+        """
+        result = self.execute('SELECT * FROM mysql_users WHERE username = %s',
+                              (
+                                  username
+                              ))
+        if not result:
+            raise ProxySQLUserNotFound
+        else:
+            row = result[0]
+            user = ProxySQLMySQLUser(user=row['username'],
+                                     password=row['password'],
+                                     active=row['active'],
+                                     use_ssl=row['use_ssl'],
+                                     default_hostgroup=row['default_hostgroup'],
+                                     default_schema=row['default_schema'],
+                                     schema_locked=row['schema_locked'],
+                                     transaction_persistent=row['transaction_persistent'],
+                                     fast_forward=row['fast_forward'],
+                                     backend=row['backend'],
+                                     frontend=row['frontend'],
+                                     max_connections=row['max_connections'])
+            return user
+
     def add_user(self, user):
-        """Add MySQL user
+        """
+        Add MySQL user
+
         :param user: user for add
         :type user: ProxySQLMySQLUser
         """
@@ -297,11 +331,13 @@ class ProxySQL(object):
         self.reload_runtime()
 
     def delete_user(self, username):
-        """Delete MySQL user`
+        """
+        Delete MySQL user
+
         :param username: username of user
         :type username: str
         """
-        self.execute('DELETE FROM mysql_servers WHERE `username` = %s',
+        self.execute('DELETE FROM mysql_users WHERE `username` = %s',
                      (
                          username
                      ))
