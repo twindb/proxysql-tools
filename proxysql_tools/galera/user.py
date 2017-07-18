@@ -22,6 +22,7 @@ def proxysql_connection_params(cfg):
 
 
 def get_encrypred_password(cfg, pwd):
+    """Encrypt password with MySQL function PASSWORD()."""
     args = proxysql_connection_params(cfg)
     try:
         proxysql = ProxySQL(**args)
