@@ -302,14 +302,21 @@ def modify(ctx, cfg, username):
     """Modify MySQL backend user by username"""
     attrs = {
         '--use_ssl': 'use_ssl',
+        '--no-use_ssl': 'use_ssl',
         '--active': 'active',
+        '--no-active': 'active',
         '--default_hostgroup': 'default_hostgroup',
         '--default_schema': 'default_schema',
         '--schema_locked': 'schema_locked',
+        '--no-schema_locked': 'schema_locked',
         '--transaction_persistent': 'transaction_persistent',
+        '--no-transaction_persistent': 'transaction_persistent',
         '--backend': 'backend',
         '--frontend': 'frontend',
+        '--no-backend': 'backend',
+        '--no-frontend': 'frontend',
         '--fast_forward': 'fast_forward',
+        '--no-fast_forward': 'fast_forward',
         '--max_connections': 'max_connections'
     }
 
@@ -333,7 +340,10 @@ def modify(ctx, cfg, username):
                         params[attrs[ctx.args[i]]] = value
                     i += 2
                     continue
-            params[attrs[ctx.args[i]]] = True
+            if ctx.args[i].startswith('--no-'):
+                params[attrs[ctx.args[i]]] = False
+            else:
+                params[attrs[ctx.args[i]]] = True
         else:
             LOG.error('Unexpected argument: %s', args[i])
             exit(1)
