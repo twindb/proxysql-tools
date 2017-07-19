@@ -57,7 +57,7 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
         self.compression = int(compression)
         self.max_connections = int(max_connections)
         self.max_replication_lag = int(max_replication_lag)
-        self.use_ssl = bool(use_ssl)
+        self.use_ssl = bool(int(use_ssl))
         self.max_latency_ms = int(max_latency_ms)
         self.comment = comment
         self._connection = None
@@ -186,22 +186,22 @@ class ProxySQLMySQLUser(object):  # pylint: disable=too-many-instance-attributes
                  max_connections=10000):
         self.username = username
         self.password = password
-        self.active = bool(active)
-        self.use_ssl = bool(use_ssl)
+        self.active = bool(int(active))
+        self.use_ssl = bool(int(use_ssl))
         self.default_hostgroup = int(default_hostgroup)
         self.default_schema = default_schema
-        self.schema_locked = bool(schema_locked)
-        self.transaction_persistent = bool(transaction_persistent)
-        self.fast_forward = bool(fast_forward)
-        self.backend = bool(backend)
-        self.frontend = bool(frontend)
+        self.schema_locked = bool(int(schema_locked))
+        self.transaction_persistent = bool(int(transaction_persistent))
+        self.fast_forward = bool(int(fast_forward))
+        self.backend = bool(int(backend))
+        self.frontend = bool(int(frontend))
         self.max_connections = int(max_connections)
 
     def __eq__(self, other):
         try:
             return self.username == other.username and \
                    self.password == other.password and \
-                   self.active == other.active  and \
+                   self.active == other.active and \
                    self.default_hostgroup == other.default_hostgroup and \
                    self.default_schema == other.default_schema and \
                    self.schema_locked == other.schema_locked and \
