@@ -240,7 +240,7 @@ def create(cfg, username, password, active, use_ssl,  # pylint: disable=too-many
            backend, frontend, max_connections):
     """Add user of MySQL backend to ProxySQL"""
     kwargs = {
-        'user': username,
+        'username': username,
         'password': password,
         'use_ssl': use_ssl,
         'active': active,

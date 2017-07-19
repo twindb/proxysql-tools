@@ -54,7 +54,7 @@ def test_proxysql_mysql_user():
                            backend=True,
                            frontend=False,
                            max_connections='10')
-    assert mu.user == 'foo'
+    assert mu.username == 'foo'
     assert mu.password == 'qwerty'
     assert mu.active is True
     assert mu.use_ssl is True
