@@ -42,7 +42,7 @@ def test_proxysql_mysql_backend():
 
 
 def test_proxysql_mysql_user():
-    mu = ProxySQLMySQLUser(user='foo',
+    mu = ProxySQLMySQLUser(username='foo',
                            password='qwerty',
                            active=True,
                            use_ssl=True,
@@ -289,7 +289,7 @@ def test_get_users(mock_execute, proxysql, response):
 @mock.patch.object(ProxySQL, 'reload_runtime')
 @mock.patch.object(ProxySQL, 'execute')
 def test_add_user(mock_execute, mock_runtime, query, proxysql):
-    user = ProxySQLMySQLUser(user='foo', password='bar')
+    user = ProxySQLMySQLUser(username='foo', password='bar')
     proxysql.add_user(user)
     mock_execute.assert_called_once_with(query)
     mock_runtime.assert_called_once_with()
@@ -298,7 +298,7 @@ def test_add_user(mock_execute, mock_runtime, query, proxysql):
 @mock.patch.object(ProxySQL, 'reload_runtime')
 @mock.patch.object(ProxySQL, 'execute')
 def test_delete_user(mock_execute, mock_runtime, proxysql):
-    user = ProxySQLMySQLUser(user='foo', password='bar')
+    user = ProxySQLMySQLUser(username='foo', password='bar')
     proxysql.delete_user('test')
     query = "DELETE FROM mysql_users WHERE username='test'"
     mock_execute.assert_called_once_with(query)
@@ -306,7 +306,7 @@ def test_delete_user(mock_execute, mock_runtime, proxysql):
 
 @mock.patch.object(ProxySQL, 'execute')
 def test_get_user(mock_execute, proxysql):
-    user = ProxySQLMySQLUser(user='foo', password='bar')
+    user = ProxySQLMySQLUser(username='foo', password='bar')
     proxysql.get_user('test')
     query = "SELECT * FROM mysql_users WHERE username = 'test'"
     mock_execute.assert_called_once_with(query)
@@ -314,7 +314,7 @@ def test_get_user(mock_execute, proxysql):
 
 @mock.patch.object(ProxySQL, 'execute')
 def test_get_user_if_user_does_not_exist(mock_execute, proxysql):
-    user = ProxySQLMySQLUser(user='foo', password='bar')
+    user = ProxySQLMySQLUser(username='foo', password='bar')
     mock_execute.return_value = []
     with pytest.raises(ProxySQLUserNotFound):
         proxysql.get_user('test')
