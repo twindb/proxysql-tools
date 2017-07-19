@@ -318,25 +318,25 @@ def modify(ctx, cfg, username):
     while i < len(args):
         if args[i] in attrs.keys():
             if args[i] in ['--max_connections',
-                               '--default_schema',
-                               '--default_hostgroup']:
+                           '--default_schema',
+                           '--default_hostgroup']:
                 if i >= len(args) - 1:
                     LOG.error('Arguments error')
                     exit(1)
                 else:
                     value = args[i+1]
                     if args[i] in ['--max_connections',
-                                       '--default_hostgroup']:
+                                   '--default_hostgroup']:
                         params[attrs[ctx.args[i]]] = int(value)
                     else:
                         params[attrs[ctx.args[i]]] = value
-                    i=i+2
+                    i += 2
                     continue
             params[attrs[ctx.args[i]]] = True
         else:
             LOG.error('Unexpected argument: %s', args[i])
             exit(1)
-        i+=1
+        i += 1
     try:
         modify_user(cfg, username, params)
         LOG.info("User %s has modified", username)
