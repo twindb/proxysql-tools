@@ -38,7 +38,7 @@ def get_users(cfg):
                          'frontend', 'max_connections'])
     for user in users:
         table.add_row([
-            user.user,
+            user.username,
             user.password,
             user.active,
             user.use_ssl,
