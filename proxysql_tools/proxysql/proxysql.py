@@ -179,10 +179,10 @@ class ProxySQLMySQLUser(object):  # pylint: disable=too-many-instance-attributes
 
 .. _hostgroup: http://bit.ly/2rGnT5i
     """
-    def __init__(self, user='root', password=None, active=False, use_ssl=False,  # pylint: disable=too-many-arguments
+    def __init__(self, user='root', password=None, active=True, use_ssl=False,  # pylint: disable=too-many-arguments
                  default_hostgroup=0, default_schema='information_schema',
                  schema_locked=False, transaction_persistent=False,
-                 fast_forward=False, backend=False, frontend=True,
+                 fast_forward=False, backend=True, frontend=True,
                  max_connections=10000):
         self.user = user
         self.password = password
@@ -296,10 +296,7 @@ class ProxySQL(object):
     def get_user(self, username):
         """
         Get user by username
-<<<<<<< HEAD
-=======
 
->>>>>>> develop
         :param username: Username
         :return: User information
         :rtype: ProxySQLMySQLUser
