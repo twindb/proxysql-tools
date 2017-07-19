@@ -11,7 +11,7 @@ from proxysql_tools.aws.aws import aws_notify_master
 from proxysql_tools.cli_entrypoint.galera import galera_register
 from proxysql_tools.galera.server import server_status, \
     server_set_wsrep_desync
-from proxysql_tools.galera.user import get_users, create_user, delete_user, change_password
+from proxysql_tools.galera.user import get_users, create_user, delete_user, change_password, modify_user
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, ProxySQLUserNotFound
 from proxysql_tools.proxysql.proxysql import ProxySQL
 from proxysql_tools.util.bug1258464 import bug1258464
@@ -288,3 +288,60 @@ def set_password(cfg, username, password):
 def delete(cfg, username):
     """Delete MySQL backend user by username"""
     delete_user(cfg, username)
+
+
+@user.command(name='modify', context_settings=dict(
+    ignore_unknown_options=True,
+    allow_extra_args=True
+))
+@click.argument('username')
+@PASS_CFG
+@click.pass_context
+def modify(ctx, cfg, username):
+    """Modify MySQL backend user by username"""
+    attrs = {
+        '--use_ssl': 'use_ssl',
+        '--active': 'active',
+        '--default_hostgroup': 'default_hostgroup',
+        '--default_schema': 'default_schema',
+        '--schema_locked': 'schema_locked',
+        '--transaction_persistent': 'transaction_persistent',
+        '--backend': 'backend',
+        '--frontend': 'frontend',
+        '--fast_forward': 'fast_forward',
+        '--max_connections': 'max_connections'
+    }
+
+    params = {}
+    args = ctx.args
+    i = 0
+    while i < len(args):
+        if args[i] in attrs.keys():
+            if args[i] in ['--max_connections',
+                               '--default_schema',
+                               '--default_hostgroup']:
+                if i >= len(args) - 1:
+                    LOG.error('Arguments error')
+                    exit(1)
+                else:
+                    value = args[i+1]
+                    if args[i] in ['--max_connections',
+                                       '--default_hostgroup']:
+                        params[attrs[ctx.args[i]]] = int(value)
+                    else:
+                        params[attrs[ctx.args[i]]] = value
+                    i=i+2
+                    continue
+            params[attrs[ctx.args[i]]] = True
+        else:
+            LOG.error('Unexpected argument: %s', args[i])
+            exit(1)
+        i+=1
+    try:
+        modify_user(cfg, username, params)
+        LOG.info("User %s has modified", username)
+    except ProxySQLUserNotFound:
+        LOG.error("User not found")
+        exit(1)
+    except MySQLError as err:
+        LOG.error('Failed to talk to database: %s', err)

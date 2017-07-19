@@ -94,3 +94,13 @@ def delete_user(cfg, username):
     """Delete user from MySQL backend"""
     args = proxysql_connection_params(cfg)
     ProxySQL(**args).delete_user(username)
+
+
+def modify_user(cfg, username, user_params):
+    args = proxysql_connection_params(cfg)
+    proxysql = ProxySQL(**args)
+    user = proxysql.get_user(username)
+
+    for key, value in user_params.iteritems():
+        user.__setattr__(key, value)
+    proxysql.add_user(user)
