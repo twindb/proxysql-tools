@@ -11,7 +11,8 @@ from proxysql_tools.aws.aws import aws_notify_master
 from proxysql_tools.cli_entrypoint.galera import galera_register
 from proxysql_tools.galera.server import server_status, \
     server_set_wsrep_desync
-from proxysql_tools.galera.user import get_users, create_user, delete_user, change_password, modify_user
+from proxysql_tools.galera.user import get_users, create_user, delete_user, \
+    change_password, modify_user
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, ProxySQLUserNotFound
 from proxysql_tools.proxysql.proxysql import ProxySQL
 from proxysql_tools.util.bug1258464 import bug1258464
