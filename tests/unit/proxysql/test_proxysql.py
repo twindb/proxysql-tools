@@ -68,6 +68,33 @@ def test_proxysql_mysql_user():
     assert mu.max_connections == 10
 
 
+def test_proxysql_mysql_user_with_type_conversion():
+    mu = ProxySQLMySQLUser(username='foo',
+                           password='qwerty',
+                           active='0',
+                           use_ssl='0',
+                           default_hostgroup='10',
+                           default_schema='bar',
+                           schema_locked='0',
+                           transaction_persistent='0',
+                           fast_forward='0',
+                           backend='0',
+                           frontend=0,
+                           max_connections='10')
+    assert mu.username == 'foo'
+    assert mu.password == 'qwerty'
+    assert mu.active is False
+    assert mu.use_ssl is False
+    assert mu.default_hostgroup == 10
+    assert mu.default_schema == 'bar'
+    assert mu.schema_locked is False
+    assert mu.transaction_persistent is False
+    assert mu.fast_forward is False
+    assert mu.backend is False
+    assert mu.frontend is False
+    assert mu.max_connections == 10
+
+
 def test_proxysql():
     ps = ProxySQL(host='foo',
                   port='3307',
