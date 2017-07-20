@@ -311,4 +311,3 @@ def modify(ctx, cfg, username):
     except ValueError:
         LOG.error("Invalid input")
         exit(1)
-
