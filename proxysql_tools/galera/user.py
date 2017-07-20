@@ -8,6 +8,7 @@ from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
 from proxysql_tools import LOG
 from proxysql_tools import OPTIONS_MAPPING
 from proxysql_tools.proxysql.proxysql import ProxySQL, ProxySQLMySQLUser, BackendStatus
+from proxysql_tools.util import parse_user_arguments
 
 
 def proxysql_connection_params(cfg):
@@ -96,12 +97,13 @@ def delete_user(cfg, username):
     ProxySQL(**args).delete_user(username)
 
 
-def modify_user(cfg, username, user_params):
+def modify_user(cfg, username, user_args):
     """Modify user from MySQL backend"""
+
     args = proxysql_connection_params(cfg)
     proxysql = ProxySQL(**args)
     user = proxysql.get_user(username)
-
-    for key, value in user_params.iteritems():
+    params = parse_user_arguments(user_args)
+    for key, value in params.iteritems():
         user.__setattr__(key, value)
     proxysql.add_user(user)

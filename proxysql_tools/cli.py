@@ -300,59 +300,15 @@ def delete(cfg, username):
 @click.pass_context
 def modify(ctx, cfg, username):
     """Modify MySQL backend user by username"""
-    attrs = {
-        '--use_ssl': 'use_ssl',
-        '--no-use_ssl': 'use_ssl',
-        '--active': 'active',
-        '--no-active': 'active',
-        '--default_hostgroup': 'default_hostgroup',
-        '--default_schema': 'default_schema',
-        '--schema_locked': 'schema_locked',
-        '--no-schema_locked': 'schema_locked',
-        '--transaction_persistent': 'transaction_persistent',
-        '--no-transaction_persistent': 'transaction_persistent',
-        '--backend': 'backend',
-        '--frontend': 'frontend',
-        '--no-backend': 'backend',
-        '--no-frontend': 'frontend',
-        '--fast_forward': 'fast_forward',
-        '--no-fast_forward': 'fast_forward',
-        '--max_connections': 'max_connections'
-    }
-
-    params = {}
-    args = ctx.args
-    i = 0
-    while i < len(args):
-        if args[i] in attrs.keys():
-            if args[i] in ['--max_connections',
-                           '--default_schema',
-                           '--default_hostgroup']:
-                if i >= len(args) - 1:
-                    LOG.error('Arguments error')
-                    exit(1)
-                else:
-                    value = args[i+1]
-                    if args[i] in ['--max_connections',
-                                   '--default_hostgroup']:
-                        params[attrs[ctx.args[i]]] = int(value)
-                    else:
-                        params[attrs[ctx.args[i]]] = value
-                    i += 2
-                    continue
-            if ctx.args[i].startswith('--no-'):
-                params[attrs[ctx.args[i]]] = False
-            else:
-                params[attrs[ctx.args[i]]] = True
-        else:
-            LOG.error('Unexpected argument: %s', args[i])
-            exit(1)
-        i += 1
     try:
-        modify_user(cfg, username, params)
+        modify_user(cfg, username, ctx.args)
         LOG.info("User %s has modified", username)
     except ProxySQLUserNotFound:
         LOG.error("User not found")
         exit(1)
     except MySQLError as err:
         LOG.error('Failed to talk to database: %s', err)
+    except ValueError:
+        LOG.error("Invalid input")
+        exit(1)
+
