@@ -15,7 +15,7 @@ def test_get_users(mock_users, config):
 @mock.patch.object(ProxySQL, 'add_user')
 def test_create_user(config):
     kwargs = {
-        'user': 'root',
+        'username': 'root',
         'password': ''
     }
     create_user(config, kwargs)

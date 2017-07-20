@@ -57,7 +57,7 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
         self.compression = int(compression)
         self.max_connections = int(max_connections)
         self.max_replication_lag = int(max_replication_lag)
-        self.use_ssl = bool(use_ssl)
+        self.use_ssl = bool(int(use_ssl))
         self.max_latency_ms = int(max_latency_ms)
         self.comment = comment
         self._connection = None
@@ -148,7 +148,7 @@ class ProxySQLMySQLUser(object):  # pylint: disable=too-many-instance-attributes
         UNIQUE (username, frontend))
 
 
-:param user: MySQL username to connect to ProxySQL or Galera node.
+:param username: MySQL username to connect to ProxySQL or Galera node.
 :param password: MySQL password.
 :param active: Users with active = 0 will be tracked in the database,
     but will be never loaded in the in-memory data structures.
@@ -179,29 +179,29 @@ class ProxySQLMySQLUser(object):  # pylint: disable=too-many-instance-attributes
 
 .. _hostgroup: http://bit.ly/2rGnT5i
     """
-    def __init__(self, user='root', password=None, active=False, use_ssl=False,  # pylint: disable=too-many-arguments
+    def __init__(self, username='root', password=None, active=True, use_ssl=False,  # pylint: disable=too-many-arguments
                  default_hostgroup=0, default_schema='information_schema',
                  schema_locked=False, transaction_persistent=False,
-                 fast_forward=False, backend=False, frontend=True,
+                 fast_forward=False, backend=True, frontend=True,
                  max_connections=10000):
-        self.user = user
+        self.username = username
         self.password = password
-        self.active = bool(active)
-        self.use_ssl = bool(use_ssl)
+        self.active = bool(int(active))
+        self.use_ssl = bool(int(use_ssl))
         self.default_hostgroup = int(default_hostgroup)
         self.default_schema = default_schema
-        self.schema_locked = bool(schema_locked)
-        self.transaction_persistent = bool(transaction_persistent)
-        self.fast_forward = bool(fast_forward)
-        self.backend = bool(backend)
-        self.frontend = bool(frontend)
+        self.schema_locked = bool(int(schema_locked))
+        self.transaction_persistent = bool(int(transaction_persistent))
+        self.fast_forward = bool(int(fast_forward))
+        self.backend = bool(int(backend))
+        self.frontend = bool(int(frontend))
         self.max_connections = int(max_connections)
 
     def __eq__(self, other):
         try:
-            return self.user == other.user and \
+            return self.username == other.username and \
                    self.password == other.password and \
-                   self.active == other.active  and \
+                   self.active == other.active and \
                    self.default_hostgroup == other.default_hostgroup and \
                    self.default_schema == other.default_schema and \
                    self.schema_locked == other.schema_locked and \
@@ -278,7 +278,7 @@ class ProxySQL(object):
         result = self.execute(query)
         users = []
         for row in result:
-            user = ProxySQLMySQLUser(user=row['username'],
+            user = ProxySQLMySQLUser(username=row['username'],
                                      password=row['password'],
                                      active=row['active'],
                                      use_ssl=row['use_ssl'],
@@ -296,10 +296,7 @@ class ProxySQL(object):
     def get_user(self, username):
         """
         Get user by username
-<<<<<<< HEAD
-=======
 
->>>>>>> develop
         :param username: Username
         :return: User information
         :rtype: ProxySQLMySQLUser
@@ -311,7 +308,7 @@ class ProxySQL(object):
             raise ProxySQLUserNotFound
         else:
             row = result[0]
-            user = ProxySQLMySQLUser(user=row['username'],
+            user = ProxySQLMySQLUser(username=row['username'],
                                      password=row['password'],
                                      active=row['active'],
                                      use_ssl=row['use_ssl'],
@@ -340,8 +337,8 @@ class ProxySQL(object):
                 "{default_hostgroup}, '{default_schema}', {schema_locked}, " \
                 "{transaction_persistent}, {fast_forward}, {backend}, {frontend}, " \
                 "{max_connections})" \
-                "".format(username=user.user, password=user.password,
-                          active=int(user.active), use_ssl=int(user.active),
+                "".format(username=user.username, password=user.password,
+                          active=int(user.active), use_ssl=int(user.use_ssl),
                           default_hostgroup=int(user.default_hostgroup),
                           default_schema=user.default_schema,
                           schema_locked=int(user.schema_locked),

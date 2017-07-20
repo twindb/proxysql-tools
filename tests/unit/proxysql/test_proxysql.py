@@ -42,7 +42,7 @@ def test_proxysql_mysql_backend():
 
 
 def test_proxysql_mysql_user():
-    mu = ProxySQLMySQLUser(user='foo',
+    mu = ProxySQLMySQLUser(username='foo',
                            password='qwerty',
                            active=True,
                            use_ssl=True,
@@ -54,7 +54,7 @@ def test_proxysql_mysql_user():
                            backend=True,
                            frontend=False,
                            max_connections='10')
-    assert mu.user == 'foo'
+    assert mu.username == 'foo'
     assert mu.password == 'qwerty'
     assert mu.active is True
     assert mu.use_ssl is True
@@ -255,11 +255,11 @@ def test_find_backends_raises(mock_execute, proxysql):
         proxysql.find_backends(10)
 
 
-@pytest.mark.parametrize('response, user',[
+@pytest.mark.parametrize('response',[
     (
         [{
             u'username': 'foo',
-            u'password': 'bar',
+            u'password': '',
             u'active': False,
             u'use_ssl': False,
             u'default_hostgroup': 0,
@@ -271,27 +271,25 @@ def test_find_backends_raises(mock_execute, proxysql):
             u'frontend': True,
             u'max_connections': '10000'
         }]
-        ,
-        ProxySQLMySQLUser(user='foo', password='bar')
     )
 ])
 @mock.patch.object(ProxySQL, 'execute')
-def test_get_users(mock_execute, proxysql, response, user):
+def test_get_users(mock_execute, proxysql, response):
     query = "SELECT * FROM mysql_users;"
     mock_execute.return_value = response
-    assert proxysql.get_users()[0] == user
+    proxysql.get_users()
     mock_execute.assert_called_once_with(query)
 
 
 @pytest.mark.parametrize('query',[
     (
-        "REPLACE INTO mysql_users(`username`, `password`, `active`, `use_ssl`, `default_hostgroup`, `default_schema`, `schema_locked`, `transaction_persistent`, `fast_forward`, `backend`, `frontend`, `max_connections`) VALUES('foo', 'bar', 0, 0, 0, 'information_schema', 0, 0, 0, 0, 1, 10000)"
+        "REPLACE INTO mysql_users(`username`, `password`, `active`, `use_ssl`, `default_hostgroup`, `default_schema`, `schema_locked`, `transaction_persistent`, `fast_forward`, `backend`, `frontend`, `max_connections`) VALUES('foo', '', 1, 0, 0, 'information_schema', 0, 0, 0, 1, 1, 10000)"
     )
 ])
 @mock.patch.object(ProxySQL, 'reload_runtime')
 @mock.patch.object(ProxySQL, 'execute')
 def test_add_user(mock_execute, mock_runtime, query, proxysql):
-    user = ProxySQLMySQLUser(user='foo', password='bar')
+    user = ProxySQLMySQLUser(username='foo', password='')
     proxysql.add_user(user)
     mock_execute.assert_called_once_with(query)
     mock_runtime.assert_called_once_with()
@@ -300,7 +298,7 @@ def test_add_user(mock_execute, mock_runtime, query, proxysql):
 @mock.patch.object(ProxySQL, 'reload_runtime')
 @mock.patch.object(ProxySQL, 'execute')
 def test_delete_user(mock_execute, mock_runtime, proxysql):
-    user = ProxySQLMySQLUser(user='foo', password='bar')
+    user = ProxySQLMySQLUser(username='foo', password='bar')
     proxysql.delete_user('test')
     query = "DELETE FROM mysql_users WHERE username='test'"
     mock_execute.assert_called_once_with(query)
@@ -308,7 +306,7 @@ def test_delete_user(mock_execute, mock_runtime, proxysql):
 
 @mock.patch.object(ProxySQL, 'execute')
 def test_get_user(mock_execute, proxysql):
-    user = ProxySQLMySQLUser(user='foo', password='bar')
+    user = ProxySQLMySQLUser(username='foo', password='bar')
     proxysql.get_user('test')
     query = "SELECT * FROM mysql_users WHERE username = 'test'"
     mock_execute.assert_called_once_with(query)
@@ -316,7 +314,7 @@ def test_get_user(mock_execute, proxysql):
 
 @mock.patch.object(ProxySQL, 'execute')
 def test_get_user_if_user_does_not_exist(mock_execute, proxysql):
-    user = ProxySQLMySQLUser(user='foo', password='bar')
+    user = ProxySQLMySQLUser(username='foo', password='bar')
     mock_execute.return_value = []
     with pytest.raises(ProxySQLUserNotFound):
         proxysql.get_user('test')
