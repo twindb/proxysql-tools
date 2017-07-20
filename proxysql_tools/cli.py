@@ -66,10 +66,10 @@ def ping(cfg):
             pass
 
     if ProxySQL(**kwargs).ping():
-        LOG.debug('ProxySQL is alive')
+        LOG.info('ProxySQL is alive')
         exit(0)
     else:
-        LOG.debug('ProxySQL is dead')
+        LOG.info('ProxySQL is dead')
         exit(1)
 
 
