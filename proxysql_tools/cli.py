@@ -6,7 +6,7 @@ from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 import click
 from pymysql import MySQLError
 
-from proxysql_tools import setup_logging, LOG, __version__, OPTIONS_MAPPING
+from proxysql_tools import setup_logging, LOG, __version__
 from proxysql_tools.aws.aws import aws_notify_master
 from proxysql_tools.cli_entrypoint.galera import galera_register
 from proxysql_tools.galera.server import server_status, \
@@ -53,19 +53,24 @@ def main(ctx, cfg, debug, config, version):
 @PASS_CFG
 def ping(cfg):
     """Checks the health of ProxySQL."""
+    kwargs_maps = {
+        'host': 'host',
+        'port': 'admin_port',
+        'user': 'admin_username',
+        'password': 'admin_password'
+    }
     kwargs = {}
-
-    for key in OPTIONS_MAPPING:
+    for key in kwargs_maps:
         try:
-            kwargs[key] = cfg.get('proxysql', OPTIONS_MAPPING[key])
+            kwargs[key] = cfg.get('proxysql', kwargs_maps[key])
         except NoOptionError:
             pass
 
     if ProxySQL(**kwargs).ping():
-        LOG.debug('ProxySQL is alive')
+        LOG.info('ProxySQL is alive')
         exit(0)
     else:
-        LOG.debug('ProxySQL is dead')
+        LOG.info('ProxySQL is dead')
         exit(1)
 
 
@@ -206,31 +211,26 @@ def user_list(cfg):
 @user.command()
 @click.argument('username', required=True)
 @click.option('--password', help='User password',
-              type=str, default='')
-@click.option('--active/--no-active', default=False, is_flag=True,
+              type=str, default="")
+@click.option('--active/--no-active', default=True,
               help='Is user active', show_default=True)
-@click.option('--use_ssl/--no-use_ssl', default=False, is_flag=True,
+@click.option('--use_ssl/--no-use_ssl', default=False,
               help='Use SSL for user', show_default=True)
 @click.option('--default_hostgroup', default=0,
               help='Default hostgroup for user', show_default=True)
 @click.option('--default_schema', default='information_schema',
               help='Default shema for user', show_default=True)
-@click.option('--schema_locked/--no-schema_locked',
-              default=False, is_flag=True,
+@click.option('--schema_locked/--no-schema_locked', default=False,
               help='Is schema locked', show_default=True)
 @click.option('--transaction_persistent/--no-transaction_persistent',
-              default=False,
-              is_flag=True, help='Is transaction persistent',
+              default=False, help='Is transaction persistent',
               show_default=True)
 @click.option('--fast_forward/--no-fast_forward', default=False,
-              show_default=True,
-              is_flag=True, help='Is fast forward')
+              show_default=True, help='Is fast forward')
 @click.option('--backend/--no-backend', default=True,
-              show_default=True,
-              is_flag=True, help='Is user backend')
+              show_default=True, help='Is user backend')
 @click.option('--frontend/--no-frontend', default=True,
-              show_default=True,
-              is_flag=True, help='Is user frontend')
+              show_default=True, help='Is user frontend')
 @click.option('--max_connections', default=10000,
               help='Max connection for this user',
               show_default=True)
@@ -241,7 +241,7 @@ def create(cfg, username, password, active, use_ssl,  # pylint: disable=too-many
            backend, frontend, max_connections):
     """Add user of MySQL backend to ProxySQL"""
     kwargs = {
-        'user': username,
+        'username': username,
         'password': password,
         'use_ssl': use_ssl,
         'active': active,
@@ -254,7 +254,14 @@ def create(cfg, username, password, active, use_ssl,  # pylint: disable=too-many
         'fast_forward': fast_forward,
         'max_connections': max_connections
     }
-    create_user(cfg, kwargs)
+    try:
+        create_user(cfg, kwargs)
+        LOG.info('User %s successfully created', username)
+    except MySQLError as err:
+        LOG.error('Failed to talk to database: %s', err)
+    except (NoOptionError, NoSectionError) as err:
+        LOG.error('Failed to parse config: %s', err)
+        exit(1)
 
 
 def validate_password(ctx, param, value):  # pylint: disable=unused-argument
@@ -278,17 +285,33 @@ def set_password(cfg, username, password):
     """Change password of exists MySQL user"""
     try:
         change_password(cfg, username, password)
+        LOG.info('Password for user %s changed', username)
     except ProxySQLUserNotFound:
         LOG.error("User not found")
+        exit(1)
+    except MySQLError as err:
+        LOG.error('Failed to talk to database: %s', err)
+    except (NoOptionError, NoSectionError) as err:
+        LOG.error('Failed to parse config: %s', err)
+        exit(1)
+    except ProxySQLBackendNotFound as err:
+        LOG.error('ProxySQL backends not found: %s', err)
         exit(1)
 
 
 @user.command()
-@click.argument('username')
+@click.argument('username', required=True)
 @PASS_CFG
 def delete(cfg, username):
     """Delete MySQL backend user by username"""
-    delete_user(cfg, username)
+    try:
+        delete_user(cfg, username)
+        LOG.info('User %s has deleted', username)
+    except MySQLError as err:
+        LOG.error('Failed to talk to database: %s', err)
+    except (NoOptionError, NoSectionError) as err:
+        LOG.error('Failed to parse config: %s', err)
+        exit(1)
 
 
 @user.command(name='modify', context_settings=dict(
