@@ -6,6 +6,7 @@ from prettytable import PrettyTable
 from proxysql_tools.util import get_proxysql_options
 from proxysql_tools import LOG
 from proxysql_tools.proxysql.proxysql import ProxySQL, ProxySQLMySQLUser, BackendStatus
+from proxysql_tools.util import parse_user_arguments
 
 
 def get_encrypred_password(cfg, pwd):
@@ -78,3 +79,15 @@ def delete_user(cfg, username):
     """Delete user from MySQL backend"""
     args = get_proxysql_options(cfg)
     ProxySQL(**args).delete_user(username)
+
+
+def modify_user(cfg, username, user_args):
+    """Modify user from MySQL backend"""
+
+    args = get_proxysql_options(cfg)
+    proxysql = ProxySQL(**args)
+    user = proxysql.get_user(username)
+    params = parse_user_arguments(user_args)
+    for key, value in params.iteritems():
+        user.__setattr__(key, value)
+    proxysql.add_user(user)
