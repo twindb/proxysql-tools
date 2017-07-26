@@ -3,7 +3,7 @@ import pytest
 from pymysql import OperationalError
 from pymysql.cursors import DictCursor
 
-from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
+from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, ProxySQLUserNotFound
 from proxysql_tools.proxysql.proxysql import BackendStatus, ProxySQLMySQLBackend, \
     ProxySQLMySQLUser, ProxySQL
 
@@ -42,7 +42,7 @@ def test_proxysql_mysql_backend():
 
 
 def test_proxysql_mysql_user():
-    mu = ProxySQLMySQLUser(user='foo',
+    mu = ProxySQLMySQLUser(username='foo',
                            password='qwerty',
                            active=True,
                            use_ssl=True,
@@ -54,7 +54,7 @@ def test_proxysql_mysql_user():
                            backend=True,
                            frontend=False,
                            max_connections='10')
-    assert mu.user == 'foo'
+    assert mu.username == 'foo'
     assert mu.password == 'qwerty'
     assert mu.active is True
     assert mu.use_ssl is True
@@ -64,6 +64,33 @@ def test_proxysql_mysql_user():
     assert mu.transaction_persistent is True
     assert mu.fast_forward is True
     assert mu.backend is True
+    assert mu.frontend is False
+    assert mu.max_connections == 10
+
+
+def test_proxysql_mysql_user_with_type_conversion():
+    mu = ProxySQLMySQLUser(username='foo',
+                           password='qwerty',
+                           active='0',
+                           use_ssl='0',
+                           default_hostgroup='10',
+                           default_schema='bar',
+                           schema_locked='0',
+                           transaction_persistent='0',
+                           fast_forward='0',
+                           backend='0',
+                           frontend=0,
+                           max_connections='10')
+    assert mu.username == 'foo'
+    assert mu.password == 'qwerty'
+    assert mu.active is False
+    assert mu.use_ssl is False
+    assert mu.default_hostgroup == 10
+    assert mu.default_schema == 'bar'
+    assert mu.schema_locked is False
+    assert mu.transaction_persistent is False
+    assert mu.fast_forward is False
+    assert mu.backend is False
     assert mu.frontend is False
     assert mu.max_connections == 10
 
@@ -253,3 +280,71 @@ def test_find_backends_raises(mock_execute, proxysql):
     mock_execute.return_value = ()
     with pytest.raises(ProxySQLBackendNotFound):
         proxysql.find_backends(10)
+
+
+@pytest.mark.parametrize('response',[
+    (
+        [{
+            u'username': 'foo',
+            u'password': '',
+            u'active': False,
+            u'use_ssl': False,
+            u'default_hostgroup': 0,
+            u'default_schema': 'information_schema',
+            u'schema_locked': False,
+            u'transaction_persistent': False,
+            u'fast_forward': False,
+            u'backend': False,
+            u'frontend': True,
+            u'max_connections': '10000'
+        }]
+    )
+])
+@mock.patch.object(ProxySQL, 'execute')
+def test_get_users(mock_execute, proxysql, response):
+    query = "SELECT * FROM mysql_users;"
+    mock_execute.return_value = response
+    proxysql.get_users()
+    mock_execute.assert_called_once_with(query)
+
+
+@pytest.mark.parametrize('query',[
+    (
+        "REPLACE INTO mysql_users(`username`, `password`, `active`, `use_ssl`, `default_hostgroup`, `default_schema`, `schema_locked`, `transaction_persistent`, `fast_forward`, `backend`, `frontend`, `max_connections`) VALUES('foo', '', 1, 0, 0, 'information_schema', 0, 0, 0, 1, 1, 10000)"
+    )
+])
+@mock.patch.object(ProxySQL, 'reload_runtime')
+@mock.patch.object(ProxySQL, 'execute')
+def test_add_user(mock_execute, mock_runtime, query, proxysql):
+    user = ProxySQLMySQLUser(username='foo', password='')
+    proxysql.add_user(user)
+    mock_execute.assert_called_once_with(query)
+    mock_runtime.assert_called_once_with()
+
+
+@mock.patch.object(ProxySQL, 'reload_runtime')
+@mock.patch.object(ProxySQL, 'execute')
+def test_delete_user(mock_execute, mock_runtime, proxysql):
+    user = ProxySQLMySQLUser(username='foo', password='bar')
+    proxysql.delete_user('test')
+    query = "DELETE FROM mysql_users WHERE username='test'"
+    mock_execute.assert_called_once_with(query)
+    mock_runtime.assert_called_once_with()
+
+@mock.patch.object(ProxySQL, 'execute')
+def test_get_user(mock_execute, proxysql):
+    user = ProxySQLMySQLUser(username='foo', password='bar')
+    proxysql.get_user('test')
+    query = "SELECT * FROM mysql_users WHERE username = 'test'"
+    mock_execute.assert_called_once_with(query)
+
+
+@mock.patch.object(ProxySQL, 'execute')
+def test_get_user_if_user_does_not_exist(mock_execute, proxysql):
+    user = ProxySQLMySQLUser(username='foo', password='bar')
+    mock_execute.return_value = []
+    with pytest.raises(ProxySQLUserNotFound):
+        proxysql.get_user('test')
+
+    query = "SELECT * FROM mysql_users WHERE username = 'test'"
+    mock_execute.assert_called_once_with(query)

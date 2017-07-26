@@ -23,6 +23,15 @@ class percona::cluster::service ($ensure="running", $bootstrap=false) {
         ensure        => 'present',
         password_hash => '*BF27B4C7AAD278126E228AA8427806E870F64F39',
     }
+
+    mysql_grant { 'proxysql_user@%/*.*':
+        ensure     => 'present',
+        options    => ['GRANT'],
+        privileges => ['ALL'],
+        table      => '*.*',
+        user       => 'proxysql_user@%',
+    }
+
     mysql_user { 'monitor@%':
         ensure        => 'present',
         password_hash => '*E1A383418F81A65DB753CF477200945A1A5BA77D',

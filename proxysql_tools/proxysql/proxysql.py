@@ -5,7 +5,7 @@ import pymysql
 from pymysql.cursors import DictCursor
 
 from proxysql_tools import LOG, execute
-from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
+from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, ProxySQLUserNotFound
 
 PROXYSQL_CONNECT_TIMEOUT = 20
 
@@ -57,9 +57,10 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
         self.compression = int(compression)
         self.max_connections = int(max_connections)
         self.max_replication_lag = int(max_replication_lag)
-        self.use_ssl = bool(use_ssl)
+        self.use_ssl = bool(int(use_ssl))
         self.max_latency_ms = int(max_latency_ms)
         self.comment = comment
+        self._connection = None
 
     def __eq__(self, other):
         try:
@@ -99,6 +100,30 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
                    max_latency_ms=self.max_latency_ms,
                    comment=self.comment)
 
+    def connect(self, username, password):
+        """
+        Make a MySQL connection to the backend.
+
+        :param username: MySQL user.
+        :param password: MySQL password.
+        """
+        self._connection = pymysql.connect(host=self.hostname,
+                                           port=self.port,
+                                           user=username,
+                                           passwd=password,
+                                           cursorclass=DictCursor)
+
+    def execute(self, query, *args):
+        """Execute query in MySQL Backend.
+
+        :param query: Query to execute.
+        :type query: str
+        :return: Query result or None if the query is not supposed
+            to return result
+        :rtype: dict
+        """
+        return execute(self._connection, query, *args)
+
 
 class ProxySQLMySQLUser(object):  # pylint: disable=too-many-instance-attributes,too-few-public-methods
     """ProxySQLMySQLUser describes record in ProxySQL table ``mysql_users``.
@@ -123,7 +148,7 @@ class ProxySQLMySQLUser(object):  # pylint: disable=too-many-instance-attributes
         UNIQUE (username, frontend))
 
 
-:param user: MySQL username to connect to ProxySQL or Galera node.
+:param username: MySQL username to connect to ProxySQL or Galera node.
 :param password: MySQL password.
 :param active: Users with active = 0 will be tracked in the database,
     but will be never loaded in the in-memory data structures.
@@ -154,23 +179,43 @@ class ProxySQLMySQLUser(object):  # pylint: disable=too-many-instance-attributes
 
 .. _hostgroup: http://bit.ly/2rGnT5i
     """
-    def __init__(self, user='root', password=None, active=False, use_ssl=False,  # pylint: disable=too-many-arguments
+    def __init__(self, username='root', password=None, active=True, use_ssl=False,  # pylint: disable=too-many-arguments
                  default_hostgroup=0, default_schema='information_schema',
                  schema_locked=False, transaction_persistent=False,
-                 fast_forward=False, backend=False, frontend=True,
+                 fast_forward=False, backend=True, frontend=True,
                  max_connections=10000):
-        self.user = user
+        self.username = username
         self.password = password
-        self.active = active
-        self.use_ssl = use_ssl
+        self.active = bool(int(active))
+        self.use_ssl = bool(int(use_ssl))
         self.default_hostgroup = int(default_hostgroup)
         self.default_schema = default_schema
-        self.schema_locked = schema_locked
-        self.transaction_persistent = transaction_persistent
-        self.fast_forward = fast_forward
-        self.backend = backend
-        self.frontend = frontend
+        self.schema_locked = bool(int(schema_locked))
+        self.transaction_persistent = bool(int(transaction_persistent))
+        self.fast_forward = bool(int(fast_forward))
+        self.backend = bool(int(backend))
+        self.frontend = bool(int(frontend))
         self.max_connections = int(max_connections)
+
+    def __eq__(self, other):
+        try:
+            return self.username == other.username and \
+                   self.password == other.password and \
+                   self.active == other.active and \
+                   self.default_hostgroup == other.default_hostgroup and \
+                   self.default_schema == other.default_schema and \
+                   self.schema_locked == other.schema_locked and \
+                   self.transaction_persistent == other.transaction_persistent and \
+                   self.fast_forward == other.fast_forward and \
+                   self.backend == other.backend and \
+                   self.frontend == other.frontend and \
+                   self.max_connections == other.max_connections
+        except AttributeError:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
 
 
 class ProxySQL(object):
@@ -221,6 +266,98 @@ class ProxySQL(object):
         self.execute('LOAD MYSQL SERVERS TO RUNTIME')
         self.execute('LOAD MYSQL USERS TO RUNTIME')
         self.execute('LOAD MYSQL VARIABLES TO RUNTIME')
+
+    def get_users(self):
+        """
+        Get mysql users
+
+        :return: List of users or empty list
+        :rtype: list(ProxySQLMySQLUser)
+        """
+        query = "SELECT * FROM mysql_users;"
+        result = self.execute(query)
+        users = []
+        for row in result:
+            user = ProxySQLMySQLUser(username=row['username'],
+                                     password=row['password'],
+                                     active=row['active'],
+                                     use_ssl=row['use_ssl'],
+                                     default_hostgroup=row['default_hostgroup'],
+                                     default_schema=row['default_schema'],
+                                     schema_locked=row['schema_locked'],
+                                     transaction_persistent=row['transaction_persistent'],
+                                     fast_forward=row['fast_forward'],
+                                     backend=row['backend'],
+                                     frontend=row['frontend'],
+                                     max_connections=row['max_connections'])
+            users.append(user)
+        return users
+
+    def get_user(self, username):
+        """
+        Get user by username
+
+        :param username: Username
+        :return: User information
+        :rtype: ProxySQLMySQLUser
+        :raise: ProxySQLUserNotFound
+        """
+        result = self.execute("SELECT * FROM mysql_users WHERE username = '{username}'"
+                              .format(username=username))
+        if not result:
+            raise ProxySQLUserNotFound
+        else:
+            row = result[0]
+            user = ProxySQLMySQLUser(username=row['username'],
+                                     password=row['password'],
+                                     active=row['active'],
+                                     use_ssl=row['use_ssl'],
+                                     default_hostgroup=row['default_hostgroup'],
+                                     default_schema=row['default_schema'],
+                                     schema_locked=row['schema_locked'],
+                                     transaction_persistent=row['transaction_persistent'],
+                                     fast_forward=row['fast_forward'],
+                                     backend=row['backend'],
+                                     frontend=row['frontend'],
+                                     max_connections=row['max_connections'])
+            return user
+
+    def add_user(self, user):
+        """
+        Add MySQL user
+
+        :param user: user for add
+        :type user: ProxySQLMySQLUser
+        """
+        query = "REPLACE INTO mysql_users(`username`, `password`, `active`, " \
+                "`use_ssl`, `default_hostgroup`, `default_schema`, `schema_locked`, " \
+                "`transaction_persistent`, `fast_forward`, `backend`, `frontend`, " \
+                "`max_connections`) " \
+                "VALUES('{username}', '{password}', {active}, {use_ssl}, " \
+                "{default_hostgroup}, '{default_schema}', {schema_locked}, " \
+                "{transaction_persistent}, {fast_forward}, {backend}, {frontend}, " \
+                "{max_connections})" \
+                "".format(username=user.username, password=user.password,
+                          active=int(user.active), use_ssl=int(user.use_ssl),
+                          default_hostgroup=int(user.default_hostgroup),
+                          default_schema=user.default_schema,
+                          schema_locked=int(user.schema_locked),
+                          transaction_persistent=int(user.transaction_persistent),
+                          fast_forward=int(user.fast_forward), backend=int(user.backend),
+                          frontend=int(user.frontend), max_connections=user.max_connections)
+        self.execute(query)
+        self.reload_runtime()
+
+    def delete_user(self, username):
+        """
+        Delete MySQL user
+
+        :param username: username of user
+        :type username: str
+        """
+        self.execute("DELETE FROM mysql_users WHERE username='{username}'"
+                     .format(username=username))
+        self.reload_runtime()
 
     def register_backend(self, backend):
         """Register Galera node in ProxySQL

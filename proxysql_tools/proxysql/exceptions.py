@@ -7,3 +7,7 @@ class ProxySQLError(Exception):
 
 class ProxySQLBackendNotFound(ProxySQLError):
     """Requested backend not found"""
+
+
+class ProxySQLUserNotFound(ProxySQLError):
+    """Requested user not found"""
