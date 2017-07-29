@@ -1,6 +1,10 @@
 """Auxiliary functions."""
 from ConfigParser import NoOptionError
 
+from proxysql_tools import LOG
+from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
+from proxysql_tools.proxysql.proxysql import ProxySQL
+
 
 def get_proxysql_options(cfg):
     """Get ProxySQL relevant config options"""
@@ -28,6 +32,28 @@ def get_proxysql_options(cfg):
 
     return kwargs
 
+
+def get_backend(cfg, server_ip, port):
+    """Get backend by server_ip and port"""
+    kwargs = get_proxysql_options(cfg)
+    LOG.debug('ProxySQL config %r', kwargs)
+    proxysql = ProxySQL(**kwargs)
+
+    writer_hostgroup_id = int(cfg.get('galera', 'writer_hostgroup_id'))
+    reader_hostgroup_id = int(cfg.get('galera', 'reader_hostgroup_id'))
+
+    backends = proxysql.find_backends(writer_hostgroup_id) + \
+        proxysql.find_backends(reader_hostgroup_id)
+
+    for backend in backends:
+        if backend.hostname == server_ip and backend.port == port:
+            if writer_hostgroup_id == backend.hostgroup_id:
+                return backend, "writer"
+            else:
+                return backend, "reader"
+
+    raise ProxySQLBackendNotFound('Could not find server %s:%d'
+                                  % (server_ip, port))
 
 def parse_user_arguments(args):
     """Parse user arguments for modify_user"""
