@@ -10,11 +10,11 @@ from proxysql_tools import setup_logging, LOG, __version__
 from proxysql_tools.aws.aws import aws_notify_master
 from proxysql_tools.cli_entrypoint.galera import galera_register
 from proxysql_tools.galera.server import server_status, \
-    server_set_wsrep_desync
+    server_set_wsrep_desync, server_set_admin_status
 from proxysql_tools.galera.user import get_users, create_user, delete_user, \
     change_password, modify_user
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, ProxySQLUserNotFound
-from proxysql_tools.proxysql.proxysql import ProxySQL
+from proxysql_tools.proxysql.proxysql import ProxySQL, BackendStatus
 from proxysql_tools.util.bug1258464 import bug1258464
 
 PASS_CFG = click.make_pass_decorator(ConfigParser, ensure=True)
@@ -201,7 +201,8 @@ def set_sync(cfg, ip_address, port):
 @click.argument('port', required=False, type=int, default=3306)
 @PASS_CFG
 def set_online(cfg, ip_address, port):
-    pass
+    """Set server backend status online"""
+    server_set_admin_status(cfg, ip_address, port, BackendStatus.online)
 
 
 @server.command()
@@ -209,7 +210,8 @@ def set_online(cfg, ip_address, port):
 @click.argument('port', required=False, type=int, default=3306)
 @PASS_CFG
 def set_offline(cfg, ip_address, port):
-    pass
+    """Set server backend status offline"""
+    server_set_admin_status(cfg, ip_address, port, BackendStatus.offline_hard)
 
 
 @galera.group()

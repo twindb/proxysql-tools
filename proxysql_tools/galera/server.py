@@ -5,8 +5,8 @@ from prettytable import PrettyTable
 
 from proxysql_tools import LOG
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
-from proxysql_tools.proxysql.proxysql import ProxySQL
-from proxysql_tools.util import get_proxysql_options
+from proxysql_tools.proxysql.proxysql import ProxySQL, BackendStatus
+from proxysql_tools.util import get_proxysql_options, get_backend
 
 
 def server_status(cfg):
@@ -56,23 +56,22 @@ def server_set_wsrep_desync(cfg, server_ip, port, wsrep_desync='ON'):
     :param port: Server port
     :param wsrep_desync: Value for wsrep_desync
     """
+    backend = get_backend(cfg, server_ip, port)
+    backend.connect(cfg.get('galera', 'cluster_username'),
+                    cfg.get('galera', 'cluster_password'))
+    backend.execute("SET GLOBAL wsrep_desync=%s", wsrep_desync)
+
+
+def server_set_admin_status(cfg, server_ip, port, status=BackendStatus.online):
+    """
+    Set server admin_status
+    :param cfg: ProxySQL Tools configuration
+    :type cfg: ConfigParser.ConfigParser
+    :param server_ip: Server IP address
+    :param port: Server port
+    :param status: Admin status
+    """
+    backend, role = get_backend(cfg, server_ip, port)
     kwargs = get_proxysql_options(cfg)
-    LOG.debug('ProxySQL config %r', kwargs)
     proxysql = ProxySQL(**kwargs)
-
-    writer_hostgroup_id = int(cfg.get('galera', 'writer_hostgroup_id'))
-    reader_hostgroup_id = int(cfg.get('galera', 'reader_hostgroup_id'))
-
-    backends = proxysql.find_backends(writer_hostgroup_id) + \
-        proxysql.find_backends(reader_hostgroup_id)
-
-    for backend in backends:
-        if backend.hostname == server_ip and backend.port == port:
-
-            backend.connect(cfg.get('galera', 'cluster_username'),
-                            cfg.get('galera', 'cluster_password'))
-            backend.execute("SET GLOBAL wsrep_desync=%s", wsrep_desync)
-            return
-
-    raise ProxySQLBackendNotFound('Could not find server %s:%d'
-                                  % (server_ip, port))
+    proxysql.set_admin_status(backend, role, status)
