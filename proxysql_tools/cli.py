@@ -196,6 +196,22 @@ def set_sync(cfg, ip_address, port):
         LOG.error(err)
 
 
+@server.command()
+@click.argument('ip_address', required=True)
+@click.argument('port', required=False, type=int, default=3306)
+@PASS_CFG
+def set_online(cfg, ip_address, port):
+    pass
+
+
+@server.command()
+@click.argument('ip_address', required=True)
+@click.argument('port', required=False, type=int, default=3306)
+@PASS_CFG
+def set_offline(cfg, ip_address, port):
+    pass
+
+
 @galera.group()
 def user():
     """Commands for ProxySQL users"""
