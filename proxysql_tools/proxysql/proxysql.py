@@ -45,7 +45,6 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
         PRIMARY KEY (hostgroup_id, hostname, port) )
 
     """
-
     def __init__(self, hostname, hostgroup_id=0, port=3306,  # pylint: disable=too-many-arguments
                  status=BackendStatus.online,
                  weight=1, compression=0, max_connections=10000,
@@ -90,17 +89,17 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
                "use_ssl={use_ssl}, " \
                "max_latency_ms={max_latency_ms}, " \
                "comment={comment}".format(
-            hostgroup_id=self.hostgroup_id,
-            hostname=self.hostname,
-            port=self.port,
-            status=self.status,
-            weight=self.weight,
-            compression=self.compression,
-            max_connections=self.max_connections,
-            max_replication_lag=self.max_replication_lag,
-            use_ssl=self.use_ssl,
-            max_latency_ms=self.max_latency_ms,
-            comment=self.comment)
+                   hostgroup_id=self.hostgroup_id,
+                   hostname=self.hostname,
+                   port=self.port,
+                   status=self.status,
+                   weight=self.weight,
+                   compression=self.compression,
+                   max_connections=self.max_connections,
+                   max_replication_lag=self.max_replication_lag,
+                   use_ssl=self.use_ssl,
+                   max_latency_ms=self.max_latency_ms,
+                   comment=self.comment)
 
     def connect(self, username, password):
         """
@@ -181,7 +180,6 @@ class ProxySQLMySQLUser(object):  # pylint: disable=too-many-instance-attributes
 
 .. _hostgroup: http://bit.ly/2rGnT5i
     """
-
     def __init__(self, username='root', password=None, active=True, use_ssl=False,  # pylint: disable=too-many-arguments
                  default_hostgroup=0, default_schema='information_schema',
                  schema_locked=False, transaction_persistent=False,
@@ -220,6 +218,7 @@ class ProxySQLMySQLUser(object):  # pylint: disable=too-many-instance-attributes
         return not self.__eq__(other)
 
 
+
 class ProxySQL(object):
     """
     ProxySQL describes a single ProxySQL instance.
@@ -230,7 +229,6 @@ class ProxySQL(object):
     :param password: Password for ProxySQL admin.
     :param socket: Socket to connect to ProxySQL admin interface.
     """
-
     def __init__(self, host='localhost', port=3306, user='root',  # pylint: disable=too-many-arguments
                  password=None, socket=None):
 
@@ -477,7 +475,7 @@ class ProxySQL(object):
         return result != ()
 
     def set_admin_status(self, backend, role, status):
-        """Set admin status"""
+        """Set admin_status"""
         comment = {}
         comment['role'] = role
         comment['admin_status'] = status

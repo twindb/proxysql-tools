@@ -4,7 +4,6 @@ from __future__ import print_function
 from prettytable import PrettyTable
 
 from proxysql_tools import LOG
-from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
 from proxysql_tools.proxysql.proxysql import ProxySQL, BackendStatus
 from proxysql_tools.util import get_proxysql_options, get_backend
 
