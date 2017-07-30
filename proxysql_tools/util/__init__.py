@@ -47,10 +47,7 @@ def get_backend(cfg, server_ip, port):
 
     for backend in backends:
         if backend.hostname == server_ip and backend.port == port:
-            if writer_hostgroup_id == backend.hostgroup_id:
-                return backend, "writer"
-            else:
-                return backend, "reader"
+            return backend
 
     raise ProxySQLBackendNotFound('Could not find server %s:%d'
                                   % (server_ip, port))
