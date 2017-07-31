@@ -7,6 +7,7 @@ from proxysql_tools.galera.exceptions import GaleraClusterSyncedNodeNotFound, \
 from proxysql_tools.galera.galera_node import GaleraNodeState, GaleraNode
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
 from proxysql_tools.proxysql.proxysql import ProxySQLMySQLBackend, BackendStatus
+from proxysql_tools.util import get_backend_comment
 
 
 def singlewriter(galera_cluster, proxysql,
@@ -214,7 +215,7 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, comment,  # p
         if state == GaleraNodeState.SYNCED:
             LOG.debug('Node %s (%s) is healthy', node, backend.status)
 
-            backend.comment = proxysql.get_backend_comment(comment, backend.status)
+            backend.comment = get_backend_comment(comment, backend.status)
             if backend.status != BackendStatus.online:
 
                 LOG.debug('Deregistering %s (%s)', backend, backend.status)
@@ -296,7 +297,7 @@ def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-ma
                                            hostgroup_id=hostgroup_id,
                                            port=galera_node.port,
                                            comment=comment)
-            backend.comment = proxysql.get_backend_comment(comment, backend.status)
+            backend.comment = get_backend_comment(comment, backend.status)
             proxysql.register_backend(backend)
             LOG.info('Added backend %s to hostgroup %d', backend, hostgroup_id)
 
