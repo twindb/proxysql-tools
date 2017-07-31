@@ -6,7 +6,7 @@ from prettytable import PrettyTable
 from proxysql_tools import LOG
 from proxysql_tools.proxysql.proxysql import ProxySQL, BackendStatus
 from proxysql_tools.util import get_proxysql_options, get_backend, \
-    get_hostgroups_ids
+    get_hostgroups_id
 
 
 def server_status(cfg):
@@ -15,7 +15,7 @@ def server_status(cfg):
     LOG.debug('ProxySQL config %r', kwargs)
     proxysql = ProxySQL(**kwargs)
 
-    writer_hostgroup_id, reader_hostgroup_id = get_hostgroups_ids(cfg)
+    writer_hostgroup_id, reader_hostgroup_id = get_hostgroups_id(cfg)
 
     for hostgroup_id, name in [(writer_hostgroup_id, 'Writers'),
                                (reader_hostgroup_id, 'Readers')]:
@@ -70,7 +70,7 @@ def server_set_admin_status(cfg, server_ip, port, status=BackendStatus.online):
     :param port: Server port
     :param status: Admin status
     """
-    writer_hostgroup_id, _ = get_hostgroups_ids(cfg)
+    writer_hostgroup_id, _ = get_hostgroups_id(cfg)
     backend = get_backend(cfg, server_ip, port)
     if backend.hostgroup_id == writer_hostgroup_id:
         role = "writer"
