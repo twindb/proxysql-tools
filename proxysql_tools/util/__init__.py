@@ -33,7 +33,7 @@ def get_proxysql_options(cfg):
     return kwargs
 
 
-def get_hostgroups_ids(cfg):
+def get_hostgroups_id(cfg):
     """Get writer and reader hostgroups id's """
     writer_hostgroup_id = int(cfg.get('galera', 'writer_hostgroup_id'))
     reader_hostgroup_id = int(cfg.get('galera', 'reader_hostgroup_id'))
@@ -46,7 +46,7 @@ def get_backend(cfg, server_ip, port):
     LOG.debug('ProxySQL config %r', kwargs)
     proxysql = ProxySQL(**kwargs)
 
-    writer_hostgroup_id, reader_hostgroup_id = get_hostgroups_ids(cfg)
+    writer_hostgroup_id, reader_hostgroup_id = get_hostgroups_id(cfg)
 
     backends = proxysql.find_backends(writer_hostgroup_id) + \
         proxysql.find_backends(reader_hostgroup_id)

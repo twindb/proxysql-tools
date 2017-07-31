@@ -251,9 +251,9 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, comment,  # p
                                  limit=limit, ignore_backend=ignore_backend)
     except OperationalError as err:
         LOG.error(err)
-        LOG.error('Looks like backend %s is unhealthy. Deregistering it.',
+        LOG.error('Looks like backend %s is unhealthy. Set OFFLINE_HARD status.',
                   backend)
-        proxysql.deregister_backend(backend)
+        proxysql.set_status(backend, BackendStatus.offline_hard)
         register_synced_backends(galera_cluster, proxysql,
                                  hostgroup_id, comment=comment,
                                  limit=limit, ignore_backend=ignore_backend)

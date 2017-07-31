@@ -5,7 +5,7 @@ from proxysql_tools import LOG
 from proxysql_tools.galera.galera_cluster import GaleraCluster
 from proxysql_tools.load_balancing_mode import singlewriter
 from proxysql_tools.proxysql.proxysql import ProxySQL, ProxySQLMySQLBackend
-from proxysql_tools.util import get_proxysql_options, get_hostgroups_ids
+from proxysql_tools.util import get_proxysql_options, get_hostgroups_id
 
 
 def galera_register(cfg):
@@ -30,7 +30,7 @@ def galera_register(cfg):
     proxysql = ProxySQL(**kwargs)
 
     load_balancing_mode = cfg.get('galera', 'load_balancing_mode')
-    writer_hostgroup_id, reader_hostgroup_id = get_hostgroups_ids(cfg)
+    writer_hostgroup_id, reader_hostgroup_id = get_hostgroups_id(cfg)
 
     if load_balancing_mode == 'singlewriter':
         kwargs = {}
