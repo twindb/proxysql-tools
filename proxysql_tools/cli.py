@@ -147,9 +147,11 @@ def status(cfg):
     except (NoOptionError, NoSectionError) as err:
         LOG.error('Failed to parse config: %s', err)
         exit(1)
-
     except MySQLError as err:
         LOG.error('Failed to talk to database: %s', err)
+        exit(1)
+    except ProxySQLBackendNotFound as err:
+        LOG.error(err)
 
 
 @server.command()
