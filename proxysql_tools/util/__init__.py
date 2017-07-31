@@ -150,10 +150,3 @@ def parse_user_arguments(args):
             raise ValueError('Unexpected argument: %s', arg)
         i = i+1
     return result
-
-
-def get_backend_comment(role, status):
-    comment = {}
-    comment['role'] = role
-    comment['admin_status'] = status
-    return json.dumps(comment)
