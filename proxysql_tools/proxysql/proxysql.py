@@ -7,7 +7,6 @@ from pymysql.cursors import DictCursor
 
 from proxysql_tools import LOG, execute
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, ProxySQLUserNotFound
-from proxysql_tools.util import get_backend_comment
 
 PROXYSQL_CONNECT_TIMEOUT = 20
 
@@ -477,13 +476,16 @@ class ProxySQL(object):
 
     def set_admin_status(self, backend, role, status):
         """Set admin_status"""
-        comment = get_backend_comment(role, status)
+        comment = {}
+        comment['role'] = role
+        comment['admin_status'] = status
+        comment_str = json.dumps(comment)
         self.execute('UPDATE `mysql_servers` SET `comment` = %s '
                      ' WHERE hostgroup_id = %s '
                      ' AND `hostname` = %s '
                      ' AND `port` = %s',
                      (
-                         comment,
+                         comment_str,
                          backend.hostgroup_id,
                          backend.hostname,
                          backend.port
