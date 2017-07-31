@@ -193,7 +193,7 @@ def test__galera_register_shutdowned_reader_is_degistered(percona_xtradb_cluster
     try:
         with connection.cursor() as cursor:
             cursor.execute('SELECT `hostgroup_id`, `hostname`, '
-                           '`port`'
+                           '`port`, `status`'
                            ' FROM `mysql_servers`'
                            ' WHERE hostgroup_id = %s '
                            ' AND `hostname` = %s '
@@ -202,8 +202,9 @@ def test__galera_register_shutdowned_reader_is_degistered(percona_xtradb_cluster
                                backend_unreg.hostgroup_id,
                                backend_unreg.hostname,
                                backend_unreg.port
-                           ))
-            assert cursor.fetchall() == ()
+                           )
+                           )
+            assert cursor.fetchall()[0]['status'] == BackendStatus.offline_hard
 
     finally:
         connection.close()
