@@ -7,7 +7,6 @@ from pymysql.cursors import DictCursor
 
 from proxysql_tools import LOG, execute
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, ProxySQLUserNotFound
-from proxysql_tools.util import get_backend_comment
 
 PROXYSQL_CONNECT_TIMEOUT = 20
 
@@ -474,6 +473,12 @@ class ProxySQL(object):
                                   backend.port
                               ))
         return result != ()
+
+    def get_backend_comment(role, status):
+        comment = {}
+        comment['role'] = role
+        comment['admin_status'] = status
+        return json.dumps(comment)
 
     def set_admin_status(self, backend, role, status):
         """Set admin_status"""
