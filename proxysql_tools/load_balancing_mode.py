@@ -117,6 +117,7 @@ def register_writer(galera_cluster, proxysql, writer_hostgroup_id,
                                  limit=1)
 
 
+
 def register_readers(galera_cluster, proxysql,
                      writer_hostgroup_id, reader_hostgroup_id,
                      ignore_writer=None):
@@ -234,7 +235,7 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, comment,  # p
         else:
             LOG.warn('Node %s is reachable but unhealty, '
                      'setting it OFFLINE_SOFT', node)
-            proxysql.set_admin_status(backend, BackendStatus.offline_soft)
+            proxysql.set_status(backend, BackendStatus.offline_soft)
             register_synced_backends(galera_cluster, proxysql,
                                      hostgroup_id,
                                      comment=comment,
@@ -252,7 +253,7 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, comment,  # p
         LOG.error(err)
         LOG.error('Looks like backend %s is unhealthy. Set OFFLINE_HARD status.',
                   backend)
-        proxysql.set_admin_status(backend, comment, BackendStatus.offline_hard)
+        proxysql.set_status(backend, BackendStatus.offline_hard)
         register_synced_backends(galera_cluster, proxysql,
                                  hostgroup_id, comment=comment,
                                  limit=limit, ignore_backend=ignore_backend)
