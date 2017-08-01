@@ -70,12 +70,8 @@ def server_set_admin_status(cfg, server_ip, port, status=BackendStatus.online):
     :param port: Server port
     :param status: Admin status
     """
-    writer_hostgroup_id, _ = get_hostgroups_id(cfg)
     backend = get_backend(cfg, server_ip, port)
-    if backend.hostgroup_id == writer_hostgroup_id:
-        role = "writer"
-    else:
-        role = "reader"
+    backend.admin_status = status
     kwargs = get_proxysql_options(cfg)
     proxysql = ProxySQL(**kwargs)
-    proxysql.set_admin_status(backend, role, status)
+    proxysql.set_admin_status(backend)

@@ -19,6 +19,12 @@ class BackendStatus(object):  # pylint: disable=too-few-public-methods
     offline_hard = 'OFFLINE_HARD'
 
 
+class BackendRole(object):  # pylint: disable=too-few-public-methods
+    """Status of ProxySQL backend"""
+    reader = 'Reader'
+    writer = 'Writer'
+
+
 class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attributes,too-few-public-methods
     """ProxySQLMySQLBackend describes record in ProxySQL
     table ``mysql_servers``.
@@ -49,19 +55,20 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
                  status=BackendStatus.online,
                  weight=1, compression=0, max_connections=10000,
                  max_replication_lag=0, use_ssl=False,
-                 max_latency_ms=0, comment=None):
+                 max_latency_ms=0, role=None):
         self.hostname = hostname
         self.hostgroup_id = int(hostgroup_id)
         self.port = int(port)
         self.status = status
+        self.admin_status = status
         self.weight = int(weight)
         self.compression = int(compression)
         self.max_connections = int(max_connections)
         self.max_replication_lag = int(max_replication_lag)
         self.use_ssl = bool(int(use_ssl))
         self.max_latency_ms = int(max_latency_ms)
-        self.comment = comment
         self._connection = None
+        self.role = role
 
     def __eq__(self, other):
         try:
@@ -366,10 +373,7 @@ class ProxySQL(object):
         :param backend: Galera node.
         :type backend: ProxySQLMySQLBackend
         """
-        if backend.comment:
-            comment = "'%s'" % pymysql.escape_string(backend.comment)
-        else:
-            comment = 'NULL'
+        comment = self._get_comment(backend)
 
         query = "REPLACE INTO mysql_servers(`hostgroup_id`," \
                 " `hostname`, `port`," \
@@ -379,7 +383,7 @@ class ProxySQL(object):
                 "VALUES({hostgroup_id}, '{hostname}', {port}," \
                 " '{status}', {weight}, {compression}, {max_connections}," \
                 " {max_replication_lag}, {use_ssl}, {max_latency_ms}," \
-                " {comment})" \
+                " '{comment}')" \
                 "".format(hostgroup_id=int(backend.hostgroup_id),
                           hostname=pymysql.escape_string(backend.hostname),
                           port=int(backend.port),
@@ -443,8 +447,13 @@ class ProxySQL(object):
                                            row['max_replication_lag'],
                                            use_ssl=row['use_ssl'],
                                            max_latency_ms=
-                                           row['max_latency_ms'],
-                                           comment=row['comment'])
+                                           row['max_latency_ms'])
+            backend.comment = row['comment']
+            if backend.comment:
+                admin_status_map = json.loads(backend.comment)
+                backend.role = admin_status_map['role']
+                backend.status = admin_status_map['admin_status']
+
             if status and backend.status != status:
                 continue
             backends.append(backend)
@@ -474,24 +483,26 @@ class ProxySQL(object):
                               ))
         return result != ()
 
-    def set_admin_status(self, backend, role, status):
+    def _get_comment(self, backend):
+        """Generate comment in mysql_servers for ProxySQL"""
+        status = {}
+        status['role'] = backend.role
+        status['admin_status'] = backend.admin_status
+        return json.dumps(status)
+
+    def set_admin_status(self, backend):
         """Set admin_status"""
-        comment = {}
-        comment['role'] = role
-        comment['admin_status'] = status
-        comment_str = json.dumps(comment)
         self.execute('UPDATE `mysql_servers` SET `comment` = %s '
                      ' WHERE hostgroup_id = %s '
                      ' AND `hostname` = %s '
                      ' AND `port` = %s',
                      (
-                         comment_str,
+                         self._get_comment(backend),
                          backend.hostgroup_id,
                          backend.hostname,
                          backend.port
                      ))
-        self.set_status(backend, status)
-        self.reload_runtime()
+        self.set_status(backend, backend.admin_status)
 
     def set_status(self, backend, status):
         """Update status of a backend in ProxySQL"""
