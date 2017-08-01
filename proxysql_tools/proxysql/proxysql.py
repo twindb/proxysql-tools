@@ -69,6 +69,7 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
         self.max_latency_ms = int(max_latency_ms)
         self._connection = None
         self.role = role
+        self.comment = None
 
     def __eq__(self, other):
         try:
@@ -483,7 +484,7 @@ class ProxySQL(object):
                               ))
         return result != ()
 
-    def _get_comment(self, backend):
+    def _get_comment(self, backend): # pylint: disable=no-self-use
         """Generate comment in mysql_servers for ProxySQL"""
         status = {}
         status['role'] = backend.role
