@@ -152,6 +152,7 @@ def status(cfg):
         exit(1)
     except ProxySQLBackendNotFound as err:
         LOG.error(err)
+        exit(1)
 
 
 @server.command()
