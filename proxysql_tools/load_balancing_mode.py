@@ -244,7 +244,8 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, role,  # pyli
         else:
             LOG.warn('Node %s is reachable but unhealty, '
                      'setting it OFFLINE_SOFT', node)
-            proxysql.set_status(backend, BackendStatus.offline_soft)
+            backend.status = backend.admin_status = BackendStatus.offline_soft
+            proxysql.set_admin_status(backend)
             register_synced_backends(galera_cluster, proxysql,
                                      hostgroup_id,
                                      role=role,
