@@ -493,30 +493,28 @@ class ProxySQL(object):
 
     def set_admin_status(self, backend):
         """Set admin_status"""
-        self.execute('UPDATE `mysql_servers` SET `comment` = %s '
-                     ' WHERE hostgroup_id = %s '
-                     ' AND `hostname` = %s '
-                     ' AND `port` = %s',
-                     (
-                         self._get_comment(backend),
-                         backend.hostgroup_id,
-                         backend.hostname,
-                         backend.port
-                     ))
+        query = "UPDATE mysql_servers SET `comment` = '{comment}' " \
+                " WHERE `hostgroup_id` = {hostgroup_id} " \
+                " AND `hostname` = '{hostname}' " \
+                " AND `port` = {port} " \
+                "".format(comment=self._get_comment(backend),
+                          hostgroup_id=backend.hostgroup_id,
+                          hostname=backend.hostname,
+                          port=backend.port)
+        self.execute(query)
         self.set_status(backend, backend.admin_status)
 
     def set_status(self, backend, status):
         """Update status of a backend in ProxySQL"""
-        self.execute('UPDATE `mysql_servers` SET `status` = %s '
-                     ' WHERE hostgroup_id = %s '
-                     ' AND `hostname` = %s '
-                     ' AND `port` = %s',
-                     (
-                         status,
-                         backend.hostgroup_id,
-                         backend.hostname,
-                         backend.port
-                     ))
+        query = "UPDATE mysql_servers SET `status` = '{status}' " \
+                " WHERE `hostgroup_id` = {hostgroup_id} " \
+                " AND `hostname` = '{hostname}' " \
+                " AND `port` = {port} " \
+                "".format(status=status,
+                          hostgroup_id=backend.hostgroup_id,
+                          hostname=backend.hostname,
+                          port=backend.port)
+        self.execute(query)
         self.reload_runtime()
 
     @contextmanager
