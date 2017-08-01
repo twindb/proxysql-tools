@@ -1,3 +1,5 @@
+import json
+
 import mock
 import pytest
 from pymysql import OperationalError
@@ -26,8 +28,7 @@ def test_proxysql_mysql_backend():
                               max_connections='10',
                               max_replication_lag='20',
                               use_ssl=100,
-                              max_latency_ms='30',
-                              comment='bar')
+                              max_latency_ms='30',)
 
     assert be.hostgroup_id == 0
     assert be.port == 3307
@@ -38,7 +39,6 @@ def test_proxysql_mysql_backend():
     assert be.max_replication_lag == 20
     assert be.use_ssl is True
     assert be.max_latency_ms == 30
-    assert be.comment == 'bar'
 
 
 def test_proxysql_mysql_user():
@@ -153,19 +153,19 @@ def test_reload_runtime(mock_execute, proxysql):
     mock_execute.assert_has_calls(calls=calls, any_order=False)
 
 
-@pytest.mark.parametrize('comment, query',[
+@pytest.mark.parametrize('role, query',[
     (
-        'Some comment',
-        "REPLACE INTO mysql_servers(`hostgroup_id`, `hostname`, `port`, `status`, `weight`, `compression`, `max_connections`, `max_replication_lag`, `use_ssl`, `max_latency_ms`, `comment`) VALUES(0, 'foo', 3306, 'ONLINE', 1, 0, 10000, 0, 0, 0, 'Some comment')"
+        'Writer',
+        'REPLACE INTO mysql_servers(`hostgroup_id`, `hostname`, `port`, `status`, `weight`, `compression`, `max_connections`, `max_replication_lag`, `use_ssl`, `max_latency_ms`, `comment`) VALUES(0, \'foo\', 3306, \'ONLINE\', 1, 0, 10000, 0, 0, 0, \'{"admin_status": "ONLINE", "role": "Writer"}\')'
     ),
     (
-        None,
-        "REPLACE INTO mysql_servers(`hostgroup_id`, `hostname`, `port`, `status`, `weight`, `compression`, `max_connections`, `max_replication_lag`, `use_ssl`, `max_latency_ms`, `comment`) VALUES(0, 'foo', 3306, 'ONLINE', 1, 0, 10000, 0, 0, 0, NULL)"
+        'Reader',
+        'REPLACE INTO mysql_servers(`hostgroup_id`, `hostname`, `port`, `status`, `weight`, `compression`, `max_connections`, `max_replication_lag`, `use_ssl`, `max_latency_ms`, `comment`) VALUES(0, \'foo\', 3306, \'ONLINE\', 1, 0, 10000, 0, 0, 0, \'{"admin_status": "ONLINE", "role": "Reader"}\')'
     )
 ])
 @mock.patch.object(ProxySQL, 'reload_runtime')
 @mock.patch.object(ProxySQL, 'execute')
-def test_register_backend(mock_execute, mock_runtime, comment, query, proxysql):
+def test_register_backend(mock_execute, mock_runtime, role, query, proxysql):
     """
 
     :param mock_execute:
@@ -175,7 +175,8 @@ def test_register_backend(mock_execute, mock_runtime, comment, query, proxysql):
     :param proxysql:
     :type proxysql: ProxySQL
     """
-    backend = ProxySQLMySQLBackend('foo', comment=comment)
+
+    backend = ProxySQLMySQLBackend('foo', role=role)
     proxysql.register_backend(backend)
     mock_execute.assert_called_once_with(query)
     mock_runtime.assert_called_once_with()

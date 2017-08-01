@@ -12,7 +12,9 @@ def galera_node():
 
 @pytest.fixture
 def proxysql_mysql_backend():
-    return ProxySQLMySQLBackend('127.0.0.1')
+    backend = ProxySQLMySQLBackend('127.0.0.1')
+    backend.comment = ""
+    return backend
 
 
 @pytest.fixture
