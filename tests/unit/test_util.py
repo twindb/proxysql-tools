@@ -61,9 +61,7 @@ def test__bug1258464_when_raise_NotImplementedError(mocker):
     mock_cursor = mock.MagicMock()
     mock_cursor.fetchone.return_value = [100]
     mock_pymysql.connect.return_value.cursor.return_value.__enter__.return_value = mock_cursor
-    mock_get_my_cnf = mocker.patch('proxysql_tools.util.bug1258464.get_my_cnf')
-    mock_get_my_cnf.return_value = 'some path'
-    mock_get_my_cnf.side_effect = NotImplementedError
+    mock_pymysql.connect.side_effect = NotImplementedError
     assert not bug1258464('some path')
 
 
@@ -72,10 +70,7 @@ def test__bug1258464_when_raise_OSError(mocker):
     mock_cursor = mock.MagicMock()
     mock_cursor.fetchone.return_value = [100]
     mock_pymysql.connect.return_value.cursor.return_value.__enter__.return_value = mock_cursor
-    mock_get_my_cnf = mocker.patch('proxysql_tools.util.bug1258464.get_my_cnf')
-    mock_get_my_cnf.return_value = 'some path'
-    mock_get_pid = mocker.patch('proxysql_tools.util.bug1258464.get_pid')
-    mock_get_pid.side_effect = OSError
+    mock_pymysql.connect.side_effect = OSError
     assert not bug1258464('some path')
 
 
