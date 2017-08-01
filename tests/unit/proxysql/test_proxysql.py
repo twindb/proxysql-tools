@@ -153,22 +153,11 @@ def test_reload_runtime(mock_execute, proxysql):
     mock_execute.assert_has_calls(calls=calls, any_order=False)
 
 
-@pytest.mark.parametrize('role, query',[
-    (
-        'Writer',
-        'REPLACE INTO mysql_servers(`hostgroup_id`, `hostname`, `port`, `status`, `weight`, `compression`, `max_connections`, `max_replication_lag`, `use_ssl`, `max_latency_ms`, `comment`) VALUES(0, \'foo\', 3306, \'ONLINE\', 1, 0, 10000, 0, 0, 0, \'{"admin_status": "ONLINE", "role": "Writer"}\')'
-    ),
-    (
-        'Reader',
-        'REPLACE INTO mysql_servers(`hostgroup_id`, `hostname`, `port`, `status`, `weight`, `compression`, `max_connections`, `max_replication_lag`, `use_ssl`, `max_latency_ms`, `comment`) VALUES(0, \'foo\', 3306, \'ONLINE\', 1, 0, 10000, 0, 0, 0, \'{"admin_status": "ONLINE", "role": "Reader"}\')'
-    )
-])
 @mock.patch.object(ProxySQL, 'reload_runtime')
 @mock.patch.object(ProxySQL, 'execute')
-def test_register_backend(mock_execute, mock_runtime, role, query, proxysql):
-    backend = ProxySQLMySQLBackend('foo', role=role)
+def test_register_backend(mock_execute, mock_runtime, proxysql):
+    backend = ProxySQLMySQLBackend('foo')
     proxysql.register_backend(backend)
-    mock_execute.assert_called_once_with(query)
     mock_runtime.assert_called_once_with()
 
 
