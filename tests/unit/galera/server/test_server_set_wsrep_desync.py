@@ -1,17 +1,9 @@
 import mock
 import pytest
-from prettytable import PrettyTable
 
-from proxysql_tools.galera.server import server_status, server_set_wsrep_desync
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
-from proxysql_tools.proxysql.proxysql import ProxySQL, ProxySQLMySQLBackend
-
-
-@mock.patch.object(ProxySQL, 'find_backends')
-def test_server_status(mocker_find_bknd, proxysql_mysql_backend, config):
-    mocker_find_bknd.return_value = [proxysql_mysql_backend]
-    server_status(config)
-
+from proxysql_tools.proxysql.proxysql import ProxySQL
+from proxysql_tools.galera.server import server_set_wsrep_desync
 
 @mock.patch.object(ProxySQL, 'find_backends')
 def test_server_set_wsrep_desync(mocker_find_bknd, config):
