@@ -453,7 +453,7 @@ class ProxySQL(object):
             if backend.comment:
                 admin_status_map = json.loads(backend.comment)
                 backend.role = admin_status_map['role']
-                backend.status = admin_status_map['admin_status']
+                backend.status = backend.admin_status = admin_status_map['admin_status']
 
             if status and backend.status != status:
                 continue
