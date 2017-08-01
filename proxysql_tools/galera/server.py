@@ -1,8 +1,6 @@
 """MySQL Server commands."""
 from __future__ import print_function
 
-import json
-
 from prettytable import PrettyTable
 
 from proxysql_tools import LOG
@@ -63,7 +61,7 @@ def server_set_wsrep_desync(cfg, server_ip, port, wsrep_desync='ON'):
     backend.execute("SET GLOBAL wsrep_desync=%s", wsrep_desync)
 
 
-def server_set_admin_status(cfg, server_ip, port, status):
+def server_set_admin_status(cfg, server_ip, port, status=BackendStatus.online):
     """
     Set server admin_status
     :param cfg: ProxySQL Tools configuration
@@ -72,11 +70,12 @@ def server_set_admin_status(cfg, server_ip, port, status):
     :param port: Server port
     :param status: Admin status
     """
+    writer_hostgroup_id, _ = get_hostgroups_id(cfg)
     backend = get_backend(cfg, server_ip, port)
-
-    backend.admin_status = status
-    backend.role = json.loads(backend.comment)['role']
-
+    if backend.hostgroup_id == writer_hostgroup_id:
+        role = "writer"
+    else:
+        role = "reader"
     kwargs = get_proxysql_options(cfg)
     proxysql = ProxySQL(**kwargs)
-    proxysql.set_admin_status(backend)
+    proxysql.set_admin_status(backend, role, status)
