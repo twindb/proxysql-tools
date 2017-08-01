@@ -262,7 +262,8 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, role,  # pyli
         LOG.error(err)
         LOG.error('Looks like backend %s is unhealthy. Set OFFLINE_HARD status.',
                   backend)
-        proxysql.set_admin_status(backend, BackendStatus.offline_hard)
+        backend.status = backend.admin_status = BackendStatus.offline_hard
+        proxysql.set_admin_status(backend)
         register_synced_backends(galera_cluster, proxysql,
                                  hostgroup_id, role=role,
                                  limit=limit, ignore_backend=ignore_backend)
