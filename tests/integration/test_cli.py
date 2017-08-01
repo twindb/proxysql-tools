@@ -100,8 +100,7 @@ def test__galera_register_command_set_nodes_online(percona_xtradb_cluster_three_
                                                row['max_replication_lag'],
                                                use_ssl=row['use_ssl'],
                                                max_latency_ms=
-                                               row['max_latency_ms'],
-                                               comment=row['comment'])
+                                               row['max_latency_ms'])
                 assert backend.status == BackendStatus.online
 
             cursor.execute('SELECT `hostgroup_id`, `hostname`, '
@@ -123,8 +122,7 @@ def test__galera_register_command_set_nodes_online(percona_xtradb_cluster_three_
                                                row['max_replication_lag'],
                                                use_ssl=row['use_ssl'],
                                                max_latency_ms=
-                                               row['max_latency_ms'],
-                                               comment=row['comment'])
+                                               row['max_latency_ms'])
                 assert backend.status == BackendStatus.online
 
     finally:
