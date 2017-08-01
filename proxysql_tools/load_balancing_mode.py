@@ -6,8 +6,7 @@ from proxysql_tools.galera.exceptions import GaleraClusterSyncedNodeNotFound, \
     GaleraClusterNodeNotFound
 from proxysql_tools.galera.galera_node import GaleraNodeState, GaleraNode
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
-from proxysql_tools.proxysql.proxysql import ProxySQLMySQLBackend, BackendStatus, \
-    BackendRole
+from proxysql_tools.proxysql.proxysql import ProxySQLMySQLBackend, BackendStatus
 
 
 def singlewriter(galera_cluster, proxysql,
@@ -39,11 +38,10 @@ def singlewriter(galera_cluster, proxysql,
         reader = ProxySQLMySQLBackend(galera_node.host,
                                       hostgroup_id=reader_hostgroup_id,
                                       port=galera_node.port,
-                                      role=BackendRole.reader)
+                                      comment='Reader')
         writer = ProxySQLMySQLBackend(galera_node.host,
                                       hostgroup_id=writer_hostgroup_id,
-                                      port=galera_node.port,
-                                      role=BackendRole.writer)
+                                      port=galera_node.port)
         if not (proxysql.backend_registered(reader) or
                 proxysql.backend_registered(writer)):
             proxysql.register_backend(reader)
@@ -95,16 +93,16 @@ def register_writer(galera_cluster, proxysql, writer_hostgroup_id,
     try:
         for backend in proxysql.find_backends(writer_hostgroup_id):
             check_backend(backend, galera_cluster, proxysql,
-                          writer_hostgroup_id, role=BackendRole.writer, limit=1,
+                          writer_hostgroup_id, 'Writer', limit=1,
                           ignore_backend=ignore_writer,
                           recovered_hostgroup_id=reader_hostgroup_id,
-                          recoverd_role=BackendRole.reader)
+                          recoverd_comment='Reader')
 
     except ProxySQLBackendNotFound:
         # add it
         register_synced_backends(galera_cluster, proxysql,
                                  writer_hostgroup_id,
-                                 role=BackendRole.writer,
+                                 comment='Writer',
                                  limit=1,
                                  ignore_backend=ignore_writer)
 
@@ -115,7 +113,7 @@ def register_writer(galera_cluster, proxysql, writer_hostgroup_id,
                  'Will try to add previously ignored backends')
         register_synced_backends(galera_cluster, proxysql,
                                  writer_hostgroup_id,
-                                 role=BackendRole.writer,
+                                 comment='Writer',
                                  limit=1)
 
 
@@ -144,7 +142,7 @@ def register_readers(galera_cluster, proxysql,
         LOG.warn(err)
         register_synced_backends(galera_cluster, proxysql,
                                  writer_hostgroup_id,
-                                 role=BackendRole.writer,
+                                 comment='Writer',
                                  limit=1,
                                  ignore_backend=ignore_writer)
         writer = proxysql.find_backends(writer_hostgroup_id)[0]
@@ -160,12 +158,12 @@ def register_readers(galera_cluster, proxysql,
             LOG.debug('Do not match')
 
             check_backend(backend, galera_cluster, proxysql,
-                          reader_hostgroup_id, role=BackendRole.reader)
+                          reader_hostgroup_id, 'Reader')
             num_readers += 1
         if num_readers == 0:
             LOG.warn('Did not register any readers')
             check_backend(writer, galera_cluster, proxysql,
-                          reader_hostgroup_id, role=BackendRole.reader)
+                          reader_hostgroup_id, 'Reader')
 
     except ProxySQLBackendNotFound:
         # If there are no readers , register writer as reader as well
@@ -174,13 +172,13 @@ def register_readers(galera_cluster, proxysql,
         writer_as_reader.hostgroup_id = reader_hostgroup_id
         register_synced_backends(galera_cluster, proxysql,
                                  reader_hostgroup_id,
-                                 role=BackendRole.reader,
+                                 comment='Reader',
                                  ignore_backend=writer_as_reader)
 
 
-def check_backend(backend, galera_cluster, proxysql, hostgroup_id, role,  # pylint: disable=too-many-arguments
+def check_backend(backend, galera_cluster, proxysql, hostgroup_id, comment,  # pylint: disable=too-many-arguments
                   limit=None, ignore_backend=None,
-                  recovered_hostgroup_id=None, recoverd_role=None):
+                  recovered_hostgroup_id=None, recoverd_comment=None):
     """
     Check health of given backed and if necessary replace it.
 
@@ -192,7 +190,7 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, role,  # pyli
     :type proxysql: ProxySQL
     :param hostgroup_id: Hostgroup_id which the backend belongs to.
     :type hostgroup_id: int
-    :param role: Role of  mysql_servers in ProxySQL
+    :param comment: Comment to add to mysql_servers in ProxySQL
     :param limit: Register not more than limit number of backends
     :type limit: int
     :param ignore_backend: Do not register this backend
@@ -200,25 +198,17 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, role,  # pyli
     :param recovered_hostgroup_id: If backend recovers from OFFLINE_SOFT assign
         it to this hostgroup_id. Default hostgroup_id.
     :type recovered_hostgroup_id: int
-    :param recoverd_role: If backend recovers from OFFLINE_SOFT set
-        this role
-    :type recoverd_role: str
+    :param recoverd_comment: If backend recovers from OFFLINE_SOFT set
+        this comment
+    :type recoverd_comment: str
     :return: True if backend successfully registered.
     :rtype: bool
     """
     # check it
-
     LOG.debug('Backend %s is already registered', backend)
     LOG.debug('Checking its health')
     try:
-
         node = galera_cluster.find_node(backend.hostname, backend.port)
-
-        if backend.admin_status and \
-                backend.admin_status == BackendStatus.offline_hard:
-            backend.status = backend.admin_status
-            proxysql.register_backend(backend)
-            return
 
         state = node.wsrep_local_state
         LOG.debug('%s state: %d', node, state)
@@ -237,19 +227,18 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, role,  # pyli
                     recovered_hostgroup_id = hostgroup_id
                 backend.hostgroup_id = recovered_hostgroup_id
 
-                if recoverd_role:
-                    backend.role = recoverd_role
+                if recoverd_comment:
+                    backend.comment = recoverd_comment
 
                 LOG.debug('Registering %s (%s)', backend, backend.status)
                 proxysql.register_backend(backend)
         else:
             LOG.warn('Node %s is reachable but unhealty, '
                      'setting it OFFLINE_SOFT', node)
-            backend.admin_status = BackendStatus.offline_soft
-            proxysql.set_admin_status(backend)
+            proxysql.set_status(backend, BackendStatus.offline_soft)
             register_synced_backends(galera_cluster, proxysql,
                                      hostgroup_id,
-                                     role=role,
+                                     comment=comment,
                                      limit=limit,
                                      ignore_backend=ignore_backend)
 
@@ -258,7 +247,7 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, role,  # pyli
                  backend)
         proxysql.deregister_backend(backend)
         register_synced_backends(galera_cluster, proxysql,
-                                 hostgroup_id, role=role,
+                                 hostgroup_id, comment=comment,
                                  limit=limit, ignore_backend=ignore_backend)
     except OperationalError as err:
         LOG.error(err)
@@ -266,13 +255,13 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, role,  # pyli
                   backend)
         proxysql.set_status(backend, BackendStatus.offline_hard)
         register_synced_backends(galera_cluster, proxysql,
-                                 hostgroup_id, role=role,
+                                 hostgroup_id, comment=comment,
                                  limit=limit, ignore_backend=ignore_backend)
     return True
 
 
 def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-many-arguments
-                             hostgroup_id, role=None, limit=None,
+                             hostgroup_id, comment=None, limit=None,
                              ignore_backend=None):
     """
     Find SYNCED node and register it as a backend.
@@ -283,8 +272,8 @@ def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-ma
     :type proxysql: ProxySQL
     :param hostgroup_id: hostgroup_id
     :type hostgroup_id: int
-    :param role: Role of to mysql_server
-    :type role: str
+    :param comment: Optional comment to add to mysql_server
+    :type comment: str
     :param limit: Register not more than limit number of backends
     :type limit: int
     :param ignore_backend: Do not register this backend
@@ -310,7 +299,7 @@ def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-ma
             backend = ProxySQLMySQLBackend(galera_node.host,
                                            hostgroup_id=hostgroup_id,
                                            port=galera_node.port,
-                                           role=role)
+                                           comment=comment)
             proxysql.register_backend(backend)
             LOG.info('Added backend %s to hostgroup %d', backend, hostgroup_id)
 
