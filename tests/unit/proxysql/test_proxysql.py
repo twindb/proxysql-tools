@@ -166,16 +166,6 @@ def test_reload_runtime(mock_execute, proxysql):
 @mock.patch.object(ProxySQL, 'reload_runtime')
 @mock.patch.object(ProxySQL, 'execute')
 def test_register_backend(mock_execute, mock_runtime, role, query, proxysql):
-    """
-
-    :param mock_execute:
-    :param mock_runtime:
-    :param comment:
-    :param query:
-    :param proxysql:
-    :type proxysql: ProxySQL
-    """
-
     backend = ProxySQLMySQLBackend('foo', role=role)
     proxysql.register_backend(backend)
     mock_execute.assert_called_once_with(query)
@@ -185,15 +175,7 @@ def test_register_backend(mock_execute, mock_runtime, role, query, proxysql):
 @mock.patch.object(ProxySQL, 'reload_runtime')
 @mock.patch.object(ProxySQL, 'execute')
 def test_deregister_backend(mock_execute, mock_runtime, proxysql):
-    """
 
-    :param mock_execute:
-    :param mock_runtime:
-    :param comment:
-    :param query:
-    :param proxysql:
-    :type proxysql: ProxySQL
-    """
     backend = ProxySQLMySQLBackend('foo', hostgroup_id=10, port=3307)
     proxysql.deregister_backend(backend)
     query = "DELETE FROM mysql_servers WHERE hostgroup_id=10 AND hostname='foo' AND port=3307"
