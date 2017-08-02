@@ -80,10 +80,11 @@ class GaleraCluster(object):
                         state = galera_node.wsrep_local_state
                         donor_reject = galera_node.wsrep_sst_donor_rejects_queries
                         reject_queries = galera_node.wsrep_reject_queries
-                        LOG.debug('%s state: %s donor reject: %s reject queries: %s', galera_node, state,
-                                  donor_reject, reject_queries)
-                        if state == GaleraNodeState.DONOR and len(nodes) == 0 and donor_reject == "OFF" and reject_queries == "NONE":
-                            nodes.append(galera_node)
+                        length = len(nodes)
+                        LOG.debug('%s state: %s donor reject: %s reject queries: %s',
+                                  galera_node, state, donor_reject, reject_queries)
+                        if state == GaleraNodeState.DONOR and length == 0 and donor_reject == "OFF" and reject_queries == "NONE":
+                                nodes.append(galera_node)
                     except OperationalError as err:
                         LOG.error(err)
                         LOG.info('Skipping node %s', galera_node)

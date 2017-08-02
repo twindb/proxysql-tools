@@ -33,10 +33,9 @@ def galera_register(cfg):
     writer_hostgroup_id = int(cfg.get('galera', 'writer_hostgroup_id'))
     reader_hostgroup_id = int(cfg.get('galera', 'reader_hostgroup_id'))
     try:
-        use_last_desynced = cfg.getboolean('galera','use_last_desynced')
+        use_last_desynced = cfg.getboolean('galera', 'use_last_desynced')
     except NoOptionError:
         use_last_desynced = None
-        pass
 
     if load_balancing_mode == 'singlewriter':
         kwargs = {}

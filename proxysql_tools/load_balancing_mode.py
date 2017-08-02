@@ -106,8 +106,7 @@ def register_writer(galera_cluster, proxysql, writer_hostgroup_id,
                           use_last_desynced, limit=1,
                           ignore_backend=ignore_writer,
                           recovered_hostgroup_id=reader_hostgroup_id,
-                          recoverd_comment='Reader'
-                          )
+                          recoverd_comment='Reader')
 
     except ProxySQLBackendNotFound:
         # add it
@@ -289,7 +288,7 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, comment,  # p
 
 def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-many-arguments
                              hostgroup_id,
-                             use_last_desynced = None,
+                             use_last_desynced=None,
                              comment=None, limit=None,
                              ignore_backend=None):
     """
@@ -327,7 +326,7 @@ def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-ma
             candidate_nodes = galera_nodes
 
         for galera_node in candidate_nodes:
-            LOG.debug('wsrep_reject_queries: {}'.format(galera_node.wsrep_reject_queries))
+            LOG.debug('wsrep_reject_queries: %s', galera_node.wsrep_reject_queries)
             if galera_node.wsrep_reject_queries == "NONE":
                 backend = ProxySQLMySQLBackend(galera_node.host,
                                                hostgroup_id=hostgroup_id,
