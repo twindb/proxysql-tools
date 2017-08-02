@@ -322,7 +322,7 @@ def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-ma
                                            role=role)
             if old_backend and \
                     old_backend.status == BackendStatus.offline_hard:
-                backend.status = old_backend.status
+                backend.status = backend.admin_status = old_backend.admin_status
             proxysql.register_backend(backend)
             LOG.info('Added backend %s to hostgroup %d', backend, hostgroup_id)
 
