@@ -3,7 +3,7 @@ from click.testing import CliRunner
 import proxysql_tools
 from proxysql_tools.cli import main
 from proxysql_tools.proxysql.proxysql import ProxySQLMySQLBackend
-from tests.integration import wait_for_cluster_nodes_to_become_healthy, proxysql_tools_config_2
+from tests.integration.library import wait_for_cluster_nodes_to_become_healthy, proxysql_tools_config_2
 
 
 def test__galera_server_status(percona_xtradb_cluster_three_node,
