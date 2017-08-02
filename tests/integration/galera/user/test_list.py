@@ -1,19 +1,12 @@
 import pymysql
 from click.testing import CliRunner
+from pymysql.cursors import DictCursor
 
 import proxysql_tools
 from proxysql_tools.cli import main
 from tests.integration.library import proxysql_tools_config
 
-
-def test__main_command_version_can_be_fetched():
-    runner = CliRunner()
-    result = runner.invoke(main, ['--version'])
-    assert result.output == proxysql_tools.__version__ + '\n'
-    assert result.exit_code == 0
-
-
-def test__ping_command_can_be_executed(proxysql_instance, tmpdir):
+def test__galera_user_list_can_be_executed(proxysql_instance, tmpdir):
     config = proxysql_tools_config(proxysql_instance, '127.0.0.1', '3306',
                                    'user', 'pass', 10, 11, 'monitor',
                                    'monitor')
@@ -22,9 +15,11 @@ def test__ping_command_can_be_executed(proxysql_instance, tmpdir):
         config.write(fh)
         proxysql_tools.LOG.debug('proxysql-tools config: \n%s', config)
     runner = CliRunner()
-    result = runner.invoke(main, ['--config', config_file, 'ping'])
+    result = runner.invoke(main,
+                           ['--config', config_file, 'galera', 'user', 'create', 'foo']
+                           )
     assert result.exit_code == 0
-
-
-
-
+    result = runner.invoke(main,
+                           ['--config', config_file, 'galera', 'user', 'list']
+                           )
+    assert result.exit_code == 0
