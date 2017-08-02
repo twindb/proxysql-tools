@@ -8,12 +8,12 @@ from proxysql_tools import execute
 
 
 class GaleraNodeState(object):  # pylint: disable=too-few-public-methods
-    """State of Galera node http://bit.ly/2r1tUGB """
-    PRIMARY = 1
-    JOINER = 5 #2
+    """State of Galera node http://bit.ly/2wkXYyY """
+    INITIALIZED = 0
+    JOINING = 1
+    DONOR = 2
     JOINED = 3
     SYNCED = 4
-    DONOR = 2 #5
 
 
 class GaleraNode(object):
