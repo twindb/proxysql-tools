@@ -115,11 +115,11 @@ def register_writer(galera_cluster, proxysql, writer_hostgroup_id,
             proxysql.find_backends(writer_hostgroup_id, BackendStatus.offline_hard)
         except ProxySQLBackendNotFound:
             LOG.warn('No writer backends were registered. '
-                    'Will try to add previously ignored backends')
+                     'Will try to add previously ignored backends')
             register_synced_backends(galera_cluster, proxysql,
-                                    writer_hostgroup_id,
-                                    role=BackendRole.writer,
-                                    limit=1)
+                                     writer_hostgroup_id,
+                                     role=BackendRole.writer,
+                                     limit=1)
 
 
 
