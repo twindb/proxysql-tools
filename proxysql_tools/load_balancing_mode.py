@@ -8,7 +8,7 @@ from proxysql_tools.galera.galera_node import GaleraNodeState, GaleraNode
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
 from proxysql_tools.proxysql.proxysql import ProxySQLMySQLBackend, BackendStatus, \
     BackendRole
-from proxysql_tools.util import get_backend, get_backend_by_hostgroup_id
+from proxysql_tools.util import get_backend_by_hostgroup_id
 
 
 def singlewriter(galera_cluster, proxysql,
