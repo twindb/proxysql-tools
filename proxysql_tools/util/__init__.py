@@ -59,19 +59,6 @@ def get_backend(cfg, server_ip, port):
                                   % (server_ip, port))
 
 
-def get_backend_by_hostgroup_id(proxysql, hostgroup_id, server_ip, port):
-    """Get backend by server_ip, hostgroup_id and port"""
-
-    backends = proxysql.find_backends(hostgroup_id)
-
-    for backend in backends:
-        if backend.hostname == server_ip and backend.port == port:
-            return backend
-
-    raise ProxySQLBackendNotFound('Could not find server %s:%d'
-                                  % (server_ip, port))
-
-
 def parse_user_arguments(args):
     """Parse user arguments for modify_user"""
     attrs = {
