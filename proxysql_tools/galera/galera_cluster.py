@@ -49,19 +49,22 @@ class GaleraCluster(object):
 
         raise GaleraClusterNodeNotFound('Cannot find node %s:%d', host, port)
 
-    def find_synced_nodes(self):
+    def find_synced_nodes(self, use_last_desynced=None):
         """Find a node in the cluster in SYNCED state.
+        :param: use_last_desynced: Use the last desynced node if needed
         :return: List of Galera node in SYNCED state.
         :rtype: list(GaleraNode)
         :raise: GaleraClusterSyncedNodeNotFound
         """
+        use_last_desynced = use_last_desynced
         LOG.debug('Looking for a SYNCED node')
         nodes = []
         for galera_node in self._nodes:
             try:
                 state = galera_node.wsrep_local_state
+                reject_queries = galera_node.wsrep_reject_queries
                 LOG.debug('%s state: %s', galera_node, state)
-                if state == GaleraNodeState.SYNCED:
+                if state == GaleraNodeState.SYNCED and reject_queries == "NONE":
                     nodes.append(galera_node)
             except OperationalError as err:
                 LOG.error(err)
@@ -69,6 +72,24 @@ class GaleraCluster(object):
         if nodes:
             return nodes
         else:
+            if use_last_desynced:
+                LOG.debug('Looking for an available DESYNCED node')
+                nodes = []
+                for galera_node in self._nodes:
+                    try:
+                        state = galera_node.wsrep_local_state
+                        donor_reject = galera_node.wsrep_sst_donor_rejects_queries
+                        reject_queries = galera_node.wsrep_reject_queries
+                        LOG.debug('%s state: %s donor reject: %s reject queries: %s', galera_node, state,
+                                  donor_reject, reject_queries)
+                        if state == GaleraNodeState.DONOR and len(nodes) == 0 and donor_reject == "OFF" and reject_queries == "NONE":
+                            nodes.append(galera_node)
+                    except OperationalError as err:
+                        LOG.error(err)
+                        LOG.info('Skipping node %s', galera_node)
+                if nodes:
+                    return nodes
+
             raise GaleraClusterSyncedNodeNotFound('Cluster has '
                                                   'no SYNCED nodes')
 
