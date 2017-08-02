@@ -7,7 +7,7 @@ from pymysql.cursors import DictCursor
 
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, ProxySQLUserNotFound
 from proxysql_tools.proxysql.proxysql import BackendStatus, ProxySQLMySQLBackend, \
-    ProxySQLMySQLUser, ProxySQL
+    ProxySQLMySQLUser, ProxySQL, BackendRole
 
 
 def test_backendstatus():
@@ -226,7 +226,7 @@ def test_connect(mock_pymysql, kwargs_in, kwargs_out):
     (
         [{
             u'status': 'ONLINE',
-            u'comment': '',
+            u'comment': '{ "role": "Reader", "admin_status": "ONLINE" }',
             u'compression': '0',
             u'weight': '1',
             u'hostname': '192.168.90.2',
@@ -235,10 +235,10 @@ def test_connect(mock_pymysql, kwargs_in, kwargs_out):
             u'max_replication_lag': '0',
             u'port': '3306',
             u'max_latency_ms': '0',
-            u'max_connections': '10000'
+            u'max_connections': '10000',
         }]
         ,
-        ProxySQLMySQLBackend('192.168.90.2', hostgroup_id=10, port=3306)
+        ProxySQLMySQLBackend('192.168.90.2', hostgroup_id=10, port=3306, role=BackendRole.reader)
     )
 ])
 @mock.patch.object(ProxySQL, 'execute')
