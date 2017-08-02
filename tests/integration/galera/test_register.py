@@ -6,7 +6,8 @@ import proxysql_tools
 from proxysql_tools.cli import main
 from proxysql_tools.galera.galera_node import GaleraNode
 from proxysql_tools.proxysql.proxysql import ProxySQLMySQLBackend, BackendStatus
-from tests.integration.library import wait_for_cluster_nodes_to_become_healthy, proxysql_tools_config_2
+from tests.integration.library import wait_for_cluster_nodes_to_become_healthy, proxysql_tools_config_2, \
+    shutdown_container
 
 
 def test__galera_register_command_set_nodes_online(percona_xtradb_cluster_three_node,
