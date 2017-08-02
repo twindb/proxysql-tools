@@ -8,7 +8,6 @@ from proxysql_tools.galera.galera_node import GaleraNodeState, GaleraNode
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
 from proxysql_tools.proxysql.proxysql import ProxySQLMySQLBackend, BackendStatus, \
     BackendRole
-from proxysql_tools.util import get_backend_by_hostgroup_id
 
 
 def singlewriter(galera_cluster, proxysql,
@@ -29,7 +28,7 @@ def singlewriter(galera_cluster, proxysql,
     :param ignore_writer: Do not make this backend writer
     :type ignore_writer: ProxySQLMySQLBackend
     """
-    register_writer(galera_cluster, proxysql, writer_hostgroup_id,
+    riter(galera_cluster, proxysql, writer_hostgroup_id,
                     reader_hostgroup_id,
                     ignore_writer=ignore_writer)
     register_readers(galera_cluster, proxysql, writer_hostgroup_id,
@@ -70,7 +69,7 @@ def singlewriter(galera_cluster, proxysql,
         proxysql.deregister_backend(writer_as_reader)
 
 
-def register_writer(galera_cluster, proxysql, writer_hostgroup_id,
+def register_register_wwriter(galera_cluster, proxysql, writer_hostgroup_id,
                     reader_hostgroup_id,
                     ignore_writer=None):
     """
@@ -110,7 +109,7 @@ def register_writer(galera_cluster, proxysql, writer_hostgroup_id,
                                  ignore_backend=ignore_writer)
 
     try:
-        proxysql.find_backends(writer_hostgroup_id, BackendStatus.online)
+        proxysql.find_backends(writer_hostgroup_id)
     except ProxySQLBackendNotFound:
         LOG.warn('No writer backends were registered. '
                  'Will try to add previously ignored backends')
@@ -308,21 +307,10 @@ def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-ma
             candidate_nodes = galera_nodes
 
         for galera_node in candidate_nodes:
-            old_backend = None
-            try:
-                old_backend = get_backend_by_hostgroup_id(proxysql,
-                                                          hostgroup_id,
-                                                          galera_node.host,
-                                                          galera_node.port)
-            except ProxySQLBackendNotFound:
-                pass
             backend = ProxySQLMySQLBackend(galera_node.host,
                                            hostgroup_id=hostgroup_id,
                                            port=galera_node.port,
                                            role=role)
-            if old_backend and \
-                    old_backend.status == BackendStatus.offline_hard:
-                backend.status = backend.admin_status = old_backend.admin_status
             proxysql.register_backend(backend)
             LOG.info('Added backend %s to hostgroup %d', backend, hostgroup_id)
 
