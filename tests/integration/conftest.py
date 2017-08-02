@@ -1,19 +1,18 @@
 import os
 import pprint
-import pytest
 
+import pytest
 from docker.types import IPAMConfig, IPAMPool
 
 from proxysql_tools import LOG, setup_logging
 from proxysql_tools.galera.galera_node import GaleraNode
 from proxysql_tools.proxysql.proxysql import ProxySQL
-from tests.integration.library import (
+from tests.integration import (
     docker_client,
     docker_pull_image,
     eventually,
     create_percona_xtradb_cluster
 )
-
 
 CONTAINERS_FOR_TESTING_LABEL = 'pytest_docker'
 DEBIAN_IMAGE = 'debian:8'
