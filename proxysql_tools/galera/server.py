@@ -30,17 +30,20 @@ def server_status(cfg):
         servers.align['comment'] = 'l'   # pylint: disable=unsupported-assignment-operation
         LOG.info('%s:', name)
         for backend in proxysql.find_backends(hostgroup_id):
-            servers.add_row([backend.hostgroup_id,
-                             backend.hostname,
-                             backend.port,
-                             backend.status,
-                             backend.weight,
-                             backend.compression,
-                             backend.max_connections,
-                             backend.max_replication_lag,
-                             backend.use_ssl,
-                             backend.max_latency_ms,
-                             backend.comment])
+            row = [
+                backend.hostgroup_id,
+                backend.hostname,
+                backend.port,
+                backend.status,
+                backend.weight,
+                backend.compression,
+                backend.max_connections,
+                backend.max_replication_lag,
+                backend.use_ssl,
+                backend.max_latency_ms,
+                backend.comment
+            ]
+            servers.add_row(row)
 
         print(servers)
 
