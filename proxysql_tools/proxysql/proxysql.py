@@ -261,11 +261,24 @@ class ProxySQL(object):
         with self._connect() as conn:
             return execute(conn, query, *args)
 
+
+    def reload_servers(self):
+        """Reload the ProxySQL runtime configuration about servers."""
+        self.execute('LOAD MYSQL SERVERS TO RUNTIME')
+
+    def reload_users(self):
+        """Reload the ProxySQL runtime configuration about users."""
+        self.execute('LOAD MYSQL USERS TO RUNTIME')
+
+    def reload_variables(self):
+        """Reload the ProxySQL runtime configuration about variables."""
+        self.execute('LOAD MYSQL VARIABLES TO RUNTIME')
+
     def reload_runtime(self):
         """Reload the ProxySQL runtime configuration."""
-        self.execute('LOAD MYSQL SERVERS TO RUNTIME')
-        self.execute('LOAD MYSQL USERS TO RUNTIME')
-        self.execute('LOAD MYSQL VARIABLES TO RUNTIME')
+        self.reload_servers()
+        self.reload_users()
+        self.reload_variables()
 
     def get_users(self):
         """
