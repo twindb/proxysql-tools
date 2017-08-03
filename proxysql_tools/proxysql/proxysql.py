@@ -377,14 +377,16 @@ class ProxySQL(object):
             'frontend': int(user.frontend),
             'max_connections': user.max_connections
         }
-        query = "REPLACE INTO mysql_users(`username`, `password`, `active`, " \
+        query = "REPLACE INTO mysql_users(" \
+                "`username`, `password`, `active`, " \
                 "`use_ssl`, `default_hostgroup`, `default_schema`, " \
                 "`schema_locked`, `transaction_persistent`, `fast_forward`, " \
                 "`backend`, `frontend`, `max_connections`) " \
-                "VALUES('{username}', '{password}', {active}, {use_ssl}, " \
-                "{default_hostgroup}, '{default_schema}', {schema_locked}, " \
-                "{transaction_persistent}, {fast_forward}, {backend}, " \
-                "{frontend}, {max_connections})" \
+                "VALUES(" \
+                "'{username}', '{password}', {active}, " \
+                "{use_ssl}, {default_hostgroup}, '{default_schema}', " \
+                "{schema_locked}, {transaction_persistent}, {fast_forward}, " \
+                "{backend}, {frontend}, {max_connections})" \
                 "".format(**kwargs)
         self.execute(query)
         self.reload_runtime()
@@ -407,27 +409,30 @@ class ProxySQL(object):
         :type backend: ProxySQLMySQLBackend
         """
         comment = self._get_comment(backend)
-
-        query = "REPLACE INTO mysql_servers(`hostgroup_id`," \
-                " `hostname`, `port`," \
-                " `status`, `weight`, `compression`, `max_connections`," \
-                " `max_replication_lag`, `use_ssl`, `max_latency_ms`," \
-                " `comment`) " \
-                "VALUES({hostgroup_id}, '{hostname}', {port}," \
-                " '{status}', {weight}, {compression}, {max_connections}," \
-                " {max_replication_lag}, {use_ssl}, {max_latency_ms}," \
-                " '{comment}')" \
-                "".format(hostgroup_id=int(backend.hostgroup_id),
-                          hostname=pymysql.escape_string(backend.hostname),
-                          port=int(backend.port),
-                          status=pymysql.escape_string(backend.status),
-                          weight=int(backend.weight),
-                          compression=int(backend.compression),
-                          max_connections=int(backend.max_connections),
-                          max_replication_lag=int(backend.max_replication_lag),
-                          use_ssl=int(backend.use_ssl),
-                          max_latency_ms=int(backend.max_latency_ms),
-                          comment=comment)
+        kwargs = {
+            'hostgroup_id': int(backend.hostgroup_id),
+            'hostname': pymysql.escape_string(backend.hostname),
+            'port': int(backend.port),
+            'status': pymysql.escape_string(backend.status),
+            'weight': int(backend.weight),
+            'compression': int(backend.compression),
+            'max_connections': int(backend.max_connections),
+            'max_replication_lag': int(backend.max_replication_lag),
+            'use_ssl': int(backend.use_ssl),
+            'max_latency_ms': int(backend.max_latency_ms),
+            'comment': comment
+        }
+        query = "REPLACE INTO mysql_servers(" \
+                "`hostgroup_id`, `hostname`, `port`, " \
+                "`status`, `weight`, `compression`, " \
+                "`max_connections`, `max_replication_lag`, `use_ssl`, " \
+                "`max_latency_ms`, `comment`) " \
+                "VALUES(" \
+                "{hostgroup_id}, '{hostname}', {port}, " \
+                "'{status}', {weight}, {compression}, " \
+                "{max_connections}, {max_replication_lag}, {use_ssl}, " \
+                "{max_latency_ms}, '{comment}')" \
+                "".format(**kwargs)
         self.execute(query)
         self.reload_runtime()
 
@@ -438,7 +443,9 @@ class ProxySQL(object):
         :param backend: Galera node.
         :type backend: ProxySQLMySQLBackend
         """
-        query = "DELETE FROM mysql_servers WHERE hostgroup_id={hostgroup_id}" \
+        query = "DELETE FROM mysql_servers " \
+                "WHERE " \
+                " hostgroup_id={hostgroup_id}" \
                 " AND hostname='{hostname}'" \
                 " AND port={port}" \
                 "".format(hostgroup_id=int(backend.hostgroup_id),
@@ -468,19 +475,18 @@ class ProxySQL(object):
 
         backends = []
         for row in result:
-            backend = ProxySQLMySQLBackend(row['hostname'],
-                                           hostgroup_id=row['hostgroup_id'],
-                                           port=row['port'],
-                                           status=row['status'],
-                                           weight=row['weight'],
-                                           compression=row['compression'],
-                                           max_connections=
-                                           row['max_connections'],
-                                           max_replication_lag=
-                                           row['max_replication_lag'],
-                                           use_ssl=row['use_ssl'],
-                                           max_latency_ms=
-                                           row['max_latency_ms'])
+            kwargs = {
+                'hostgroup_id': row['hostgroup_id'],
+                'port': row['port'],
+                'status': row['status'],
+                'weight': row['weight'],
+                'compression': row['compression'],
+                'max_connections': row['max_connections'],
+                'max_replication_lag': row['max_replication_lag'],
+                'use_ssl': row['use_ssl'],
+                'max_latency_ms': row['max_latency_ms']
+            }
+            backend = ProxySQLMySQLBackend(row['hostname'], **kwargs)
             backend.comment = row['comment']
             if backend.comment:
                 admin_status_map = json.loads(backend.comment)
@@ -555,17 +561,18 @@ class ProxySQL(object):
     @contextmanager
     def _connect(self):
         """Connect to ProxySQL admin interface."""
+        connect_args = {
+            'user': self.user,
+            'passwd': self.password,
+            'connect_timeout': PROXYSQL_CONNECT_TIMEOUT,
+            'cursorclass': DictCursor
+        }
         if self.socket is not None:
-            conn = pymysql.connect(unix_socket=self.socket,
-                                   user=self.user,
-                                   passwd=self.password,
-                                   connect_timeout=PROXYSQL_CONNECT_TIMEOUT,
-                                   cursorclass=DictCursor)
+            connect_args['unix_socket'] = self.socket
         else:
-            conn = pymysql.connect(host=self.host, port=self.port,
-                                   user=self.user, passwd=self.password,
-                                   connect_timeout=PROXYSQL_CONNECT_TIMEOUT,
-                                   cursorclass=DictCursor)
+            connect_args['host'] = self.host
+            connect_args['port'] = self.port
 
+        conn = pymysql.connect(**connect_args)
         yield conn
         conn.close()
