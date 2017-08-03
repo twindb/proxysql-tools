@@ -513,17 +513,17 @@ class ProxySQL(object):
 
         if hostgroup_id:
             result = self.execute('SELECT `hostgroup_id`, `hostname`, '
-                                '`port`, `status`, `weight`, `compression`, '
-                                '`max_connections`, `max_replication_lag`, '
-                                '`use_ssl`, `max_latency_ms`, `comment`'
-                                ' FROM `mysql_servers`'
-                                ' WHERE hostgroup_id = %s', hostgroup_id)
+                                  '`port`, `status`, `weight`, `compression`, '
+                                  '`max_connections`, `max_replication_lag`, '
+                                  '`use_ssl`, `max_latency_ms`, `comment`'
+                                  ' FROM `mysql_servers`'
+                                  ' WHERE hostgroup_id = %s', hostgroup_id)
         else:
             result = self.execute('SELECT `hostgroup_id`, `hostname`, '
-                                '`port`, `status`, `weight`, `compression`, '
-                                '`max_connections`, `max_replication_lag`, '
-                                '`use_ssl`, `max_latency_ms`, `comment`'
-                                ' FROM `mysql_servers`')
+                                  '`port`, `status`, `weight`, `compression`, '
+                                  '`max_connections`, `max_replication_lag`, '
+                                  '`use_ssl`, `max_latency_ms`, `comment`'
+                                  ' FROM `mysql_servers`')
 
         backends = []
         for row in result:
