@@ -19,15 +19,25 @@ def server_status(cfg):
 
     for hostgroup_id, name in [(writer_hostgroup_id, 'Writers'),
                                (reader_hostgroup_id, 'Readers')]:
-        servers = PrettyTable(['hostgroup_id', 'hostname',
-                               'port', 'status',
-                               'weight', 'compression', 'max_connections',
-                               'max_replication_lag', 'use_ssl',
-                               'max_latency_ms',
-                               'comment'])
+        columns = [
+            'hostgroup_id',
+            'hostname',
+            'port',
+            'status',
+            'weight',
+            'compression',
+            'max_connections',
+            'max_replication_lag',
+            'use_ssl',
+            'max_latency_ms',
+            'comment'
+        ]
+        servers = PrettyTable(columns)
+
         servers.align = 'r'
         servers.align['hostname'] = 'l'  # pylint: disable=unsupported-assignment-operation
         servers.align['comment'] = 'l'   # pylint: disable=unsupported-assignment-operation
+
         LOG.info('%s:', name)
         for backend in proxysql.find_backends(hostgroup_id):
             row = [
@@ -67,6 +77,7 @@ def server_set_wsrep_desync(cfg, server_ip, port, wsrep_desync='ON'):
 def server_set_admin_status(cfg, server_ip, port, status=BackendStatus.online):
     """
     Set server admin_status
+
     :param cfg: ProxySQL Tools configuration
     :type cfg: ConfigParser.ConfigParser
     :param server_ip: Server IP address
