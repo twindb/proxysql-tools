@@ -360,6 +360,7 @@ class ProxySQL(object):
                           frontend=int(user.frontend), max_connections=user.max_connections)
         self.execute(query)
         self.reload_users()
+        self.execute('SAVE MYSQL USERS TO DISK')
 
     def delete_user(self, username):
         """
