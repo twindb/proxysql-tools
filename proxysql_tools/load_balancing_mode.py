@@ -315,7 +315,6 @@ def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-ma
         else:
             candidate_nodes = galera_nodes
 
-
         for galera_node in candidate_nodes:
 
             backend = ProxySQLMySQLBackend(galera_node.host,
