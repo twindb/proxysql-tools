@@ -359,7 +359,7 @@ class ProxySQL(object):
                           fast_forward=int(user.fast_forward), backend=int(user.backend),
                           frontend=int(user.frontend), max_connections=user.max_connections)
         self.execute(query)
-        self.reload_runtime()
+        self.reload_users()
 
     def delete_user(self, username):
         """
