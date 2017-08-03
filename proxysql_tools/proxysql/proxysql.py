@@ -306,7 +306,7 @@ class ProxySQL(object):
                 'frontend': row['frontend'],
                 'max_connections': row['max_connections']
             }
-            user = ProxySQLMySQLUser(*kwargs)
+            user = ProxySQLMySQLUser(**kwargs)
             users.append(user)
         return users
 
