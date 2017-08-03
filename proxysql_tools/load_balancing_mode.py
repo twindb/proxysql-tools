@@ -223,7 +223,7 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, role,  # pyli
                     backend.admin_status == BackendStatus.offline_hard:
                 backend.status = backend.admin_status
                 proxysql.register_backend(backend)
-                return
+                return True
 
             if backend.status != BackendStatus.online:
 
@@ -303,20 +303,20 @@ def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-ma
 
         if limit:
             candidate_nodes = galera_nodes[:limit]
-        else:
-            candidate_nodes = galera_nodes
-
-        for galera_node in candidate_nodes:
-
             try:
                 backends = ProxySQLMySQLBackendSet()
                 backends.add_set(proxysql.find_backends(
                     status=BackendStatus.offline_hard,
                     hostgroup_id=hostgroup_id))
-                backends.find(galera_node.host, galera_node.port)
-                continue
+                backends.find(candidate_nodes[0].host, candidate_nodes[0].port)
+                candidate_nodes = galera_nodes[limit:limit+1]
             except ProxySQLBackendNotFound:
                 pass
+        else:
+            candidate_nodes = galera_nodes
+
+
+        for galera_node in candidate_nodes:
 
             backend = ProxySQLMySQLBackend(galera_node.host,
                                            hostgroup_id=hostgroup_id,
