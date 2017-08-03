@@ -115,8 +115,8 @@ def register_writer(galera_cluster, proxysql, writer_hostgroup_id,
                  'Will try to add previously ignored backends')
         register_synced_backends(galera_cluster, proxysql,
                                  writer_hostgroup_id,
-                                role=BackendRole.writer,
-                                limit=1)
+                                 role=BackendRole.writer,
+                                 limit=1)
 
 
 
