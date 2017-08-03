@@ -41,7 +41,6 @@ def get_hostgroups_id(cfg):
 
 
 def get_backend(kwargs, server_ip, port):
-
     """Get backend by server_ip and port"""
     proxysql = ProxySQL(**kwargs)
     backends = ProxySQLMySQLBackendSet()
