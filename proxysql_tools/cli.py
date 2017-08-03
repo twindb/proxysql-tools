@@ -15,6 +15,7 @@ from proxysql_tools.galera.user import get_users, create_user, delete_user, \
     change_password, modify_user
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, ProxySQLUserNotFound
 from proxysql_tools.proxysql.proxysql import ProxySQL, BackendStatus
+from proxysql_tools.util import get_proxysql_options
 from proxysql_tools.util.bug1258464 import bug1258464
 
 PASS_CFG = click.make_pass_decorator(ConfigParser, ensure=True)
@@ -53,19 +54,7 @@ def main(ctx, cfg, debug, config, version):
 @PASS_CFG
 def ping(cfg):
     """Checks the health of ProxySQL."""
-    kwargs_maps = {
-        'host': 'host',
-        'port': 'admin_port',
-        'user': 'admin_username',
-        'password': 'admin_password'
-    }
-    kwargs = {}
-    for key in kwargs_maps:
-        try:
-            kwargs[key] = cfg.get('proxysql', kwargs_maps[key])
-        except NoOptionError:
-            pass
-
+    kwargs = get_proxysql_options(cfg)
     if ProxySQL(**kwargs).ping():
         LOG.info('ProxySQL is alive')
         exit(0)
@@ -205,7 +194,8 @@ def set_sync(cfg, ip_address, port):
 @PASS_CFG
 def set_online(cfg, ip_address, port):
     """Set server backend status online"""
-    server_set_admin_status(cfg, ip_address, port, BackendStatus.online)
+    kwargs = get_proxysql_options(cfg)
+    server_set_admin_status(kwargs, ip_address, port, BackendStatus.online)
 
 
 @server.command()
@@ -214,7 +204,8 @@ def set_online(cfg, ip_address, port):
 @PASS_CFG
 def set_offline(cfg, ip_address, port):
     """Set server backend status offline"""
-    server_set_admin_status(cfg, ip_address, port, BackendStatus.offline_hard)
+    kwargs = get_proxysql_options(cfg)
+    server_set_admin_status(kwargs, ip_address, port, BackendStatus.offline_hard)
 
 
 @galera.group()
