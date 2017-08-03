@@ -308,18 +308,12 @@ def test_get_users(mock_execute, proxysql, response):
     mock_execute.assert_called_once_with(query)
 
 
-@pytest.mark.parametrize('query',[
-    (
-        "REPLACE INTO mysql_users(`username`, `password`, `active`, `use_ssl`, `default_hostgroup`, `default_schema`, `schema_locked`, `transaction_persistent`, `fast_forward`, `backend`, `frontend`, `max_connections`) VALUES('foo', '', 1, 0, 0, 'information_schema', 0, 0, 0, 1, 1, 10000)"
-    )
-])
-@mock.patch.object(ProxySQL, 'reload_users')
 @mock.patch.object(ProxySQL, 'execute')
-def test_add_user(mock_execute, mock_runtime, query, proxysql):
+@mock.patch.object(ProxySQL, 'reload_users')
+def test_add_user(mock_reload_users, mock_execute, proxysql):
     user = ProxySQLMySQLUser(username='foo', password='')
     proxysql.add_user(user)
-    mock_execute.assert_called_once_with(query)
-    mock_runtime.assert_called_once()
+    mock_reload_users.assert_called_once()
 
 
 @mock.patch.object(ProxySQL, 'reload_users')
