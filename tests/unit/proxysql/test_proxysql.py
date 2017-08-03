@@ -274,7 +274,7 @@ def test_find_backends_raises(mock_execute, proxysql):
 ])
 @mock.patch.object(ProxySQL, 'execute')
 def test_get_users(mock_execute, proxysql, response):
-    query = "SELECT * FROM mysql_users;"
+    query = "SELECT * FROM mysql_users"
     mock_execute.return_value = response
     proxysql.get_users()
     mock_execute.assert_called_once_with(query)
