@@ -227,8 +227,7 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, role,  # pyli
         if state == GaleraNodeState.SYNCED:
             LOG.debug('Node %s (%s) is healthy', node, backend.status)
 
-            if backend.admin_status and \
-                    backend.admin_status == BackendStatus.offline_hard:
+            if backend.admin_status == BackendStatus.offline_hard:
                 backend.status = backend.admin_status
                 proxysql.register_backend(backend)
                 return True
