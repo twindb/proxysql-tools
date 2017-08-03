@@ -42,7 +42,7 @@ class ProxySQLMySQLBackendSet(object):
         """
         for backend in self._backend_list:
             if backend.hostname == host and \
-                backend.port == port:
+                    backend.port == port:
                 return backend
         raise ProxySQLBackendNotFound('Backend not found')
 
