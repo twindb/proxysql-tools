@@ -75,7 +75,7 @@ def server_set_wsrep_desync(cfg, server_ip, port, wsrep_desync='ON'):
     backend.execute("SET GLOBAL wsrep_desync=%s", wsrep_desync)
 
 
-def server_set_admin_status(cfg, server_ip, port, status=BackendStatus.online):
+def server_set_admin_status(kwargs, server_ip, port, status=BackendStatus.online):
     """
     Set server admin_status
 
@@ -85,7 +85,6 @@ def server_set_admin_status(cfg, server_ip, port, status=BackendStatus.online):
     :param port: Server port
     :param status: Admin status
     """
-    kwargs = get_proxysql_options(cfg)
     backend = get_backend(kwargs, server_ip, port)
     proxysql = ProxySQL(**kwargs)
     backend.admin_status = status
