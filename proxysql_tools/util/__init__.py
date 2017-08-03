@@ -3,7 +3,7 @@ from ConfigParser import NoOptionError
 
 from proxysql_tools import LOG
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
-from proxysql_tools.proxysql.proxysql import ProxySQL
+from proxysql_tools.proxysql.proxysql import ProxySQL, ProxySQLMySQLBackendSet
 
 
 def get_proxysql_options(cfg):
@@ -40,23 +40,13 @@ def get_hostgroups_id(cfg):
     return writer_hostgroup_id, reader_hostgroup_id
 
 
-def get_backend(cfg, server_ip, port):
+def get_backend(kwargs, server_ip, port):
+
     """Get backend by server_ip and port"""
-    kwargs = get_proxysql_options(cfg)
-    LOG.debug('ProxySQL config %r', kwargs)
     proxysql = ProxySQL(**kwargs)
-
-    writer_hostgroup_id, reader_hostgroup_id = get_hostgroups_id(cfg)
-
-    backends = proxysql.find_backends(writer_hostgroup_id) + \
-        proxysql.find_backends(reader_hostgroup_id)
-
-    for backend in backends:
-        if backend.hostname == server_ip and backend.port == port:
-            return backend
-
-    raise ProxySQLBackendNotFound('Could not find server %s:%d'
-                                  % (server_ip, port))
+    backends = ProxySQLMySQLBackendSet()
+    backends.add_set(proxysql.find_backends())
+    return backends.find(server_ip, port)
 
 
 def parse_user_arguments(args):

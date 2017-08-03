@@ -26,6 +26,49 @@ class BackendRole(object):  # pylint: disable=too-few-public-methods
     writer = 'Writer'
 
 
+class ProxySQLMySQLBackendSet(object):
+    """ProxySQLMySQLBackendSet contains set of MySQL backends"""
+    def __init__(self):
+        self._backend_list = []
+
+    def find(self, host, port):
+        """
+        Find backend by host and port
+        :param host:
+        :param port:
+        :return: Return finded backend
+        :rtype: ProxySQLMySQLBackend
+        :raises: ProxySQLBackendNotFound
+        """
+        for backend in self._backend_list:
+            if backend.hostname == host and \
+                backend.port == port:
+                return backend
+        raise ProxySQLBackendNotFound('Backend not found')
+
+    def add_set(self, backend):
+        """
+        Add iterable object to list
+        :param backend: Iterable data of backend for adding
+        """
+        tmp_set = set(self._backend_list)
+        tmp_set.update(backend)
+        self._backend_list = list(tmp_set)
+
+    def add(self, backend):
+        """
+        Add backend
+        :param backend: Backend
+        """
+        tmp_set = set(self._backend_list)
+        tmp_set.add(backend)
+        self._backend_list = list(tmp_set)
+
+    def __getitem__(self, item):
+        return self._backend_list[item]
+
+    pass
+
 class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attributes,too-few-public-methods
     """ProxySQLMySQLBackend describes record in ProxySQL
     table ``mysql_servers``.
@@ -441,7 +484,7 @@ class ProxySQL(object):
         self.execute(query)
         self.reload_runtime()
 
-    def find_backends(self, hostgroup_id, status=None):
+    def find_backends(self, hostgroup_id=None, status=None):
         """
         Get writer from mysql_servers
 
@@ -453,12 +496,21 @@ class ProxySQL(object):
         :rtype: list(ProxySQLMySQLBackend)
         :raise: ProxySQLBackendNotFound
         """
-        result = self.execute('SELECT `hostgroup_id`, `hostname`, '
-                              '`port`, `status`, `weight`, `compression`, '
-                              '`max_connections`, `max_replication_lag`, '
-                              '`use_ssl`, `max_latency_ms`, `comment`'
-                              ' FROM `mysql_servers`'
-                              ' WHERE hostgroup_id = %s', hostgroup_id)
+
+
+        if hostgroup_id:
+            result = self.execute('SELECT `hostgroup_id`, `hostname`, '
+                                '`port`, `status`, `weight`, `compression`, '
+                                '`max_connections`, `max_replication_lag`, '
+                                '`use_ssl`, `max_latency_ms`, `comment`'
+                                ' FROM `mysql_servers`'
+                                ' WHERE hostgroup_id = %s', hostgroup_id)
+        else:
+            result = self.execute('SELECT `hostgroup_id`, `hostname`, '
+                                '`port`, `status`, `weight`, `compression`, '
+                                '`max_connections`, `max_replication_lag`, '
+                                '`use_ssl`, `max_latency_ms`, `comment`'
+                                ' FROM `mysql_servers`')
 
         backends = []
         for row in result:
