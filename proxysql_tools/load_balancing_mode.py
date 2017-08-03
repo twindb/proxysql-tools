@@ -7,7 +7,7 @@ from proxysql_tools.galera.exceptions import GaleraClusterSyncedNodeNotFound, \
 from proxysql_tools.galera.galera_node import GaleraNodeState, GaleraNode
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
 from proxysql_tools.proxysql.proxysql import ProxySQLMySQLBackend, BackendStatus, \
-    BackendRole
+    BackendRole, ProxySQLMySQLBackendSet
 
 
 def singlewriter(galera_cluster, proxysql,
@@ -111,15 +111,12 @@ def register_writer(galera_cluster, proxysql, writer_hostgroup_id,
     try:
         proxysql.find_backends(writer_hostgroup_id, BackendStatus.online)
     except ProxySQLBackendNotFound:
-        try:
-            proxysql.find_backends(writer_hostgroup_id, BackendStatus.offline_hard)
-        except ProxySQLBackendNotFound:
-            LOG.warn('No writer backends were registered. '
-                     'Will try to add previously ignored backends')
-            register_synced_backends(galera_cluster, proxysql,
-                                     writer_hostgroup_id,
-                                     role=BackendRole.writer,
-                                     limit=1)
+        LOG.warn('No writer backends were registered. '
+                 'Will try to add previously ignored backends')
+        register_synced_backends(galera_cluster, proxysql,
+                                 writer_hostgroup_id,
+                                role=BackendRole.writer,
+                                limit=1)
 
 
 
@@ -310,6 +307,17 @@ def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-ma
             candidate_nodes = galera_nodes
 
         for galera_node in candidate_nodes:
+
+            try:
+                backends = ProxySQLMySQLBackendSet()
+                backends.add_set(proxysql.find_backends(
+                    status=BackendStatus.offline_hard,
+                    hostgroup_id=hostgroup_id))
+                backends.find(galera_node.host, galera_node.port)
+                continue
+            except ProxySQLBackendNotFound:
+                pass
+
             backend = ProxySQLMySQLBackend(galera_node.host,
                                            hostgroup_id=hostgroup_id,
                                            port=galera_node.port,
