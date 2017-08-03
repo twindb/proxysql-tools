@@ -67,7 +67,6 @@ class ProxySQLMySQLBackendSet(object):
     def __getitem__(self, item):
         return self._backend_list[item]
 
-    pass
 
 class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attributes,too-few-public-methods
     """ProxySQLMySQLBackend describes record in ProxySQL
