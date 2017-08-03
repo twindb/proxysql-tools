@@ -7,7 +7,7 @@ from proxysql_tools.galera.exceptions import GaleraClusterSyncedNodeNotFound, \
 from proxysql_tools.galera.galera_node import GaleraNodeState, GaleraNode
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
 from proxysql_tools.proxysql.proxysql import ProxySQLMySQLBackend, BackendStatus, \
-    BackendRole, ProxySQLMySQLBackendSet
+    BackendRole
 
 
 def singlewriter(galera_cluster, proxysql,
@@ -120,7 +120,7 @@ def register_writer(galera_cluster, proxysql, writer_hostgroup_id,
                                      writer_hostgroup_id,
                                      role=BackendRole.writer,
                                      limit=1,
-                                     ignore_backend=backend_offline)
+                                     ignore_backend=backend_offline[0])
         except ProxySQLBackendNotFound:
             register_synced_backends(galera_cluster, proxysql,
                                      writer_hostgroup_id,
