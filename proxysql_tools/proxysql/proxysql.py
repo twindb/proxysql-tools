@@ -444,7 +444,7 @@ class ProxySQL(object):
         :type backend: ProxySQLMySQLBackend
         """
         query = "DELETE FROM mysql_servers " \
-                "WHERE " \
+                "WHERE" \
                 " hostgroup_id={hostgroup_id}" \
                 " AND hostname='{hostname}'" \
                 " AND port={port}" \
