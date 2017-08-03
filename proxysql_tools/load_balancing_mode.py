@@ -322,7 +322,7 @@ def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-ma
             proxysql.register_backend(backend)
             LOG.info('Added backend %s to hostgroup %d', backend, hostgroup_id)
         if not candidate_nodes:
-            LOG.info('Not candidate for writer. Set ignored backend as writer', ignore_backend)
+            LOG.info('Not candidate for writer. Set ignored backend as writer %s', ignore_backend)
             backend = ProxySQLMySQLBackend(ignore_backend.hostname,
                                            hostgroup_id=hostgroup_id,
                                            port=ignore_backend.port,
