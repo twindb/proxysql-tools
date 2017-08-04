@@ -6,8 +6,8 @@ from proxysql_tools.galera.exceptions import GaleraClusterSyncedNodeNotFound, \
     GaleraClusterNodeNotFound
 from proxysql_tools.galera.galera_node import GaleraNodeState, GaleraNode
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
-from proxysql_tools.proxysql.proxysql import ProxySQLMySQLBackend, BackendStatus, \
-    BackendRole
+from proxysql_tools.proxysql.proxysql import ProxySQLMySQLBackend, \
+    BackendStatus, BackendRole
 
 
 def singlewriter(galera_cluster, proxysql,
@@ -268,7 +268,8 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, role,  # pyli
                                  limit=limit, ignore_backend=ignore_backend)
     except OperationalError as err:
         LOG.error(err)
-        LOG.error('Looks like backend %s is unhealthy. Set OFFLINE_HARD status.',
+        LOG.error('Looks like backend %s is unhealthy. '
+                  'Set OFFLINE_HARD status.',
                   backend)
         backend.status = backend.admin_status = BackendStatus.offline_hard
         proxysql.set_admin_status(backend)
@@ -321,7 +322,8 @@ def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-ma
             proxysql.register_backend(backend)
             LOG.info('Added backend %s to hostgroup %d', backend, hostgroup_id)
         if not candidate_nodes:
-            LOG.info('Not candidate for writer. Set ignored backend as writer %s', ignore_backend)
+            LOG.info('Not candidate for writer. '
+                     'Set ignored backend as writer %s', ignore_backend)
             backend = ProxySQLMySQLBackend(ignore_backend.hostname,
                                            hostgroup_id=hostgroup_id,
                                            port=ignore_backend.port,

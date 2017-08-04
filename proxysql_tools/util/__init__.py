@@ -1,9 +1,8 @@
 """Auxiliary functions."""
 from ConfigParser import NoOptionError
 
-from proxysql_tools import LOG
-from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
-from proxysql_tools.proxysql.proxysql import ProxySQL, ProxySQLMySQLBackendSet
+from proxysql_tools.proxysql.proxysql import ProxySQL
+from proxysql_tools.proxysql.proxysqlbackendset import ProxySQLMySQLBackendSet
 
 
 def get_proxysql_options(cfg):

@@ -13,7 +13,8 @@ from proxysql_tools.galera.server import server_status, \
     server_set_wsrep_desync, server_set_admin_status
 from proxysql_tools.galera.user import get_users, create_user, delete_user, \
     change_password, modify_user
-from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, ProxySQLUserNotFound
+from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, \
+    ProxySQLUserNotFound
 from proxysql_tools.proxysql.proxysql import ProxySQL, BackendStatus
 from proxysql_tools.util import get_proxysql_options
 from proxysql_tools.util.bug1258464 import bug1258464
@@ -205,7 +206,8 @@ def set_online(cfg, ip_address, port):
 def set_offline(cfg, ip_address, port):
     """Set server backend status offline"""
     kwargs = get_proxysql_options(cfg)
-    server_set_admin_status(kwargs, ip_address, port, BackendStatus.offline_hard)
+    server_set_admin_status(kwargs, ip_address, port,
+                            BackendStatus.offline_hard)
 
 
 @galera.group()
