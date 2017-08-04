@@ -1,3 +1,4 @@
+"""Class ProxySQLMySQLBackendSet implementation."""
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
 from proxysql_tools.proxysql.proxysqlbackend import ProxySQLMySQLBackend
 
@@ -7,7 +8,6 @@ class ProxySQLMySQLBackendSet(object):
     def __init__(self):
         self._backend_list = []
         self._set_iterator = 0
-        pass
 
     def __len__(self):
         return len(self._backend_list)
@@ -20,8 +20,8 @@ class ProxySQLMySQLBackendSet(object):
                 if backend not in self:
                     return False
             return True
-        else:
-            return False
+
+        return False
 
     def __eq__(self, other):
         return other == self._backend_list
