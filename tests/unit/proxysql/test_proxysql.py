@@ -1,11 +1,14 @@
+import json
+
 import mock
 import pytest
 from pymysql import OperationalError
 from pymysql.cursors import DictCursor
 
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, ProxySQLUserNotFound
-from proxysql_tools.proxysql.proxysql import BackendStatus, ProxySQLMySQLBackend, \
+from proxysql_tools.proxysql.proxysql import ProxySQLMySQLBackend, \
     ProxySQLMySQLUser, ProxySQL
+from proxysql_tools.proxysql.proxysqlbackend import BackendStatus, BackendRole
 
 
 def test_backendstatus():
@@ -26,8 +29,7 @@ def test_proxysql_mysql_backend():
                               max_connections='10',
                               max_replication_lag='20',
                               use_ssl=100,
-                              max_latency_ms='30',
-                              comment='bar')
+                              max_latency_ms='30',)
 
     assert be.hostgroup_id == 0
     assert be.port == 3307
@@ -38,7 +40,6 @@ def test_proxysql_mysql_backend():
     assert be.max_replication_lag == 20
     assert be.use_ssl is True
     assert be.max_latency_ms == 30
-    assert be.comment == 'bar'
 
 
 def test_proxysql_mysql_user():
@@ -153,46 +154,18 @@ def test_reload_runtime(mock_execute, proxysql):
     mock_execute.assert_has_calls(calls=calls, any_order=False)
 
 
-@pytest.mark.parametrize('comment, query',[
-    (
-        'Some comment',
-        "REPLACE INTO mysql_servers(`hostgroup_id`, `hostname`, `port`, `status`, `weight`, `compression`, `max_connections`, `max_replication_lag`, `use_ssl`, `max_latency_ms`, `comment`) VALUES(0, 'foo', 3306, 'ONLINE', 1, 0, 10000, 0, 0, 0, 'Some comment')"
-    ),
-    (
-        None,
-        "REPLACE INTO mysql_servers(`hostgroup_id`, `hostname`, `port`, `status`, `weight`, `compression`, `max_connections`, `max_replication_lag`, `use_ssl`, `max_latency_ms`, `comment`) VALUES(0, 'foo', 3306, 'ONLINE', 1, 0, 10000, 0, 0, 0, NULL)"
-    )
-])
 @mock.patch.object(ProxySQL, 'reload_runtime')
 @mock.patch.object(ProxySQL, 'execute')
-def test_register_backend(mock_execute, mock_runtime, comment, query, proxysql):
-    """
-
-    :param mock_execute:
-    :param mock_runtime:
-    :param comment:
-    :param query:
-    :param proxysql:
-    :type proxysql: ProxySQL
-    """
-    backend = ProxySQLMySQLBackend('foo', comment=comment)
+def test_register_backend(mock_execute, mock_runtime, proxysql):
+    backend = ProxySQLMySQLBackend('foo')
     proxysql.register_backend(backend)
-    mock_execute.assert_called_once_with(query)
     mock_runtime.assert_called_once_with()
 
 
 @mock.patch.object(ProxySQL, 'reload_runtime')
 @mock.patch.object(ProxySQL, 'execute')
 def test_deregister_backend(mock_execute, mock_runtime, proxysql):
-    """
 
-    :param mock_execute:
-    :param mock_runtime:
-    :param comment:
-    :param query:
-    :param proxysql:
-    :type proxysql: ProxySQL
-    """
     backend = ProxySQLMySQLBackend('foo', hostgroup_id=10, port=3307)
     proxysql.deregister_backend(backend)
     query = "DELETE FROM mysql_servers WHERE hostgroup_id=10 AND hostname='foo' AND port=3307"
@@ -254,7 +227,7 @@ def test_connect(mock_pymysql, kwargs_in, kwargs_out):
     (
         [{
             u'status': 'ONLINE',
-            u'comment': '',
+            u'comment': '{ "role": "Reader", "admin_status": "ONLINE" }',
             u'compression': '0',
             u'weight': '1',
             u'hostname': '192.168.90.2',
@@ -263,10 +236,10 @@ def test_connect(mock_pymysql, kwargs_in, kwargs_out):
             u'max_replication_lag': '0',
             u'port': '3306',
             u'max_latency_ms': '0',
-            u'max_connections': '10000'
+            u'max_connections': '10000',
         }]
         ,
-        ProxySQLMySQLBackend('192.168.90.2', hostgroup_id=10, port=3306)
+        ProxySQLMySQLBackend('192.168.90.2', hostgroup_id=10, port=3306, role=BackendRole.reader)
     )
 ])
 @mock.patch.object(ProxySQL, 'execute')
@@ -302,7 +275,7 @@ def test_find_backends_raises(mock_execute, proxysql):
 ])
 @mock.patch.object(ProxySQL, 'execute')
 def test_get_users(mock_execute, proxysql, response):
-    query = "SELECT * FROM mysql_users;"
+    query = "SELECT * FROM mysql_users"
     mock_execute.return_value = response
     proxysql.get_users()
     mock_execute.assert_called_once_with(query)

@@ -1,6 +1,9 @@
 """Auxiliary functions."""
 from ConfigParser import NoOptionError
 
+from proxysql_tools.proxysql.proxysql import ProxySQL
+from proxysql_tools.proxysql.proxysqlbackendset import ProxySQLMySQLBackendSet
+
 
 def get_proxysql_options(cfg):
     """Get ProxySQL relevant config options"""
@@ -27,6 +30,21 @@ def get_proxysql_options(cfg):
         pass
 
     return kwargs
+
+
+def get_hostgroups_id(cfg):
+    """Get writer and reader hostgroups id's """
+    writer_hostgroup_id = int(cfg.get('galera', 'writer_hostgroup_id'))
+    reader_hostgroup_id = int(cfg.get('galera', 'reader_hostgroup_id'))
+    return writer_hostgroup_id, reader_hostgroup_id
+
+
+def get_backend(kwargs, server_ip, port):
+    """Get backend by server_ip and port"""
+    proxysql = ProxySQL(**kwargs)
+    backends = ProxySQLMySQLBackendSet()
+    backends.add_set(proxysql.find_backends())
+    return backends.find(server_ip, port)
 
 
 def parse_user_arguments(args):
