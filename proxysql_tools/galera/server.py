@@ -4,7 +4,8 @@ from __future__ import print_function
 from prettytable import PrettyTable
 
 from proxysql_tools import LOG
-from proxysql_tools.proxysql.proxysql import ProxySQL, BackendStatus
+from proxysql_tools.proxysql.proxysql import ProxySQL
+from proxysql_tools.proxysql.proxysqlbackend import BackendStatus
 from proxysql_tools.util import get_proxysql_options, get_backend, \
     get_hostgroups_id
 
@@ -75,7 +76,8 @@ def server_set_wsrep_desync(cfg, server_ip, port, wsrep_desync='ON'):
     backend.execute("SET GLOBAL wsrep_desync=%s", wsrep_desync)
 
 
-def server_set_admin_status(kwargs, server_ip, port, status=BackendStatus.online):
+def server_set_admin_status(kwargs, server_ip, port,
+                            status=BackendStatus.online):
     """
     Set server admin_status
 

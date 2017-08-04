@@ -6,8 +6,9 @@ from pymysql import OperationalError
 from pymysql.cursors import DictCursor
 
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, ProxySQLUserNotFound
-from proxysql_tools.proxysql.proxysql import BackendStatus, ProxySQLMySQLBackend, \
-    ProxySQLMySQLUser, ProxySQL, BackendRole
+from proxysql_tools.proxysql.proxysql import ProxySQLMySQLBackend, \
+    ProxySQLMySQLUser, ProxySQL
+from proxysql_tools.proxysql.proxysqlbackend import BackendStatus, BackendRole
 
 
 def test_backendstatus():

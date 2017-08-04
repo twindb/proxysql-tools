@@ -3,9 +3,10 @@ from __future__ import print_function
 
 from prettytable import PrettyTable
 
+from proxysql_tools.proxysql.proxysqlbackend import BackendStatus
 from proxysql_tools.util import get_proxysql_options, get_hostgroups_id
 from proxysql_tools import LOG
-from proxysql_tools.proxysql.proxysql import ProxySQL, ProxySQLMySQLUser, BackendStatus
+from proxysql_tools.proxysql.proxysql import ProxySQL, ProxySQLMySQLUser
 from proxysql_tools.util import parse_user_arguments
 
 

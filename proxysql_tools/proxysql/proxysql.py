@@ -8,173 +8,10 @@ from pymysql.cursors import DictCursor
 from proxysql_tools import LOG, execute
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, \
     ProxySQLUserNotFound
+from proxysql_tools.proxysql.proxysqlbackend import ProxySQLMySQLBackend
+from proxysql_tools.proxysql.proxysqlbackendset import ProxySQLMySQLBackendSet
 
 PROXYSQL_CONNECT_TIMEOUT = 20
-
-
-class BackendStatus(object):  # pylint: disable=too-few-public-methods
-    """Status of ProxySQL backend"""
-    online = 'ONLINE'
-    shunned = 'SHUNNED'
-    offline_soft = 'OFFLINE_SOFT'
-    offline_hard = 'OFFLINE_HARD'
-
-
-class BackendRole(object):  # pylint: disable=too-few-public-methods
-    """ProxySQL backend role"""
-    reader = 'Reader'
-    writer = 'Writer'
-
-
-class ProxySQLMySQLBackendSet(object):
-    """ProxySQLMySQLBackendSet contains set of MySQL backends"""
-    def __init__(self):
-        self._backend_list = []
-
-    def find(self, host, port):
-        """
-        Find backend by host and port
-        :param host:
-        :param port:
-        :return: Return finded backend
-        :rtype: ProxySQLMySQLBackend
-        :raises: ProxySQLBackendNotFound
-        """
-        for backend in self._backend_list:
-            if backend.hostname == host and \
-                    backend.port == port:
-                return backend
-        raise ProxySQLBackendNotFound('Backend not found')
-
-    def add_set(self, backend):
-        """
-        Add iterable object to list
-        :param backend: Iterable data of backend for adding
-        """
-        tmp_set = set(self._backend_list)
-        tmp_set.update(backend)
-        self._backend_list = list(tmp_set)
-
-    def add(self, backend):
-        """
-        Add backend
-        :param backend: Backend
-        """
-        tmp_set = set(self._backend_list)
-        tmp_set.add(backend)
-        self._backend_list = list(tmp_set)
-
-    def __getitem__(self, item):
-        return self._backend_list[item]
-
-
-class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attributes,too-few-public-methods
-    """ProxySQLMySQLBackend describes record in ProxySQL
-    table ``mysql_servers``.
-
-.. code-block:: mysql
-
-    CREATE TABLE mysql_servers (
-        hostgroup_id INT NOT NULL DEFAULT 0,
-        hostname VARCHAR NOT NULL,
-        port INT NOT NULL DEFAULT 3306,
-        status VARCHAR CHECK (UPPER(status) IN
-            ('ONLINE','SHUNNED','OFFLINE_SOFT', 'OFFLINE_HARD'))
-            NOT NULL DEFAULT 'ONLINE',
-        weight INT CHECK (weight >= 0) NOT NULL DEFAULT 1,
-        compression INT CHECK (compression >=0 AND compression <= 102400)
-            NOT NULL DEFAULT 0,
-        max_connections INT CHECK (max_connections >=0) NOT NULL DEFAULT 1000,
-        max_replication_lag INT CHECK (max_replication_lag >= 0
-            AND max_replication_lag <= 126144000) NOT NULL DEFAULT 0,
-        use_ssl INT CHECK (use_ssl IN(0,1)) NOT NULL DEFAULT 0,
-        max_latency_ms INT UNSIGNED CHECK (max_latency_ms>=0)
-            NOT NULL DEFAULT 0,
-        comment VARCHAR NOT NULL DEFAULT '',
-        PRIMARY KEY (hostgroup_id, hostname, port) )
-
-    """
-    def __init__(self, hostname, hostgroup_id=0, port=3306,  # pylint: disable=too-many-arguments
-                 status=BackendStatus.online,
-                 weight=1, compression=0, max_connections=10000,
-                 max_replication_lag=0, use_ssl=False,
-                 max_latency_ms=0, role=None):
-        self.hostname = hostname
-        self.hostgroup_id = int(hostgroup_id)
-        self.port = int(port)
-        self.status = status
-        self.admin_status = status
-        self.weight = int(weight)
-        self.compression = int(compression)
-        self.max_connections = int(max_connections)
-        self.max_replication_lag = int(max_replication_lag)
-        self.use_ssl = bool(int(use_ssl))
-        self.max_latency_ms = int(max_latency_ms)
-        self._connection = None
-        self.role = role
-        self.comment = None
-
-    def __eq__(self, other):
-        try:
-            return self.hostgroup_id == other.hostgroup_id and \
-                   self.hostname == other.hostname and \
-                   self.port == other.port
-        except AttributeError:
-            return False
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __repr__(self):
-        return "%d__%s__%d" % (self.hostgroup_id, self.hostname, self.port)
-
-    def __str__(self):
-        return "hostgroup_id={hostgroup_id}, " \
-               "hostname={hostname}, " \
-               "port={port}, " \
-               "status={status}, " \
-               "weight={weight}, " \
-               "compression={compression}, " \
-               "max_connections={max_connections}, " \
-               "max_replication_lag={max_replication_lag}, " \
-               "use_ssl={use_ssl}, " \
-               "max_latency_ms={max_latency_ms}, " \
-               "comment={comment}".format(
-                   hostgroup_id=self.hostgroup_id,
-                   hostname=self.hostname,
-                   port=self.port,
-                   status=self.status,
-                   weight=self.weight,
-                   compression=self.compression,
-                   max_connections=self.max_connections,
-                   max_replication_lag=self.max_replication_lag,
-                   use_ssl=self.use_ssl,
-                   max_latency_ms=self.max_latency_ms,
-                   comment=self.comment)
-
-    def connect(self, username, password):
-        """
-        Make a MySQL connection to the backend.
-
-        :param username: MySQL user.
-        :param password: MySQL password.
-        """
-        self._connection = pymysql.connect(host=self.hostname,
-                                           port=self.port,
-                                           user=username,
-                                           passwd=password,
-                                           cursorclass=DictCursor)
-
-    def execute(self, query, *args):
-        """Execute query in MySQL Backend.
-
-        :param query: Query to execute.
-        :type query: str
-        :return: Query result or None if the query is not supposed
-            to return result
-        :rtype: dict
-        """
-        return execute(self._connection, query, *args)
 
 
 class ProxySQLMySQLUser(object):  # pylint: disable=too-many-instance-attributes,too-few-public-methods
@@ -231,7 +68,8 @@ class ProxySQLMySQLUser(object):  # pylint: disable=too-many-instance-attributes
 
 .. _hostgroup: http://bit.ly/2rGnT5i
     """
-    def __init__(self, username='root', password=None, active=True, use_ssl=False,  # pylint: disable=too-many-arguments
+    def __init__(self, username='root', password=None, active=True,  # pylint: disable=too-many-arguments
+                 use_ssl=False,
                  default_hostgroup=0, default_schema='information_schema',
                  schema_locked=False, transaction_persistent=False,
                  fast_forward=False, backend=True, frontend=True,
@@ -316,7 +154,6 @@ class ProxySQL(object):
         """
         with self._connect() as conn:
             return execute(conn, query, *args)
-
 
     def reload_servers(self):
         """Reload the ProxySQL runtime configuration about servers."""
@@ -505,11 +342,9 @@ class ProxySQL(object):
         :param status: Look only for backends in this status
         :type status: BackendStatus
         :return: Writer MySQL backend or None if doesn't exist
-        :rtype: list(ProxySQLMySQLBackend)
+        :rtype: ProxySQLMySQLBackendSet
         :raise: ProxySQLBackendNotFound
         """
-
-
         if hostgroup_id:
             result = self.execute('SELECT `hostgroup_id`, `hostname`, '
                                   '`port`, `status`, `weight`, `compression`, '
@@ -524,7 +359,7 @@ class ProxySQL(object):
                                   '`use_ssl`, `max_latency_ms`, `comment`'
                                   ' FROM `mysql_servers`')
 
-        backends = []
+        backends = ProxySQLMySQLBackendSet()
         for row in result:
             kwargs = {
                 'hostgroup_id': row['hostgroup_id'],
@@ -547,7 +382,7 @@ class ProxySQL(object):
 
             if status and backend.status != status:
                 continue
-            backends.append(backend)
+            backends.add(backend)
         if backends:
             return backends
         else:

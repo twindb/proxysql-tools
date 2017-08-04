@@ -74,7 +74,8 @@ class GaleraCluster(object):
 
     @staticmethod
     def _split_cluster_host(cluster_host):
-        """Split a string with list of hosts and make a list of tuples out of it.
+        """Split a string with list of hosts and make
+        a list of tuples out of it.
         For example, string
         *192.168.90.2:3306,192.168.90.3:3306,192.168.90.4:3306*
         will be converted into list:
