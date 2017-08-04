@@ -67,9 +67,9 @@ def singlewriter(galera_cluster, proxysql,
         proxysql.deregister_backend(writer_as_reader)
 
     try:
-        offline_nodes = proxysql.find_backends(status=
-                                               BackendStatus.offline_hard)
-        active_backends = readers + writer - offline_nodes
+        active_backends = readers + \
+                          writer - \
+                          proxysql.find_backends(status=BackendStatus.offline_hard)
         i = 0
         while len(active_backends) == 2:
             try:
