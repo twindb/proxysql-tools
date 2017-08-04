@@ -6,8 +6,8 @@ from proxysql_tools.galera.exceptions import GaleraClusterSyncedNodeNotFound, \
     GaleraClusterNodeNotFound
 from proxysql_tools.galera.galera_node import GaleraNodeState, GaleraNode
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
-from proxysql_tools.proxysql.proxysql import ProxySQLMySQLBackend, \
-    BackendStatus, BackendRole
+from proxysql_tools.proxysql.proxysql import ProxySQLMySQLBackend
+from proxysql_tools.proxysql.proxysqlbackend import BackendRole, BackendStatus
 
 
 def singlewriter(galera_cluster, proxysql,

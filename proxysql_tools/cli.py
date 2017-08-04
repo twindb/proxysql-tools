@@ -15,7 +15,8 @@ from proxysql_tools.galera.user import get_users, create_user, delete_user, \
     change_password, modify_user
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, \
     ProxySQLUserNotFound
-from proxysql_tools.proxysql.proxysql import ProxySQL, BackendStatus
+from proxysql_tools.proxysql.proxysql import ProxySQL
+from proxysql_tools.proxysql.proxysqlbackend import BackendStatus
 from proxysql_tools.util import get_proxysql_options
 from proxysql_tools.util.bug1258464 import bug1258464
 

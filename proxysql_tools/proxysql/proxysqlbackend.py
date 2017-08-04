@@ -1,3 +1,4 @@
+"""Classes to work with MySQL backends."""
 import pymysql
 from pymysql.cursors import DictCursor
 
