@@ -372,6 +372,7 @@ class ProxySQL(object):
         self.execute("DELETE FROM mysql_users WHERE username='{username}'"
                      .format(username=username))
         self.reload_users()
+        self.execute('SAVE MYSQL USERS TO DISK')
 
     def register_backend(self, backend):
         """Register Galera node in ProxySQL
