@@ -4,7 +4,8 @@ from pymysql.cursors import DictCursor
 
 import proxysql_tools
 from proxysql_tools.cli import main
-from proxysql_tools.proxysql.proxysql import ProxySQLMySQLBackend, BackendStatus
+from proxysql_tools.proxysql.proxysql import ProxySQLMySQLBackend
+from proxysql_tools.proxysql.proxysqlbackend import BackendStatus
 from tests.integration.library import wait_for_cluster_nodes_to_become_healthy, proxysql_tools_config_2
 
 def test__galera_server_set_offline_reader_if_backends_are_registered(percona_xtradb_cluster_three_node,
