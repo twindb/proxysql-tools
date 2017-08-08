@@ -424,7 +424,7 @@ class ProxySQL(object):
         self.execute(query)
         self.reload_runtime()
 
-    def find_backends(self, hostgroup_id, status=None):
+    def find_backends(self, hostgroup_id=None, status=None):
         """
         Get writer from mysql_servers
 
@@ -436,12 +436,15 @@ class ProxySQL(object):
         :rtype: list(ProxySQLMySQLBackend)
         :raise: ProxySQLBackendNotFound
         """
-        result = self.execute('SELECT `hostgroup_id`, `hostname`, '
-                              '`port`, `status`, `weight`, `compression`, '
-                              '`max_connections`, `max_replication_lag`, '
-                              '`use_ssl`, `max_latency_ms`, `comment`'
-                              ' FROM `mysql_servers`'
-                              ' WHERE hostgroup_id = %s', hostgroup_id)
+        query = 'SELECT `hostgroup_id`, `hostname`, ' \
+                '`port`, `status`, `weight`, `compression`, ' \
+                '`max_connections`, `max_replication_lag`, ' \
+                '`use_ssl`, `max_latency_ms`, `comment`' \
+                ' FROM `mysql_servers`'
+        if hostgroup_id:
+            query += 'WHERE hostgroup_id = %d' % hostgroup_id
+
+        result = self.execute(query)
 
         backends = []
         for row in result:
