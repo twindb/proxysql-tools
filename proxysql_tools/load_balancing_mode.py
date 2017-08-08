@@ -315,7 +315,7 @@ def check_sst_runned(proxysql, galera_cluster, readers, writer):
     :param proxysql: ProxySQL instance
     :type proxysql: ProxySQL
     :param galera_cluster: GaleraCluster instance.
-    :type galera_cluster: GaleraClusster
+    :type galera_cluster: GaleraCluster
     :param readers: List of readers in cluster
     :type readers: list(ProxySQLMySQLBackend)
     :param writer: Writer in cluster
