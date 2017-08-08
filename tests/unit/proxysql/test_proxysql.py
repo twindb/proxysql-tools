@@ -1,6 +1,5 @@
 import mock
 import pytest
-from pymysql import OperationalError
 from pymysql.cursors import DictCursor
 
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, ProxySQLUserNotFound

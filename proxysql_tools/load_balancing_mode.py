@@ -66,25 +66,7 @@ def singlewriter(galera_cluster, proxysql,
         and not is_readers_offline:
         proxysql.deregister_backend(writer_as_reader)
 
-    try:
-        active_backends = readers + \
-                          [writer] - \
-                          proxysql.find_backends(status=BackendStatus.offline_hard)
-        i = 0
-        while len(active_backends) == 2:
-            try:
-                donor = galera_cluster.find_donor_nodes()[0]
-            except GaleraClusterNodeNotFound:
-                return
-            if active_backends[i].hostname == donor.host and \
-                active_backends[i].port == donor.port:
-                proxysql.set_status(active_backends[i],
-                                    BackendStatus.online)
-                break
-            i = i+1
-    except ProxySQLBackendNotFound:
-        pass
-
+    check_sst_runned(proxysql, galera_cluster, readers, writer)
 
 def register_writer(galera_cluster, proxysql, writer_hostgroup_id,
                     reader_hostgroup_id,
@@ -324,3 +306,39 @@ def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-ma
 
     except GaleraClusterSyncedNodeNotFound as err:
         LOG.error(err)
+
+
+def check_sst_runned(proxysql, galera_cluster, readers, writer):
+    """
+    Check sst runned, and make donor node available, if there are no other nodes.
+
+    :param proxysql: ProxySQL instance
+    :type proxysql: ProxySQL
+    :param galera_cluster: GaleraCluster instance.
+    :type galera_cluster: GaleraClusster
+    :param readers: List of readers in cluster
+    :type readers: list(ProxySQLMySQLBackend)
+    :param writer: Writer in cluster
+    :type writer: ProxySQLMySQLBackend
+    """
+    offline_nodes = list()
+    try:
+        offline_nodes = proxysql.find_backends(status=BackendStatus.offline_hard)
+    except ProxySQLBackendNotFound:
+        pass
+    active_backends = readers + \
+                      [writer]
+    if offline_nodes:
+        active_backends -= offline_nodes
+    i = 0
+    while len(active_backends) == 2:
+        try:
+            donor = galera_cluster.find_donor_nodes()[0]
+        except GaleraClusterNodeNotFound:
+            return
+        if active_backends[i].hostname == donor.host and \
+                active_backends[i].port == donor.port:
+            proxysql.set_status(active_backends[i],
+                                BackendStatus.online)
+            break
+        i = i+1
