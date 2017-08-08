@@ -32,6 +32,10 @@ def galera_register(cfg):
     load_balancing_mode = cfg.get('galera', 'load_balancing_mode')
     writer_hostgroup_id = int(cfg.get('galera', 'writer_hostgroup_id'))
     reader_hostgroup_id = int(cfg.get('galera', 'reader_hostgroup_id'))
+    try:
+        use_last_desynced = cfg.getboolean('galera', 'use_last_desynced')
+    except NoOptionError:
+        use_last_desynced = None
 
     if load_balancing_mode == 'singlewriter':
         kwargs = {}
@@ -41,6 +45,10 @@ def galera_register(cfg):
                                          hostgroup_id=writer_hostgroup_id,
                                          port=port)
             kwargs['ignore_writer'] = bcknd
+        except NoOptionError:
+            pass
+        try:
+            kwargs['use_last_desynced'] = use_last_desynced
         except NoOptionError:
             pass
         singlewriter(galera_cluster, proxysql,

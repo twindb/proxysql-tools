@@ -8,12 +8,12 @@ from proxysql_tools import execute
 
 
 class GaleraNodeState(object):  # pylint: disable=too-few-public-methods
-    """State of Galera node http://bit.ly/2r1tUGB """
-    PRIMARY = 1
-    JOINER = 2
+    """State of Galera node http://bit.ly/2wkXYyY """
+    INITIALIZED = 0
+    JOINING = 1
+    DONOR = 2
     JOINED = 3
     SYNCED = 4
-    DONOR = 5
 
 
 class GaleraNode(object):
@@ -50,6 +50,16 @@ class GaleraNode(object):
     def wsrep_local_state(self):
         """Internal Galera Cluster FSM state number."""
         return int(self._status('wsrep_local_state'))
+
+    @property
+    def wsrep_reject_queries(self):
+        """Decides if node rejects queries or not."""
+        return self._variables('wsrep_reject_queries')
+
+    @property
+    def wsrep_sst_donor_rejects_queries(self):
+        """Decides if node rejects queries or not while in Donor/Desync state."""
+        return self._variables('wsrep_sst_donor_rejects_queries')
 
     @property
     def wsrep_cluster_name(self):
@@ -89,6 +99,11 @@ class GaleraNode(object):
     def _status(self, status_variable):
         """Return value of a variable from SHOW GLOBAL STATUS"""
         result = self.execute('SHOW GLOBAL STATUS LIKE %s', status_variable)
+        return result[0]['Value']
+
+    def _variables(self, global_variable):
+        """Return value of a variable from SHOW GLOBAL VARIABLES"""
+        result = self.execute('SHOW GLOBAL VARIABLES LIKE %s', global_variable)
         return result[0]['Value']
 
     def __eq__(self, other):
