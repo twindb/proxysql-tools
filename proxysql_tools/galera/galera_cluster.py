@@ -52,7 +52,9 @@ class GaleraCluster(object):
     def find_donor_nodes(self):
         """
         Find a node in the cluster is DONOR state
-        :return:
+
+        :return: List of Galera node in DONOR state
+        :rtype: list(GaleraNode)
         :raise: GaleraClusterNodeNotFound
         """
         LOG.debug('Looking for a DONOR node')
@@ -71,9 +73,9 @@ class GaleraCluster(object):
         else:
             raise GaleraClusterNodeNotFound('Cannot find node with DONOR state')
 
-
     def find_synced_nodes(self):
         """Find a node in the cluster in SYNCED state.
+
         :return: List of Galera node in SYNCED state.
         :rtype: list(GaleraNode)
         :raise: GaleraClusterSyncedNodeNotFound

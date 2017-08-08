@@ -436,19 +436,15 @@ class ProxySQL(object):
         :rtype: list(ProxySQLMySQLBackend)
         :raise: ProxySQLBackendNotFound
         """
+        query = 'SELECT `hostgroup_id`, `hostname`, ' \
+                '`port`, `status`, `weight`, `compression`, ' \
+                '`max_connections`, `max_replication_lag`, ' \
+                '`use_ssl`, `max_latency_ms`, `comment`' \
+                ' FROM `mysql_servers`'
         if hostgroup_id:
-            result = self.execute('SELECT `hostgroup_id`, `hostname`, '
-                                  '`port`, `status`, `weight`, `compression`, '
-                                  '`max_connections`, `max_replication_lag`, '
-                                  '`use_ssl`, `max_latency_ms`, `comment`'
-                                  ' FROM `mysql_servers`'
-                                  ' WHERE hostgroup_id = %s', hostgroup_id)
-        else:
-            result = self.execute('SELECT `hostgroup_id`, `hostname`, '
-                                  '`port`, `status`, `weight`, `compression`, '
-                                  '`max_connections`, `max_replication_lag`, '
-                                  '`use_ssl`, `max_latency_ms`, `comment`'
-                                  ' FROM `mysql_servers`')
+            query += 'WHERE hostgroup_id = %d' % hostgroup_id
+
+        result = self.execute(query)
 
         backends = []
         for row in result:
