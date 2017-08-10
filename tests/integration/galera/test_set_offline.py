@@ -8,6 +8,7 @@ from proxysql_tools.proxysql.proxysql import ProxySQLMySQLBackend
 from proxysql_tools.proxysql.proxysqlbackend import BackendStatus
 from tests.integration.library import wait_for_cluster_nodes_to_become_healthy, proxysql_tools_config_2
 
+
 def test__galera_server_set_offline_reader_if_backends_are_registered(percona_xtradb_cluster_three_node,
                                                    proxysql_instance,
                                                    tmpdir):
@@ -86,6 +87,7 @@ def test__galera_server_set_offline_reader_if_backends_are_registered(percona_xt
             assert row['status'] == BackendStatus.offline_hard
     finally:
         connection.close()
+
 
 def test__galera_server_set_offline_writer_if_backends_are_registered(percona_xtradb_cluster_three_node,
                                                    proxysql_instance,

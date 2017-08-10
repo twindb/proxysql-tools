@@ -155,23 +155,59 @@ class ProxySQL(object):
         with self._connect() as conn:
             return execute(conn, query, *args)
 
-    def reload_servers(self):
-        """Reload the ProxySQL runtime configuration about servers."""
-        self.execute('LOAD MYSQL SERVERS TO RUNTIME')
-
     def reload_users(self):
-        """Reload the ProxySQL runtime configuration about users."""
+        """
+        Loads MySQL users from the in-memory database
+        to the runtime data structures.
+        """
         self.execute('LOAD MYSQL USERS TO RUNTIME')
 
+    def reload_servers(self):
+        """
+        Loads MySQL servers from the in-memory database
+        to the runtime data structures.
+        """
+        self.execute('LOAD MYSQL SERVERS TO RUNTIME')
+
     def reload_variables(self):
-        """Reload the ProxySQL runtime configuration about variables."""
+        """
+        Loads MySQL variables from the in-memory database
+        to the runtime data structures.
+        """
         self.execute('LOAD MYSQL VARIABLES TO RUNTIME')
+
+    def save_users(self):
+        """
+        Persists the MySQL users from the runtime data structures
+        to the in-memory database.
+        """
+        self.execute('SAVE MYSQL USERS FROM RUNTIME')
+
+    def save_servers(self):
+        """
+        Persists the MySQL servers from the runtime data structures
+        to the in-memory database.
+        """
+        self.execute('SAVE MYSQL SERVERS TO DISK')
+
+    def save_variables(self):
+        """
+        Persists the MySQL variables from the in-memory database
+        to the on-disk database.
+        """
+        self.execute('SAVE MYSQL VARIABLES TO DISK')
 
     def reload_runtime(self):
         """Reload the ProxySQL runtime configuration."""
         self.reload_servers()
         self.reload_users()
         self.reload_variables()
+
+    def save_runtime(self):
+        """Saves ProxySQL configuration to disk."""
+        self.save_users()
+        self.save_servers()
+        self.save_variables()
 
     def get_users(self):
         """
@@ -292,7 +328,7 @@ class ProxySQL(object):
             'hostgroup_id': int(backend.hostgroup_id),
             'hostname': pymysql.escape_string(backend.hostname),
             'port': int(backend.port),
-            'status': pymysql.escape_string(backend.status),
+            'status': backend.status,
             'weight': int(backend.weight),
             'compression': int(backend.compression),
             'max_connections': int(backend.max_connections),
@@ -313,7 +349,10 @@ class ProxySQL(object):
                 "{max_latency_ms}, '{comment}')" \
                 "".format(**kwargs)
         self.execute(query)
-        self.reload_runtime()
+        self.reload_servers()
+
+    def update_backend(self, backend):
+        self.register_backend(backend)
 
     def deregister_backend(self, backend):
         """
@@ -335,7 +374,8 @@ class ProxySQL(object):
 
     def find_backends(self, hostgroup_id=None, status=None):
         """
-        Get writer from mysql_servers
+        Find backends from mysql_servers. If hostgroup_id or status is given
+        it will filter out backends based on that criteria.
 
         :param hostgroup_id: writer hostgroup_id
         :type hostgroup_id: int
@@ -345,20 +385,20 @@ class ProxySQL(object):
         :rtype: ProxySQLMySQLBackendSet
         :raise: ProxySQLBackendNotFound
         """
+        query = 'SELECT ' \
+                '`hostgroup_id`, `hostname`, `port`, ' \
+                '`status`, `weight`, `compression`, ' \
+                '`max_connections`, `max_replication_lag`, `use_ssl`, ' \
+                '`max_latency_ms`, `comment` ' \
+                'FROM `mysql_servers` ' \
+                'WHERE 1=1'
         if hostgroup_id:
-            result = self.execute('SELECT `hostgroup_id`, `hostname`, '
-                                  '`port`, `status`, `weight`, `compression`, '
-                                  '`max_connections`, `max_replication_lag`, '
-                                  '`use_ssl`, `max_latency_ms`, `comment`'
-                                  ' FROM `mysql_servers`'
-                                  ' WHERE hostgroup_id = %s', hostgroup_id)
-        else:
-            result = self.execute('SELECT `hostgroup_id`, `hostname`, '
-                                  '`port`, `status`, `weight`, `compression`, '
-                                  '`max_connections`, `max_replication_lag`, '
-                                  '`use_ssl`, `max_latency_ms`, `comment`'
-                                  ' FROM `mysql_servers`')
+            query += ' AND hostgroup_id = %d' % hostgroup_id
 
+        if status:
+            query += " AND status = '%s'" % status
+
+        result = self.execute(query)
         backends = ProxySQLMySQLBackendSet()
         for row in result:
             kwargs = {
@@ -370,19 +410,12 @@ class ProxySQL(object):
                 'max_connections': row['max_connections'],
                 'max_replication_lag': row['max_replication_lag'],
                 'use_ssl': row['use_ssl'],
-                'max_latency_ms': row['max_latency_ms']
+                'max_latency_ms': row['max_latency_ms'],
+                'comment': row['comment']
             }
             backend = ProxySQLMySQLBackend(row['hostname'], **kwargs)
-            backend.comment = row['comment']
-            if backend.comment:
-                admin_status_map = json.loads(backend.comment)
-                backend.role = admin_status_map['role']
-                backend.status = backend.admin_status = \
-                    admin_status_map['admin_status']
-
-            if status and backend.status != status:
-                continue
             backends.add(backend)
+
         if backends:
             return backends
         else:
@@ -417,32 +450,6 @@ class ProxySQL(object):
             'admin_status': backend.admin_status
         }
         return json.dumps(status)
-
-    def set_admin_status(self, backend):
-        """Set admin_status"""
-        query = "UPDATE mysql_servers SET `comment` = '{comment}' " \
-                " WHERE `hostgroup_id` = {hostgroup_id} " \
-                " AND `hostname` = '{hostname}' " \
-                " AND `port` = {port} " \
-                "".format(comment=self._get_comment(backend),
-                          hostgroup_id=backend.hostgroup_id,
-                          hostname=backend.hostname,
-                          port=backend.port)
-        self.execute(query)
-        self.set_status(backend, backend.admin_status)
-
-    def set_status(self, backend, status):
-        """Update status of a backend in ProxySQL"""
-        query = "UPDATE mysql_servers SET `status` = '{status}' " \
-                " WHERE `hostgroup_id` = {hostgroup_id} " \
-                " AND `hostname` = '{hostname}' " \
-                " AND `port` = {port} " \
-                "".format(status=status,
-                          hostgroup_id=backend.hostgroup_id,
-                          hostname=backend.hostname,
-                          port=backend.port)
-        self.execute(query)
-        self.reload_runtime()
 
     @contextmanager
     def _connect(self):

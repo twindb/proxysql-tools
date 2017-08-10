@@ -1,4 +1,6 @@
 """Classes to work with MySQL backends."""
+import json
+
 import pymysql
 from pymysql.cursors import DictCursor
 
@@ -49,12 +51,11 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
                  status=BackendStatus.online,
                  weight=1, compression=0, max_connections=10000,
                  max_replication_lag=0, use_ssl=False,
-                 max_latency_ms=0, role=None):
+                 max_latency_ms=0, comment=None):
         self.hostname = hostname
         self.hostgroup_id = int(hostgroup_id)
         self.port = int(port)
         self.status = status
-        self.admin_status = status
         self.weight = int(weight)
         self.compression = int(compression)
         self.max_connections = int(max_connections)
@@ -62,8 +63,17 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
         self.use_ssl = bool(int(use_ssl))
         self.max_latency_ms = int(max_latency_ms)
         self._connection = None
-        self.role = role
-        self.comment = None
+        self.comment = comment
+        self._admin_status = None
+        try:
+            self.role = json.loads(comment)['role']
+        except (TypeError, KeyError):
+            self.role = None
+
+        try:
+            self.admin_status = json.loads(comment)['admin_status']
+        except (TypeError, KeyError):
+            self._admin_status = None
 
     def __eq__(self, other):
         try:
@@ -104,6 +114,22 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
                "use_ssl={use_ssl}, " \
                "max_latency_ms={max_latency_ms}, " \
                "comment={comment}".format(**kwargs)
+
+    def _get_admin_status(self):
+        return self._admin_status
+
+    def _set_admin_status(self, admin_status):
+        self._admin_status = admin_status
+        if admin_status:
+            self.status = admin_status
+
+    def _del_admin_status(self):
+        raise NotImplementedError
+
+    admin_status = property(_get_admin_status,
+                            _set_admin_status,
+                            _del_admin_status,
+                            'Admin status of backend')
 
     def connect(self, username, password):
         """

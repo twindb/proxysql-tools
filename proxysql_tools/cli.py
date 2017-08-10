@@ -196,8 +196,8 @@ def set_sync(cfg, ip_address, port):
 @PASS_CFG
 def set_online(cfg, ip_address, port):
     """Set server backend status online"""
-    kwargs = get_proxysql_options(cfg)
-    server_set_admin_status(kwargs, ip_address, port, BackendStatus.online)
+    server_set_admin_status(cfg, ip_address, port,
+                            BackendStatus.online)
 
 
 @server.command()
@@ -206,8 +206,7 @@ def set_online(cfg, ip_address, port):
 @PASS_CFG
 def set_offline(cfg, ip_address, port):
     """Set server backend status offline"""
-    kwargs = get_proxysql_options(cfg)
-    server_set_admin_status(kwargs, ip_address, port,
+    server_set_admin_status(cfg, ip_address, port,
                             BackendStatus.offline_hard)
 
 

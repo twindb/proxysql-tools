@@ -4,6 +4,7 @@ from __future__ import print_function
 from prettytable import PrettyTable
 
 from proxysql_tools import LOG
+from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
 from proxysql_tools.proxysql.proxysql import ProxySQL
 from proxysql_tools.proxysql.proxysqlbackend import BackendStatus
 from proxysql_tools.util import get_proxysql_options, get_backend, \
@@ -40,23 +41,26 @@ def server_status(cfg):
         servers.align['comment'] = 'l'   # pylint: disable=unsupported-assignment-operation
 
         LOG.info('%s:', name)
-        for backend in proxysql.find_backends(hostgroup_id):
-            row = [
-                backend.hostgroup_id,
-                backend.hostname,
-                backend.port,
-                backend.status,
-                backend.weight,
-                backend.compression,
-                backend.max_connections,
-                backend.max_replication_lag,
-                backend.use_ssl,
-                backend.max_latency_ms,
-                backend.comment
-            ]
-            servers.add_row(row)
+        try:
+            for backend in proxysql.find_backends(hostgroup_id):
+                row = [
+                    backend.hostgroup_id,
+                    backend.hostname,
+                    backend.port,
+                    backend.status,
+                    backend.weight,
+                    backend.compression,
+                    backend.max_connections,
+                    backend.max_replication_lag,
+                    backend.use_ssl,
+                    backend.max_latency_ms,
+                    backend.comment
+                ]
+                servers.add_row(row)
 
-        print(servers)
+            print(servers)
+        except ProxySQLBackendNotFound as err:
+            LOG.warning(err)
 
 
 def server_set_wsrep_desync(cfg, server_ip, port, wsrep_desync='ON'):
@@ -70,13 +74,25 @@ def server_set_wsrep_desync(cfg, server_ip, port, wsrep_desync='ON'):
     :param wsrep_desync: Value for wsrep_desync
     """
     kwargs = get_proxysql_options(cfg)
-    backend = get_backend(kwargs, server_ip, port)
-    backend.connect(cfg.get('galera', 'cluster_username'),
-                    cfg.get('galera', 'cluster_password'))
-    backend.execute("SET GLOBAL wsrep_desync=%s", wsrep_desync)
+    proxysql = ProxySQL(**kwargs)
+    backends = proxysql.find_backends()
+
+    cluster_username = cfg.get('galera', 'cluster_username')
+    cluster_password = cfg.get('galera', 'cluster_password')
+
+    for group_id in get_hostgroups_id(cfg):
+
+        try:
+            backend = backends.find(server_ip,
+                                    port=port,
+                                    hostgroup_id=group_id)
+            backend.connect(cluster_username, cluster_password)
+            backend.execute("SET GLOBAL wsrep_desync=%s", wsrep_desync)
+        except ProxySQLBackendNotFound:
+            pass
 
 
-def server_set_admin_status(kwargs, server_ip, port,
+def server_set_admin_status(cfg, server_ip, port,
                             status=BackendStatus.online):
     """
     Set server admin_status
@@ -87,7 +103,19 @@ def server_set_admin_status(kwargs, server_ip, port,
     :param port: Server port
     :param status: Admin status
     """
-    backend = get_backend(kwargs, server_ip, port)
+    kwargs = get_proxysql_options(cfg)
+    print(kwargs)
     proxysql = ProxySQL(**kwargs)
-    backend.admin_status = status
-    proxysql.set_admin_status(backend)
+    backends = proxysql.find_backends()
+
+    for group_id in get_hostgroups_id(cfg):
+
+        try:
+            backend = backends.find(server_ip,
+                                    port=port,
+                                    hostgroup_id=group_id)
+            backend.admin_status = status
+            LOG.debug('Updating %s', backend)
+            proxysql.update_backend(backend)
+        except ProxySQLBackendNotFound:
+            LOG.debug('Skipping hostgroup_id %d', group_id)

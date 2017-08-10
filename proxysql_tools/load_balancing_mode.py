@@ -1,4 +1,6 @@
 """Module implements load balancing algorithms"""
+import json
+
 from pymysql import OperationalError
 
 from proxysql_tools import LOG
@@ -36,14 +38,17 @@ def singlewriter(galera_cluster, proxysql,
 
     LOG.debug('Register all missing backends')
     for galera_node in galera_cluster.find_synced_nodes():
+        comment = {
+            'role': BackendRole.reader
+        }
         reader = ProxySQLMySQLBackend(galera_node.host,
                                       hostgroup_id=reader_hostgroup_id,
                                       port=galera_node.port,
-                                      role=BackendRole.reader)
+                                      comment=json.dumps(comment))
         writer = ProxySQLMySQLBackend(galera_node.host,
                                       hostgroup_id=writer_hostgroup_id,
                                       port=galera_node.port,
-                                      role=BackendRole.writer)
+                                      comment=json.dumps(comment))
         if not (proxysql.backend_registered(reader) or
                 proxysql.backend_registered(writer)):
             proxysql.register_backend(reader)
@@ -52,13 +57,16 @@ def singlewriter(galera_cluster, proxysql,
 
     LOG.debug('Make sure writer is not reader')
     writer = proxysql.find_backends(writer_hostgroup_id)[0]
+    LOG.debug('Writer: %r', writer)
     readers = proxysql.find_backends(reader_hostgroup_id)
+    LOG.debug('Readers: %r', readers)
     writer_as_reader = writer
     writer_as_reader.hostgroup_id = reader_hostgroup_id
 
     is_readers_offline = False
     if writer_as_reader in readers:
-        readers_without_writer = readers[:]
+        readers_without_writer = readers
+        LOG.debug('Readers without writer: %r', readers_without_writer)
         readers_without_writer.remove(writer_as_reader)
 
         is_readers_offline = all(x.status == BackendStatus.offline_soft
@@ -252,7 +260,7 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, role,  # pyli
             LOG.warn('Node %s is reachable but unhealty, '
                      'setting it OFFLINE_SOFT', node)
             backend.status = backend.admin_status = BackendStatus.offline_soft
-            proxysql.set_admin_status(backend)
+            proxysql.update_backend(backend)
             register_synced_backends(galera_cluster, proxysql,
                                      hostgroup_id,
                                      role=role,
@@ -272,7 +280,7 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, role,  # pyli
                   'Set OFFLINE_HARD status.',
                   backend)
         backend.status = backend.admin_status = BackendStatus.offline_hard
-        proxysql.set_admin_status(backend)
+        proxysql.update_backend(backend)
         register_synced_backends(galera_cluster, proxysql,
                                  hostgroup_id, role=role,
                                  limit=limit, ignore_backend=ignore_backend)
@@ -314,11 +322,14 @@ def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-ma
         else:
             candidate_nodes = galera_nodes
 
+        comment = {
+            'role': role
+        }
         for galera_node in candidate_nodes:
             backend = ProxySQLMySQLBackend(galera_node.host,
                                            hostgroup_id=hostgroup_id,
                                            port=galera_node.port,
-                                           role=role)
+                                           comment=json.dumps(comment))
             proxysql.register_backend(backend)
             LOG.info('Added backend %s to hostgroup %d', backend, hostgroup_id)
         if not candidate_nodes:
@@ -327,7 +338,7 @@ def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-ma
             backend = ProxySQLMySQLBackend(ignore_backend.hostname,
                                            hostgroup_id=hostgroup_id,
                                            port=ignore_backend.port,
-                                           role=role)
+                                           comment=json.dumps(comment))
             proxysql.register_backend(backend)
             LOG.info('Added backend %s to hostgroup %d', backend, hostgroup_id)
 
