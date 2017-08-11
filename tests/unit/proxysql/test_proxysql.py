@@ -154,12 +154,24 @@ def test_reload_runtime(mock_execute, proxysql):
     mock_execute.assert_has_calls(calls=calls, any_order=False)
 
 
-@mock.patch.object(ProxySQL, 'reload_runtime')
+@mock.patch.object(ProxySQL, 'reload_servers')
 @mock.patch.object(ProxySQL, 'execute')
-def test_register_backend(mock_execute, mock_runtime, proxysql):
+def test_register_backend(mock_execute, mock_reload_servers, proxysql):
     backend = ProxySQLMySQLBackend('foo')
     proxysql.register_backend(backend)
-    mock_runtime.assert_called_once_with()
+    expected_query = "REPLACE INTO mysql_servers(" \
+                     "`hostgroup_id`, `hostname`, `port`, " \
+                     "`status`, `weight`, `compression`, " \
+                     "`max_connections`, `max_replication_lag`, `use_ssl`, " \
+                     "`max_latency_ms`, `comment`) " \
+                     "VALUES(" \
+                     "0, 'foo', 3306, " \
+                     "'ONLINE', 1, 0, " \
+                     "10000, 0, 0, " \
+                     "0, '{\"admin_status\": null, \"role\": null}'" \
+                     ")"
+    mock_execute.assert_called_once_with(expected_query)
+    mock_reload_servers.assert_called_once_with()
 
 
 @mock.patch.object(ProxySQL, 'reload_runtime')
@@ -168,7 +180,8 @@ def test_deregister_backend(mock_execute, mock_runtime, proxysql):
 
     backend = ProxySQLMySQLBackend('foo', hostgroup_id=10, port=3307)
     proxysql.deregister_backend(backend)
-    query = "DELETE FROM mysql_servers WHERE hostgroup_id=10 AND hostname='foo' AND port=3307"
+    query = "DELETE FROM mysql_servers " \
+            "WHERE hostgroup_id=10 AND hostname='foo' AND port=3307"
     mock_execute.assert_called_once_with(query)
     mock_runtime.assert_called_once_with()
 

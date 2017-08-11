@@ -352,6 +352,10 @@ class ProxySQL(object):
         self.reload_servers()
 
     def update_backend(self, backend):
+        """
+        Updates backend in ProxySQL table mysql_servers.
+        Currently synonym of register_backend().
+        """
         self.register_backend(backend)
 
     def deregister_backend(self, backend):

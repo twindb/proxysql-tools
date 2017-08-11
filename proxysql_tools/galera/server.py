@@ -7,8 +7,7 @@ from proxysql_tools import LOG
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
 from proxysql_tools.proxysql.proxysql import ProxySQL
 from proxysql_tools.proxysql.proxysqlbackend import BackendStatus
-from proxysql_tools.util import get_proxysql_options, get_backend, \
-    get_hostgroups_id
+from proxysql_tools.util import get_proxysql_options, get_hostgroups_id
 
 
 def server_status(cfg):
@@ -104,7 +103,6 @@ def server_set_admin_status(cfg, server_ip, port,
     :param status: Admin status
     """
     kwargs = get_proxysql_options(cfg)
-    print(kwargs)
     proxysql = ProxySQL(**kwargs)
     backends = proxysql.find_backends()
 
