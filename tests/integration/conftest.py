@@ -1,19 +1,14 @@
 import os
 import pprint
-import pytest
 
+import pytest
 from docker.types import IPAMConfig, IPAMPool
 
 from proxysql_tools import LOG, setup_logging
 from proxysql_tools.galera.galera_node import GaleraNode
 from proxysql_tools.proxysql.proxysql import ProxySQL
-from tests.integration.library import (
-    docker_client,
-    docker_pull_image,
-    eventually,
-    create_percona_xtradb_cluster
-)
-
+from tests.integration.library import docker_client, docker_pull_image, eventually, create_percona_xtradb_cluster, \
+    docker_remove_all_volumes
 
 CONTAINERS_FOR_TESTING_LABEL = 'pytest_docker'
 DEBIAN_IMAGE = 'debian:8'
@@ -71,6 +66,7 @@ def debian_container():
     yield container_info
 
     api.remove_container(container=container['Id'], force=True)
+    docker_remove_all_volumes()
 
 
 @pytest.yield_fixture(scope='session')
@@ -179,6 +175,7 @@ def proxysql_container(proxysql_config_contents, tmpdir, container_network):
     yield container_info
 
     api.remove_container(container=container['Id'], force=True)
+    docker_remove_all_volumes()
 
 
 @pytest.fixture
@@ -248,6 +245,8 @@ def percona_xtradb_cluster_three_node(container_network):
     for container in container_info:
         api.remove_container(container=container['id'], force=True)
 
+    docker_remove_all_volumes()
+
 
 @pytest.yield_fixture
 def percona_xtradb_cluster_one_node(container_network):
@@ -278,6 +277,8 @@ def percona_xtradb_cluster_one_node(container_network):
     # Cleanup the containers now
     for container in container_info:
         api.remove_container(container=container['id'], force=True)
+
+    docker_remove_all_volumes()
 
 
 @pytest.fixture

@@ -10,11 +10,14 @@ from proxysql_tools import setup_logging, LOG, __version__
 from proxysql_tools.aws.aws import aws_notify_master
 from proxysql_tools.cli_entrypoint.galera import galera_register
 from proxysql_tools.galera.server import server_status, \
-    server_set_wsrep_desync
+    server_set_wsrep_desync, server_set_admin_status
 from proxysql_tools.galera.user import get_users, create_user, delete_user, \
     change_password, modify_user
-from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, ProxySQLUserNotFound
+from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, \
+    ProxySQLUserNotFound
 from proxysql_tools.proxysql.proxysql import ProxySQL
+from proxysql_tools.proxysql.proxysqlbackend import BackendStatus
+from proxysql_tools.util import get_proxysql_options
 from proxysql_tools.util.bug1258464 import bug1258464
 
 PASS_CFG = click.make_pass_decorator(ConfigParser, ensure=True)
@@ -53,19 +56,7 @@ def main(ctx, cfg, debug, config, version):
 @PASS_CFG
 def ping(cfg):
     """Checks the health of ProxySQL."""
-    kwargs_maps = {
-        'host': 'host',
-        'port': 'admin_port',
-        'user': 'admin_username',
-        'password': 'admin_password'
-    }
-    kwargs = {}
-    for key in kwargs_maps:
-        try:
-            kwargs[key] = cfg.get('proxysql', kwargs_maps[key])
-        except NoOptionError:
-            pass
-
+    kwargs = get_proxysql_options(cfg)
     if ProxySQL(**kwargs).ping():
         LOG.info('ProxySQL is alive')
         exit(0)
@@ -199,6 +190,26 @@ def set_sync(cfg, ip_address, port):
         LOG.error(err)
 
 
+@server.command()
+@click.argument('ip_address', required=True)
+@click.argument('port', required=False, type=int, default=3306)
+@PASS_CFG
+def set_online(cfg, ip_address, port):
+    """Set server backend status online"""
+    server_set_admin_status(cfg, ip_address, port,
+                            BackendStatus.online)
+
+
+@server.command()
+@click.argument('ip_address', required=True)
+@click.argument('port', required=False, type=int, default=3306)
+@PASS_CFG
+def set_offline(cfg, ip_address, port):
+    """Set server backend status offline"""
+    server_set_admin_status(cfg, ip_address, port,
+                            BackendStatus.offline_hard)
+
+
 @galera.group()
 def user():
     """Commands for ProxySQL users"""
@@ -211,6 +222,7 @@ def user_list(cfg):
     get_users(cfg)
 
 
+# noinspection LongLine
 @user.command()
 @click.argument('username', required=True)
 @click.option('--password', help='User password',
@@ -267,6 +279,7 @@ def create(cfg, username, password, active, use_ssl,  # pylint: disable=too-many
         exit(1)
 
 
+# noinspection PyUnusedLocal
 def validate_password(ctx, param, value):  # pylint: disable=unused-argument
     """CHeck password value and confirm again if it's empty."""
     if not value:
