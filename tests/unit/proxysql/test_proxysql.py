@@ -3,9 +3,10 @@ import pytest
 from pymysql import OperationalError
 from pymysql.cursors import DictCursor
 
-from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, ProxySQLUserNotFound
-from proxysql_tools.proxysql.proxysql import BackendStatus, ProxySQLMySQLBackend, \
+from proxysql_tools.proxysql.exceptions import ProxySQLUserNotFound
+from proxysql_tools.proxysql.proxysql import ProxySQLMySQLBackend, \
     ProxySQLMySQLUser, ProxySQL
+from proxysql_tools.proxysql.proxysqlbackend import BackendStatus
 
 
 def test_backendstatus():
@@ -26,8 +27,7 @@ def test_proxysql_mysql_backend():
                               max_connections='10',
                               max_replication_lag='20',
                               use_ssl=100,
-                              max_latency_ms='30',
-                              comment='bar')
+                              max_latency_ms='30',)
 
     assert be.hostgroup_id == 0
     assert be.port == 3307
@@ -38,7 +38,6 @@ def test_proxysql_mysql_backend():
     assert be.max_replication_lag == 20
     assert be.use_ssl is True
     assert be.max_latency_ms == 30
-    assert be.comment == 'bar'
 
 
 def test_proxysql_mysql_user():
@@ -69,6 +68,7 @@ def test_proxysql_mysql_user():
 
 
 def test_proxysql_mysql_user_with_type_conversion():
+    # noinspection PyTypeChecker
     mu = ProxySQLMySQLUser(username='foo',
                            password='qwerty',
                            active='0',
@@ -106,12 +106,9 @@ def test_proxysql():
     assert ps.password == 'qwerty'
 
 
+# noinspection PyUnresolvedReferences
 @mock.patch.object(ProxySQL, '_connect')
 def test_execute(mock_connect, proxysql):
-    """
-    :param proxysql: ProxySQL instance
-    :type proxysql: ProxySQL
-    """
     mock_connection = mock.Mock()
     mock_connect.return_value.__enter__.return_value = mock_connection
     mock_cursor = mock.Mock()
@@ -124,17 +121,67 @@ def test_execute(mock_connect, proxysql):
     mock_cursor.fetchall.assert_called_once_with()
 
 
+# noinspection PyUnresolvedReferences
+@mock.patch.object(ProxySQL, 'execute')
+def test_ping_alive(mock_execute, proxysql):
+    mock_execute.return_value = [{
+        'result': '1'
+    }]
+    assert proxysql.ping() is True
+    mock_execute.assert_called_once_with('SELECT 1 AS result')
+
+
+# noinspection PyUnresolvedReferences
+@mock.patch.object(ProxySQL, 'execute')
+def test_ping_dead(mock_execute, proxysql):
+    mock_execute.side_effect = OperationalError
+    assert proxysql.ping() is False
+    mock_execute.assert_called_once_with('SELECT 1 AS result')
+
+
+# noinspection PyUnresolvedReferences
 @mock.patch.object(ProxySQL, 'execute')
 def test_reload_runtime(mock_execute, proxysql):
-    """
-    :param proxysql: ProxySQL instance
-    :type proxysql: ProxySQL
-    """
     proxysql.reload_runtime()
     calls = [mock.call('LOAD MYSQL SERVERS TO RUNTIME'),
              mock.call('LOAD MYSQL USERS TO RUNTIME'),
              mock.call('LOAD MYSQL VARIABLES TO RUNTIME')]
     mock_execute.assert_has_calls(calls=calls, any_order=False)
+
+
+# noinspection PyUnresolvedReferences
+@mock.patch.object(ProxySQL, 'reload_servers')
+@mock.patch.object(ProxySQL, 'execute')
+def test_register_backend(mock_execute, mock_reload_servers, proxysql):
+    backend = ProxySQLMySQLBackend('foo')
+    proxysql.register_backend(backend)
+    expected_query = "REPLACE INTO mysql_servers(" \
+                     "`hostgroup_id`, `hostname`, `port`, " \
+                     "`status`, `weight`, `compression`, " \
+                     "`max_connections`, `max_replication_lag`, `use_ssl`, " \
+                     "`max_latency_ms`, `comment`) " \
+                     "VALUES(" \
+                     "0, 'foo', 3306, " \
+                     "'ONLINE', 1, 0, " \
+                     "10000, 0, 0, " \
+                     "0, '{\"admin_status\": null, \"role\": null}'" \
+                     ")"
+    mock_execute.assert_called_once_with(expected_query)
+    mock_reload_servers.assert_called_once_with()
+
+
+# noinspection PyUnresolvedReferences
+@mock.patch.object(ProxySQL, 'reload_runtime')
+@mock.patch.object(ProxySQL, 'execute')
+def test_deregister_backend(mock_execute, mock_runtime, proxysql):
+
+    backend = ProxySQLMySQLBackend('foo', hostgroup_id=10, port=3307)
+    proxysql.deregister_backend(backend)
+    query = "DELETE FROM mysql_servers " \
+            "WHERE hostgroup_id=10 AND hostname='foo' AND port=3307"
+    mock_execute.assert_called_once_with(query)
+    mock_runtime.assert_called_once_with()
+
 
 @pytest.mark.parametrize('kwargs_in, kwargs_out', [
     (
@@ -182,7 +229,83 @@ def test_reload_runtime(mock_execute, proxysql):
 @mock.patch('proxysql_tools.proxysql.proxysql.pymysql')
 def test_connect(mock_pymysql, kwargs_in, kwargs_out):
     ps = ProxySQL(**kwargs_in)
+    # noinspection PyProtectedMember,PyUnusedLocal
     with ps._connect() as conn:
         mock_pymysql.connect.assert_called_once_with(**kwargs_out)
 
 
+# noinspection PyUnresolvedReferences
+@pytest.mark.parametrize('response', [
+    (
+        [{
+            u'username': 'foo',
+            u'password': '',
+            u'active': False,
+            u'use_ssl': False,
+            u'default_hostgroup': 0,
+            u'default_schema': 'information_schema',
+            u'schema_locked': False,
+            u'transaction_persistent': False,
+            u'fast_forward': False,
+            u'backend': False,
+            u'frontend': True,
+            u'max_connections': '10000'
+        }]
+    )
+])
+@mock.patch.object(ProxySQL, 'execute')
+def test_get_users(mock_execute, proxysql, response):
+    query = "SELECT * FROM mysql_users"
+    mock_execute.return_value = response
+    proxysql.get_users()
+    mock_execute.assert_called_once_with(query)
+
+
+# noinspection PyUnresolvedReferences
+@pytest.mark.parametrize('query', [
+    (
+        "REPLACE INTO mysql_users("
+        "`username`, `password`, `active`, "
+        "`use_ssl`, `default_hostgroup`, `default_schema`, "
+        "`schema_locked`, `transaction_persistent`, `fast_forward`, "
+        "`backend`, `frontend`, `max_connections`) "
+        "VALUES"
+        "('foo', '', 1, 0, 0, 'information_schema', 0, 0, 0, 1, 1, 10000)"
+    )
+])
+@mock.patch.object(ProxySQL, 'reload_runtime')
+@mock.patch.object(ProxySQL, 'execute')
+def test_add_user(mock_execute, mock_runtime, query, proxysql):
+    user = ProxySQLMySQLUser(username='foo', password='')
+    proxysql.add_user(user)
+    mock_execute.assert_called_once_with(query)
+    mock_runtime.assert_called_once_with()
+
+
+# noinspection PyUnresolvedReferences
+@mock.patch.object(ProxySQL, 'reload_runtime')
+@mock.patch.object(ProxySQL, 'execute')
+def test_delete_user(mock_execute, mock_runtime, proxysql):
+    proxysql.delete_user('test')
+    query = "DELETE FROM mysql_users WHERE username='test'"
+    mock_execute.assert_called_once_with(query)
+    mock_runtime.assert_called_once_with()
+
+
+# noinspection PyUnresolvedReferences
+@mock.patch.object(ProxySQL, 'execute')
+def test_get_user(mock_execute, proxysql):
+    proxysql.get_user('test')
+    query = "SELECT * FROM mysql_users WHERE username = 'test'"
+    mock_execute.assert_called_once_with(query)
+
+
+# noinspection PyUnresolvedReferences
+@mock.patch.object(ProxySQL, 'execute')
+def test_get_user_if_user_does_not_exist(mock_execute, proxysql):
+    mock_execute.return_value = []
+    with pytest.raises(ProxySQLUserNotFound):
+        proxysql.get_user('test')
+
+    query = "SELECT * FROM mysql_users WHERE username = 'test'"
+    mock_execute.assert_called_once_with(query)

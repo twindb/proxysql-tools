@@ -5,6 +5,8 @@ import time
 import io
 from ConfigParser import ConfigParser
 
+from docker.errors import APIError
+
 from proxysql_tools import LOG
 from proxysql_tools.galera.galera_node import GaleraNode
 
@@ -24,6 +26,15 @@ def docker_pull_image(image):
 
     response = api.pull(image)
     LOG.debug('Response: %s', response)
+
+
+def docker_remove_all_volumes():
+    client = docker_client()
+    for volume in client.volumes.list():
+        try:
+            volume.remove()
+        except APIError:
+            pass
 
 
 def get_unused_port():
@@ -63,10 +74,11 @@ def eventually(func, *args, **kwargs):
     raise EnvironmentError('Function %s never returned True' % func)
 
 
-def shutdown_container(id):
+def shutdown_container(container_id):
     client = docker_client()
     api = client.api
-    api.stop(id)
+    api.stop(container_id)
+
 
 def create_percona_xtradb_cluster(container_image, container_labels,
                                   container_info, container_ports,

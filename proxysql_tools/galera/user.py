@@ -3,9 +3,10 @@ from __future__ import print_function
 
 from prettytable import PrettyTable
 
-from proxysql_tools.util import get_proxysql_options
+from proxysql_tools.proxysql.proxysqlbackend import BackendStatus
+from proxysql_tools.util import get_proxysql_options, get_hostgroups_id
 from proxysql_tools import LOG
-from proxysql_tools.proxysql.proxysql import ProxySQL, ProxySQLMySQLUser, BackendStatus
+from proxysql_tools.proxysql.proxysql import ProxySQL, ProxySQLMySQLUser
 from proxysql_tools.util import parse_user_arguments
 
 
@@ -13,7 +14,7 @@ def get_encrypred_password(cfg, pwd):
     """Encrypt password with MySQL function PASSWORD()."""
     args = get_proxysql_options(cfg)
     proxysql = ProxySQL(**args)
-    writer_hostgroup_id = int(cfg.get('galera', 'writer_hostgroup_id'))
+    writer_hostgroup_id, _ = get_hostgroups_id(cfg)
 
     backends = proxysql.find_backends(writer_hostgroup_id,
                                       BackendStatus.online)

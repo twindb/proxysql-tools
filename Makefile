@@ -92,7 +92,7 @@ test: ## run tests quickly with the default Python
 	pytest -xv --cov-report term-missing --cov=./proxysql_tools tests/unit
 
 test-integration: ## run integration tests
-	py.test tests/integration/
+	py.test -x tests/integration/
 
 test-all: ## run tests on every Python version with tox (must be run in Linux with docker)
 	tox
