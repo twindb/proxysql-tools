@@ -1,6 +1,9 @@
 """Auxiliary functions."""
 from ConfigParser import NoOptionError
 
+from proxysql_tools.proxysql.proxysql import ProxySQL
+from proxysql_tools.proxysql.proxysqlbackendset import ProxySQLMySQLBackendSet
+
 
 def get_proxysql_options(cfg):
     """Get ProxySQL relevant config options"""
@@ -27,6 +30,21 @@ def get_proxysql_options(cfg):
         pass
 
     return kwargs
+
+
+def get_hostgroups_id(cfg):
+    """Get writer and reader hostgroup id's """
+    writer_hostgroup_id = int(cfg.get('galera', 'writer_hostgroup_id'))
+    reader_hostgroup_id = int(cfg.get('galera', 'reader_hostgroup_id'))
+    return writer_hostgroup_id, reader_hostgroup_id
+
+
+def get_backend(kwargs, server_ip, port):
+    """Get backend by server_ip and port"""
+    proxysql = ProxySQL(**kwargs)
+    backends = ProxySQLMySQLBackendSet()
+    backends.add_set(proxysql.find_backends())
+    return backends.find(server_ip, port)
 
 
 def parse_user_arguments(args):
@@ -96,7 +114,7 @@ def parse_user_arguments(args):
             'value': False,
             'key': 'fast_forward'
         },
-        '--max_connections':  {
+        '--max_connections': {
             'value': int,
             'key': 'max_connections'
         }
@@ -108,14 +126,14 @@ def parse_user_arguments(args):
         if arg in ['--max_connections', '--default_hostgroup',
                    '--default_schema']:
             try:
-                result[attrs[arg]['key']] = attrs[arg]['value'](args[i+1])
+                result[attrs[arg]['key']] = attrs[arg]['value'](args[i + 1])
             except (IndexError, ValueError):
                 raise ValueError
-            i = i + 2
+            i += 2
             continue
         elif arg in attrs.keys():
             result[attrs[arg]['key']] = attrs[arg]['value']
         else:
             raise ValueError('Unexpected argument: %s', arg)
-        i = i+1
+        i += 1
     return result
