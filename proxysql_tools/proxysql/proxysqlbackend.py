@@ -73,7 +73,9 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
                 self.role = BackendRole.reader
             else:
                 self.role = json.loads(comment)['role']
-        except (TypeError, KeyError):
+                if not self.role:
+                    self.role = None
+        except (TypeError, KeyError, ValueError):
             self.role = None
 
         try:
@@ -83,6 +85,8 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
                 self._admin_status = status
             else:
                 self.admin_status = json.loads(comment)['admin_status']
+                if not self.admin_status:
+                    self.admin_status = None
         except (TypeError, KeyError, ValueError):
             self._admin_status = None
 
