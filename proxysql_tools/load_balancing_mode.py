@@ -77,6 +77,10 @@ def singlewriter(galera_cluster, proxy,
             and not is_readers_offline:
         proxy.deregister_backend(writer_as_reader)
 
+    check_sst(proxy, galera_cluster, readers, writer)
+
+
+
 
 def register_writer(galera_cluster, proxysql, writer_hostgroup_id,
                     reader_hostgroup_id,
@@ -346,3 +350,35 @@ def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-ma
 
     except GaleraClusterSyncedNodeNotFound as err:
         LOG.error(err)
+
+def check_sst(proxysql, galera_cluster, readers, writer):
+    """
+    Check sst runned, and make donor node available, if there are no other nodes.
+
+    :param proxysql: ProxySQL instance
+    :type proxysql: ProxySQL
+    :param galera_cluster: GaleraCluster instance.
+    :type galera_cluster: GaleraCluster
+    :param readers: List of readers in cluster
+    :type readers: list(ProxySQLMySQLBackend)
+    :param writer: Writer in cluster
+    :type writer: ProxySQLMySQLBackend
+    """
+    try:
+        donor = galera_cluster.find_donor_nodes()[0]
+    except GaleraClusterNodeNotFound:
+        return
+    active_backends = readers + [writer]
+    try:
+        offline_nodes = proxysql.find_backends(status=BackendStatus.offline_hard)
+        active_backends -= offline_nodes
+    except ProxySQLBackendNotFound:
+        pass
+    i = 0
+    while len(active_backends) == 2:
+        if active_backends[i].hostname == donor.host and \
+                active_backends[i].port == donor.port:
+            active_backends[i].status = BackendStatus.online
+            proxysql.register_backend(active_backends[i])
+            break
+        i = i+1
