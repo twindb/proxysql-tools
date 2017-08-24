@@ -51,6 +51,7 @@ class GaleraCluster(object):
 
     def find_synced_nodes(self):
         """Find a node in the cluster in SYNCED state.
+
         :return: List of Galera node in SYNCED state.
         :rtype: list(GaleraNode)
         :raise: GaleraClusterSyncedNodeNotFound
@@ -71,6 +72,30 @@ class GaleraCluster(object):
         else:
             raise GaleraClusterSyncedNodeNotFound('Cluster has '
                                                   'no SYNCED nodes')
+
+    def find_donor_nodes(self):
+        """
+        Find a node in the cluster is DONOR state
+
+        :return: List of Galera node in DONOR state
+        :rtype: list(GaleraNode)
+        :raise: GaleraClusterNodeNotFound
+        """
+        LOG.debug('Looking for a DONOR node')
+        nodes = []
+        for galera_node in self._nodes:
+            try:
+                state = galera_node.wsrep_local_state
+                LOG.debug('%s state: %s', galera_node, state)
+                if state == GaleraNodeState.DONOR:
+                    nodes.append(galera_node)
+            except OperationalError as err:
+                LOG.error(err)
+                LOG.info('Skipping node %s', galera_node)
+        if nodes:
+            return nodes
+        else:
+            raise GaleraClusterNodeNotFound('Cannot find node with DONOR state')
 
     @staticmethod
     def _split_cluster_host(cluster_host):
