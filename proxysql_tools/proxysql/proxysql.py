@@ -433,14 +433,17 @@ class ProxySQL(object):
         :return: True if registered, False otherwise
         :rtype: bool
         """
-        query = 'SELECT `hostgroup_id`, `hostname`, `port` ' \
-                'FROM `mysql_servers` ' \
-                'WHERE hostgroup_id = %d  ' \
-                'AND `hostname` = %s  ' \
-                'AND `port` = %s' \
-                % (int(backend.hostgroup_id),
-                   pymysql.escape_string(backend.hostname),
-                   int(backend.port))
+
+        query = "SELECT `hostgroup_id`, `hostname`, `port` " \
+                "FROM `mysql_servers` " \
+                "WHERE hostgroup_id = %d  " \
+                "AND `hostname` = '%s'  " \
+                "AND `port` = %s" % \
+                (
+                    int(backend.hostgroup_id),
+                    pymysql.escape_string(backend.hostname),
+                    int(backend.port)
+                )
         result = self.execute(query)
         return result != ()
 
