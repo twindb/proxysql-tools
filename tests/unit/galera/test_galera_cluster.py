@@ -7,7 +7,9 @@ from proxysql_tools.galera.galeranodeset import GaleraNodeSet
 
 def test_nodes():
     gc = GaleraCluster('foo:1')
-    assert gc.nodes == GaleraNodeSet().add(gc)
+    node_set = GaleraNodeSet()
+    node_set.add(GaleraNode('foo', 1))
+    assert gc.nodes == node_set
 
 
 @pytest.mark.parametrize('cluster_host, result', [
