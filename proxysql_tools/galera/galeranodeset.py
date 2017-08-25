@@ -16,7 +16,7 @@ class GaleraNodeSet(BackendSet):
 
     def find(self, host=None, port=3306, state=None):
         """
-        Find node by host and port
+        Find node by host and port or state
 
         :param host: Hostname of backend
         :param port: Port of backend
@@ -24,22 +24,11 @@ class GaleraNodeSet(BackendSet):
         :return: Return found node
         :raises: GaleraClusterNodeNotFound
         """
-
         if host:
-            needle = GaleraNode(host, port)
-            for node in self._backend_list:
-                if needle == node:
-                    return node
-            raise GaleraClusterNodeNotFound('Backend %s not found' % needle)
+            return self._find_by_host(host, port)
+        elif state:
+            return self._find_by_state(state)
 
-        if state:
-            nodes = []
-            for node in self._backend_list:
-                if node.wsrep_local_state == state:
-                    nodes.append(node)
-            if nodes:
-                return nodes
-            raise GaleraClusterNodeNotFound('Nodes with state %d not found' % state)
 
     def remove(self, backend):
         """Remove node from the set
@@ -52,3 +41,23 @@ class GaleraNodeSet(BackendSet):
             self._backend_list.remove(backend)
         except ValueError as err:
             raise GaleraClusterNodeNotFound(err)
+
+    def _find_by_state(self, state):
+        """Find node by state"""
+        nodes = []
+        for node in self._backend_list:
+            if node.wsrep_local_state == state:
+                nodes.append(node)
+        if nodes:
+            return nodes
+        raise GaleraClusterNodeNotFound('Node with state %d not found' % state)
+
+    def _find_by_host(self, host, port):
+        """Find node py host and port"""
+        needle = GaleraNode(host, port)
+        for node in self._backend_list:
+            if needle == node:
+                return [node]
+        raise GaleraClusterNodeNotFound('Node %s not found' % needle)
+
+

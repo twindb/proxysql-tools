@@ -2,11 +2,12 @@ import pytest
 
 from proxysql_tools.galera.galera_cluster import GaleraCluster
 from proxysql_tools.galera.galera_node import GaleraNode
+from proxysql_tools.galera.galeranodeset import GaleraNodeSet
 
 
 def test_nodes():
     gc = GaleraCluster('foo:1')
-    assert gc.nodes == [GaleraNode('foo', port=1)]
+    assert gc.nodes == GaleraNodeSet().add(gc)
 
 
 @pytest.mark.parametrize('cluster_host, result', [
