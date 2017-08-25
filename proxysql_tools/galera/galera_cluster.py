@@ -4,7 +4,7 @@ from proxysql_tools.galera.galera_node import GaleraNode
 from proxysql_tools.galera.galeranodeset import GaleraNodeSet
 
 
-class GaleraCluster(object):
+class GaleraCluster(object):  # pylint: disable=too-few-public-methods
     """
     GaleraCluster describes Galera cluster.
 
