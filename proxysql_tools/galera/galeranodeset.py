@@ -8,14 +8,10 @@ class GaleraNodeSet(BackendSet):
     """Set for galera nodes"""
 
     def __contains__(self, item):
-        if isinstance(item, GaleraNode):  # pylint: disable=duplicate-code
+        if isinstance(item, GaleraNode):
             return item in self._backend_list
         elif isinstance(item, GaleraNodeSet):
-            for backend in item:
-                if backend not in self:
-                    return False
-            return True
-
+            return super(GaleraNodeSet, self).__contains__(item)
         return False
 
     def find(self, host=None, port=3306, state=None):

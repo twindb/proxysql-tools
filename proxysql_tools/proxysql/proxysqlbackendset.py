@@ -11,11 +11,7 @@ class ProxySQLMySQLBackendSet(BackendSet):
         if isinstance(item, ProxySQLMySQLBackend):
             return item in self._backend_list
         elif isinstance(item, ProxySQLMySQLBackendSet):
-            for backend in item:
-                if backend not in self:
-                    return False
-            return True
-
+            return super(ProxySQLMySQLBackendSet, self).__contains__(item)
         return False
 
     def find(self, host, hostgroup_id=0, port=3306):

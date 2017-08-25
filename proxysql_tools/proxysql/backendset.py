@@ -13,9 +13,12 @@ class BackendSet(object):
     def __len__(self):
         return len(self._backend_list)
 
-    @abstractmethod
+
     def __contains__(self, item):
-        pass
+        for backend in item:
+            if backend not in self:
+                return False
+        return True
 
     def __eq__(self, other):
         return other == self._backend_list
