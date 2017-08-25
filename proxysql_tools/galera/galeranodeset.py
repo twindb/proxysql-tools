@@ -59,5 +59,3 @@ class GaleraNodeSet(BackendSet):
             if needle == node:
                 return [node]
         raise GaleraClusterNodeNotFound('Node %s not found' % needle)
-
-

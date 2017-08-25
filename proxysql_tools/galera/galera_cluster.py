@@ -1,10 +1,6 @@
 """Module describes GaleraCluster class"""
-from pymysql import OperationalError
 
-from proxysql_tools import LOG
-from proxysql_tools.galera.exceptions import GaleraClusterSyncedNodeNotFound, \
-    GaleraClusterNodeNotFound
-from proxysql_tools.galera.galera_node import GaleraNode, GaleraNodeState
+from proxysql_tools.galera.galera_node import GaleraNode
 from proxysql_tools.galera.galeranodeset import GaleraNodeSet
 
 
@@ -33,7 +29,9 @@ class GaleraCluster(object):
         :return: Return set of Galera nodes
         :rtype: GaleraNodeSet
         """
-        return GaleraNodeSet().add_set(self._nodes)
+        nodes = GaleraNodeSet()
+        nodes.add_set(self._nodes)
+        return nodes
 
     @staticmethod
     def _split_cluster_host(cluster_host):
