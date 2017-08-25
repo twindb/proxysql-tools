@@ -1,3 +1,5 @@
+"""Class BackendSet implementation."""
+
 from abc import abstractmethod
 
 

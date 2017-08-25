@@ -1,5 +1,6 @@
+"""Class GaleraNodeSet implementation."""
 from proxysql_tools.galera.exceptions import GaleraClusterNodeNotFound
-from proxysql_tools.galera.galera_node import GaleraNode, GaleraNodeState
+from proxysql_tools.galera.galera_node import GaleraNode
 from proxysql_tools.proxysql.backendset import BackendSet
 
 
@@ -7,7 +8,7 @@ class GaleraNodeSet(BackendSet):
     """Set for galera nodes"""
 
     def __contains__(self, item):
-        if isinstance(item, GaleraNode):
+        if isinstance(item, GaleraNode):  # pylint: disable=duplicate-code
             return item in self._backend_list
         elif isinstance(item, GaleraNodeSet):
             for backend in item:
