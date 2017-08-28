@@ -64,4 +64,4 @@ def test_find_host(mock_status, states, nodes, criteria, result):
     for node in nodes:
         bs.add(node)
 
-    assert bs.find(**criteria) == result
+    assert bs.find(**criteria) == [result]
