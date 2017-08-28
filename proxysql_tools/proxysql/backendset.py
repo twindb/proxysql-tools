@@ -13,7 +13,6 @@ class BackendSet(object):
     def __len__(self):
         return len(self._backend_list)
 
-
     def __contains__(self, item):
         for backend in item:
             if backend not in self:
@@ -63,9 +62,4 @@ class BackendSet(object):
 
     @abstractmethod
     def remove(self, backend):
-        """Remove backend from the set
-
-        :param backend: Backend to remove.
-        :type backend: ProxySQLMySQLBackend
-        :raise ProxySQLBackendNotFound: if backend is not in the set
-        """
+        """Remove backend from the set"""
