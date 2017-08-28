@@ -1,13 +1,10 @@
 """Module describes GaleraCluster class"""
-from pymysql import OperationalError
 
-from proxysql_tools import LOG
-from proxysql_tools.galera.exceptions import GaleraClusterSyncedNodeNotFound, \
-    GaleraClusterNodeNotFound
-from proxysql_tools.galera.galera_node import GaleraNode, GaleraNodeState
+from proxysql_tools.galera.galera_node import GaleraNode
+from proxysql_tools.galera.galeranodeset import GaleraNodeSet
 
 
-class GaleraCluster(object):
+class GaleraCluster(object):  # pylint: disable=too-few-public-methods
     """
     GaleraCluster describes Galera cluster.
 
@@ -19,83 +16,20 @@ class GaleraCluster(object):
     :type password: str
     """
     def __init__(self, cluster_hosts, user='root', password=None):
-        self._nodes = []
+        self._nodes = GaleraNodeSet()
         for host in self._split_cluster_host(cluster_hosts):
-            self._nodes.append(GaleraNode(host=host[0], port=host[1],
-                                          user=user, password=password))
+            self._nodes.add(GaleraNode(host=host[0], port=host[1],
+                                       user=user, password=password))
 
     @property
     def nodes(self):
         """
         Get list of Galera nodes
 
-        :return: Return list of Galera nodes
-        :rtype: list(GaleraNode)"""
+        :return: Return set of Galera nodes
+        :rtype: GaleraNodeSet
+        """
         return self._nodes
-
-    def find_node(self, host, port):
-        """
-        BY given host and port find a node in the cluster.
-
-        :param host: IP or address of node.
-        :param port: node port.
-        :return: GaleraNode instance.
-        :rtype: GaleraNode
-        :raise: GaleraClusterNodeNotFound
-        """
-        for node in self._nodes:
-            if node.host == host and node.port == port:
-                return node
-
-        raise GaleraClusterNodeNotFound('Cannot find node %s:%d', host, port)
-
-    def find_synced_nodes(self):
-        """Find a node in the cluster in SYNCED state.
-
-        :return: List of Galera node in SYNCED state.
-        :rtype: list(GaleraNode)
-        :raise: GaleraClusterSyncedNodeNotFound
-        """
-        LOG.debug('Looking for a SYNCED node')
-        nodes = []
-        for galera_node in self._nodes:
-            try:
-                state = galera_node.wsrep_local_state
-                LOG.debug('%s state: %s', galera_node, state)
-                if state == GaleraNodeState.SYNCED:
-                    nodes.append(galera_node)
-            except OperationalError as err:
-                LOG.error(err)
-                LOG.info('Skipping node %s', galera_node)
-        if nodes:
-            return nodes
-        else:
-            raise GaleraClusterSyncedNodeNotFound('Cluster has '
-                                                  'no SYNCED nodes')
-
-    def find_donor_nodes(self):
-        """
-        Find a node in the cluster is DONOR state
-
-        :return: List of Galera node in DONOR state
-        :rtype: list(GaleraNode)
-        :raise: GaleraClusterNodeNotFound
-        """
-        LOG.debug('Looking for a DONOR node')
-        nodes = []
-        for galera_node in self._nodes:
-            try:
-                state = galera_node.wsrep_local_state
-                LOG.debug('%s state: %s', galera_node, state)
-                if state == GaleraNodeState.DONOR:
-                    nodes.append(galera_node)
-            except OperationalError as err:
-                LOG.error(err)
-                LOG.info('Skipping node %s', galera_node)
-        if nodes:
-            return nodes
-        else:
-            raise GaleraClusterNodeNotFound('Cannot find node with DONOR state')
 
     @staticmethod
     def _split_cluster_host(cluster_host):
