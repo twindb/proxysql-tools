@@ -25,6 +25,7 @@ class GaleraNodeSet(BackendSet):
         :return: Return found node
         :raises: GaleraClusterNodeNotFound
         """
+        nodes = []
         for node in self._backend_list:
             if all((
                     # A -> B
@@ -36,7 +37,9 @@ class GaleraNodeSet(BackendSet):
                     not host or node.host == host,
                     not port or node.port == port,
                     not state or node.wsrep_local_state == state)):
-                return node
+                nodes.append(node)
+        if nodes:
+            return nodes
         raise GaleraClusterNodeNotFound('Node not found')
 
     def remove(self, backend):
