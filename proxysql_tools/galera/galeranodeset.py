@@ -21,8 +21,9 @@ class GaleraNodeSet(BackendSet):
         :param host: Hostname of backend
         :param port: Port of backend
         :param state: State of node
-        :type state:
-        :return: Return found node
+        :type state: GaleraNodeState
+        :return: Return list of founded nodes
+        :rtype: list(GaleraNode)
         :raises: GaleraClusterNodeNotFound
         """
         nodes = []
