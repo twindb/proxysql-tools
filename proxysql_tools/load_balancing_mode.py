@@ -37,7 +37,9 @@ def singlewriter(galera_cluster, proxy,
                      reader_hostgroup_id)
 
     LOG.debug('Register all missing backends')
-    for galera_node in galera_cluster.find_synced_nodes():
+    nodes = galera_cluster.nodes
+
+    for galera_node in nodes.find(state=GaleraNodeState.SYNCED):
         comment = {
             'role': BackendRole.reader
         }
@@ -228,7 +230,8 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, role,  # pyli
     LOG.debug('Backend %s is already registered', backend)
     LOG.debug('Checking its health')
     try:
-        node = galera_cluster.find_node(backend.hostname, backend.port)
+        nodes = galera_cluster.nodes
+        node = nodes.find(host=backend.hostname, port=backend.port)[0]
 
         state = node.wsrep_local_state
         LOG.debug('%s state: %d', node, state)
@@ -309,7 +312,8 @@ def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-ma
     :type ignore_backend: ProxySQLMySQLBackend
     """
     try:
-        galera_nodes = galera_cluster.find_synced_nodes()
+        nodes = galera_cluster.nodes
+        galera_nodes = nodes.find(state=GaleraNodeState.SYNCED)
 
         if ignore_backend:
             node = GaleraNode(ignore_backend.hostname,
