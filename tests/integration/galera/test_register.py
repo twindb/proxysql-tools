@@ -272,18 +272,6 @@ def test__galera_register_sync_desync_state(percona_xtradb_cluster_three_node,
     hostgroup_writer = 10
     hostgroup_reader = 11
 
-    rw_map = {
-        0: hostgroup_writer,
-        1: hostgroup_reader,
-        2: hostgroup_reader
-    }
-    for i in xrange(3):
-        backend = ProxySQLMySQLBackend(
-            hostname=percona_xtradb_cluster_three_node[i]['ip'],
-            port=percona_xtradb_cluster_three_node[0]['mysql_port'],
-            hostgroup_id=rw_map[i]
-        )
-        proxysql_instance.register_backend(backend)
 
 
     desync_node = GaleraNode(
@@ -335,8 +323,7 @@ def test__galera_register_sync_desync_state(percona_xtradb_cluster_three_node,
                                percona_xtradb_cluster_three_node[1]['ip']
                            )
                            )
-            row = cursor.fetchall()[0]
-            assert row['status'] == BackendStatus.offline_soft
+            assert not cursor.fetchall()
     finally:
         connection.close()
 
@@ -379,20 +366,6 @@ def test__galera_register_writer_node_is_reader_when_readers_list_is_empty(perco
     wait_for_cluster_nodes_to_become_healthy(percona_xtradb_cluster_three_node)
     hostgroup_writer = 10
     hostgroup_reader = 11
-
-
-    rw_map = {
-        0: hostgroup_writer,
-        1: hostgroup_reader,
-        2: hostgroup_reader
-    }
-    for i in xrange(3):
-        backend = ProxySQLMySQLBackend(
-            hostname=percona_xtradb_cluster_three_node[i]['ip'],
-            port=percona_xtradb_cluster_three_node[0]['mysql_port'],
-            hostgroup_id=rw_map[i]
-        )
-        proxysql_instance.register_backend(backend)
 
     desync_node = GaleraNode(
         host=percona_xtradb_cluster_three_node[1]['ip'],
@@ -450,8 +423,7 @@ def test__galera_register_writer_node_is_reader_when_readers_list_is_empty(perco
                                percona_xtradb_cluster_three_node[1]['ip']
                            )
                            )
-            row = cursor.fetchall()[0]
-            assert row['status'] == BackendStatus.offline_soft
+            assert not cursor.fetchall()
             cursor.execute('SELECT `hostgroup_id`, `hostname`, '
                            '`port`, `status`, `weight`, `compression`, '
                            '`max_connections`, `max_replication_lag`, '
@@ -464,8 +436,7 @@ def test__galera_register_writer_node_is_reader_when_readers_list_is_empty(perco
                                percona_xtradb_cluster_three_node[2]['ip']
                            )
                            )
-            row = cursor.fetchall()[0]
-            assert row['status'] == BackendStatus.offline_soft
+            assert not cursor.fetchall()
 
             cursor.execute('SELECT `hostgroup_id`, `hostname`, '
                            '`port`, `status`, `weight`, `compression`, '
