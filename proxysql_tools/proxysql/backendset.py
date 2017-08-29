@@ -42,6 +42,12 @@ class BackendSet(object):
         if isinstance(key, int):
             return self._backend_list[key]
 
+    def __getslice__(self, i, j):
+        backend_set = BackendSet()
+        # noinspection LongLine
+        backend_set._backend_list = self._backend_list[i:j]  # pylint: disable=protected-access
+        return backend_set
+
     def add_set(self, backend_set):
         """
         Add iterable object to list
