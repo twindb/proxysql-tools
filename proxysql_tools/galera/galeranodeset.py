@@ -23,10 +23,10 @@ class GaleraNodeSet(BackendSet):
         :param state: State of node
         :type state: GaleraNodeState
         :return: Return list of founded nodes
-        :rtype: list(GaleraNode)
+        :rtype: GaleraNodeSet
         :raises: GaleraClusterNodeNotFound
         """
-        nodes = []
+        nodes = GaleraNodeSet()
         for node in self._backend_list:
             if all((
                     # A -> B
@@ -38,7 +38,7 @@ class GaleraNodeSet(BackendSet):
                     not host or node.host == host,
                     not port or node.port == port,
                     not state or node.wsrep_local_state == state)):
-                nodes.append(node)
+                nodes.add(node)
         if nodes:
             return nodes
         raise GaleraClusterNodeNotFound('Node not found')
