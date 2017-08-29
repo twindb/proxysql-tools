@@ -64,4 +64,23 @@ def test_find_host(mock_status, states, nodes, criteria, result):
     for node in nodes:
         bs.add(node)
 
-    assert bs.find(**criteria) == [result]
+    found_nodes = bs.find(**criteria)
+    assert len(found_nodes) == 1
+    assert result in found_nodes
+    assert isinstance(found_nodes, GaleraNodeSet)
+
+
+def test_index_slice():
+    bs = GaleraNodeSet()
+    bs.add(GaleraNode(host='foo'))
+    bs.add(GaleraNode(host='bar'))
+
+    assert len(bs) == 2
+    assert bs[0] == GaleraNode(host='foo')
+    assert bs[1] == GaleraNode(host='bar')
+
+    l = [1, 2, 3]
+    assert l[:1] == [1]
+    slice_set = GaleraNodeSet()
+    slice_set.add(GaleraNode(host='foo'))
+    assert bs[:1] == slice_set
