@@ -1,4 +1,5 @@
 import mock
+from pymysql import OperationalError
 from pymysql.cursors import DictCursor
 
 from proxysql_tools.galera.galera_node import GaleraNode
@@ -40,6 +41,16 @@ def test_wsrep_local_state(mock_status, galera_node):
     mock_status.return_value = '4'
     assert galera_node.wsrep_local_state == 4
     mock_status.assert_called_once_with('wsrep_local_state')
+
+
+@mock.patch.object(GaleraNode, 'execute')
+def test_wsrep_local_state_if_can_not_execute(mock_execute, galera_node):
+    """
+    :param galera_node: GaleraNode instance
+    :type galera_node: GaleraNode
+    """
+    mock_execute.side_effect = OperationalError
+    assert galera_node.wsrep_local_state == None
 
 
 @mock.patch.object(GaleraNode, 'execute')
