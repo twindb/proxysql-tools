@@ -314,7 +314,7 @@ def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-ma
     """
     try:
         nodes = galera_cluster.nodes
-        galera_nodes = nodes.find(tate=GaleraNodeState.SYNCED)
+        galera_nodes = nodes.find(state=GaleraNodeState.SYNCED)
 
         if ignore_backend:
             node = GaleraNode(ignore_backend.hostname,
@@ -378,10 +378,4 @@ def register_offline_backend(galera_cluster, proxysql, hostgroup_id, role=None):
                                            comment=json.dumps(comment))
             proxysql.register_backend(backend)
             LOG.info('Added backend %s to hostgroup %d', backend, hostgroup_id)
-
-
-
-
-
-
 
