@@ -194,6 +194,10 @@ def register_readers(galera_cluster, proxysql,
                                  reader_hostgroup_id,
                                  role=BackendRole.reader,
                                  ignore_backend=writer_as_reader)
+        register_offline_backend(galera_cluster, proxysql,
+                                 reader_hostgroup_id)
+
+
 # noinspection LongLine
 def check_backend(backend, galera_cluster, proxysql, hostgroup_id, role,  # pylint: disable=too-many-arguments
                   limit=None, ignore_backend=None,
@@ -351,3 +355,31 @@ def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-ma
 
     except GaleraClusterSyncedNodeNotFound as err:
         LOG.error(err)
+
+
+def register_offline_backend(galera_cluster, proxysql, hostgroup_id, role=None):
+    """
+    Find OFFLINE_HARD node and register it as a backend.
+
+    :param galera_cluster: GaleraCluster instance.
+    :type galera_cluster: GaleraCluster
+    :param proxysql: ProxySQL instance
+    :type proxysql: proxysql.ProxySQL
+    :param hostgroup_id: hostgroup_id
+    :type hostgroup_id: int
+    :param role: Optional comment to add to mysql_server
+    :type role: str
+    """
+    nodes = galera_cluster.nodes
+    comment = {
+        'role': role
+    }
+    for node in nodes:
+        if node.wsrep_local_state is None:
+            backend = ProxySQLMySQLBackend(node.host,
+                                           hostgroup_id=hostgroup_id,
+                                           port=node.port,
+                                           status=BackendStatus.offline_hard,
+                                           comment=json.dumps(comment))
+            proxysql.register_backend(backend)
+            LOG.info('Added backend %s to hostgroup %d', backend, hostgroup_id)
