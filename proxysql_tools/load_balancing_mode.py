@@ -375,6 +375,7 @@ def register_offline_backend(galera_cluster, proxysql, hostgroup_id, role=None):
             backend = ProxySQLMySQLBackend(node.host,
                                            hostgroup_id=hostgroup_id,
                                            port=node.port,
+                                           status=BackendStatus.offline_hard,
                                            comment=json.dumps(comment))
             proxysql.register_backend(backend)
             LOG.info('Added backend %s to hostgroup %d', backend, hostgroup_id)
