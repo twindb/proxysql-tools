@@ -378,4 +378,3 @@ def register_offline_backend(galera_cluster, proxysql, hostgroup_id, role=None):
                                            comment=json.dumps(comment))
             proxysql.register_backend(backend)
             LOG.info('Added backend %s to hostgroup %d', backend, hostgroup_id)
-
