@@ -322,12 +322,12 @@ def register_backends(galera_cluster, proxysql,  # pylint: disable=too-many-argu
     """
     try:
         nodes = galera_cluster.nodes
-        if state:
+        if state is None:
             galera_nodes = nodes.find(state)
         else:
             galera_nodes = []
             for node in nodes:
-                if node.wsrep_local_state is state:
+                if node.wsrep_local_state is None:
                     galera_nodes.append(node)
 
         if ignore_backend:
