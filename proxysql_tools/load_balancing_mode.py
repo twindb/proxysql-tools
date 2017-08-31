@@ -78,6 +78,7 @@ def singlewriter(galera_cluster, proxy,
             and proxy.backend_registered(writer_as_reader) \
             and not is_readers_offline:
         proxy.deregister_backend(writer_as_reader)
+    register_offline_backend(galera_cluster, proxy, reader_hostgroup_id)
 
 
 def register_writer(galera_cluster, proxysql, writer_hostgroup_id,
@@ -194,8 +195,6 @@ def register_readers(galera_cluster, proxysql,
                                  reader_hostgroup_id,
                                  role=BackendRole.reader,
                                  ignore_backend=writer_as_reader)
-        register_offline_backend(galera_cluster, proxysql,
-                                 reader_hostgroup_id)
 
 
 # noinspection LongLine
