@@ -273,10 +273,10 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, role,  # pyli
                 backend.status = backend.admin_status = BackendStatus.offline_soft
             proxysql.update_backend(backend)
             register_backends(galera_cluster, proxysql,
-                                     hostgroup_id,
-                                     role=role,
-                                     limit=limit,
-                                     ignore_backend=ignore_backend)
+                              hostgroup_id,
+                              role=role,
+                              limit=limit,
+                              ignore_backend=ignore_backend)
 
     except GaleraClusterNodeNotFound:
         LOG.warn('Backend %s is not a cluster member. Will deregister it.',
@@ -300,8 +300,8 @@ def check_backend(backend, galera_cluster, proxysql, hostgroup_id, role,  # pyli
 
 # noinspection LongLine
 def register_backends(galera_cluster, proxysql,  # pylint: disable=too-many-arguments
-                             hostgroup_id, role=None, limit=None,
-                             ignore_backend=None, state=GaleraNodeState.SYNCED):
+                      hostgroup_id, role=None, limit=None,
+                      ignore_backend=None, state=GaleraNodeState.SYNCED):
     """
     Find SYNCED node and register it as a backend.
 
