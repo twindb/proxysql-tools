@@ -404,7 +404,7 @@ def test__galera_register_shutdowned_writer_is_deregistered(percona_xtradb_clust
                            ' AND `hostname` = %s '
                            ' AND `port` = %s',
                            (
-                               hostgroup_reader,
+                               backend_unreg.hostgroup_id,
                                backend_unreg.hostname,
                                backend_unreg.port
                            )
@@ -477,7 +477,7 @@ def test__galera_register_shutdowned_writer_is_deregistered_with_empty_mysql_ser
                            ' AND `hostname` = %s '
                            ' AND `port` = %s',
                            (
-                               backend_unreg.hostgroup_id,
+                               hostgroup_reader,
                                backend_unreg.hostname,
                                backend_unreg.port
                            )
