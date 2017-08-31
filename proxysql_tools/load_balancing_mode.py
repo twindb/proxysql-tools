@@ -74,14 +74,12 @@ def singlewriter(galera_cluster, proxy,
         is_readers_offline = all(x.status == BackendStatus.offline_soft
                                  for x in readers_without_writer)
 
-    if len(readers) > 2 \
-            and proxy.backend_registered(writer_as_reader) \
-            and not is_readers_offline:
+    if all((len(readers) > 2,
+            proxy.backend_registered(writer_as_reader),
+            not is_readers_offline)):
         proxy.deregister_backend(writer_as_reader)
 
     check_sst(proxy, galera_cluster, readers, writer)
-
-
 
 
 def register_writer(galera_cluster, proxysql, writer_hostgroup_id,
@@ -355,12 +353,14 @@ def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-ma
     except GaleraClusterSyncedNodeNotFound as err:
         LOG.error(err)
 
-def check_sst(proxysql, galera_cluster, readers, writer):
-    """
-    Check sst runned, and make donor node available, if there are no other nodes.
 
-    :param proxysql: ProxySQL instance
-    :type proxysql: ProxySQL
+def check_sst(proxy, galera_cluster, readers, writer):
+    """
+    Check sst runned, and make donor node available,
+    if there are no other nodes.
+
+    :param proxy: ProxySQL instance
+    :type proxy: proxysql.ProxySQL
     :param galera_cluster: GaleraCluster instance.
     :type galera_cluster: GaleraCluster
     :param readers: List of readers in cluster
@@ -375,7 +375,9 @@ def check_sst(proxysql, galera_cluster, readers, writer):
         return
     active_backends = readers + [writer]
     try:
-        offline_nodes = proxysql.find_backends(status=BackendStatus.offline_hard)
+        offline_nodes = proxy.find_backends(
+            status=BackendStatus.offline_hard
+        )
         active_backends -= offline_nodes
     except ProxySQLBackendNotFound:
         pass
@@ -384,6 +386,6 @@ def check_sst(proxysql, galera_cluster, readers, writer):
         if active_backends[i].hostname == donor.host and \
                 active_backends[i].port == donor.port:
             active_backends[i].status = BackendStatus.online
-            proxysql.register_backend(active_backends[i])
+            proxy.register_backend(active_backends[i])
             break
-        i = i+1
+        i += 1
