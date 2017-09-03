@@ -21,3 +21,4 @@ requests==2.18.1
 s3transfer==0.1.10        # via boto3
 six==1.10.0               # via python-dateutil
 urllib3==1.21.1           # via requests
+transitions==0.6.0
