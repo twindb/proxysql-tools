@@ -1,0 +1,2 @@
+class ProxySQLStateMachine(object):
+    pass
