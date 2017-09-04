@@ -51,6 +51,43 @@ def test__galera_server_set_sync(percona_xtradb_cluster_three_node,
     assert result.exit_code == 0
 
     result = runner.invoke(main,
+                           ['--config', config_file, 'galera', 'server', 'set_desync',
+                            percona_xtradb_cluster_three_node[1]['ip'], '3306']
+                           )
+    assert result.exit_code == 0
+
+    result = runner.invoke(main,
+                           ['--config', config_file, 'galera', 'register']
+                           )
+    assert result.exit_code == 0
+
+    connection = pymysql.connect(
+        host=proxysql_instance.host,
+        port=proxysql_instance.port,
+        user=proxysql_instance.user,
+        passwd=proxysql_instance.password,
+        connect_timeout=20,
+        cursorclass=DictCursor)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT `hostgroup_id`, `hostname`, '
+                           '`port`, `status`, `weight`, `compression`, '
+                           '`max_connections`, `max_replication_lag`, '
+                           '`use_ssl`, `max_latency_ms`, `comment`'
+                           ' FROM `mysql_servers`'
+                           ' WHERE hostgroup_id = %s'
+                           ' AND hostname = %s',
+                           (
+                               hostgroup_reader,
+                               percona_xtradb_cluster_three_node[1]['ip']
+                           )
+                           )
+            row = cursor.fetchall()[0]
+            assert row['status'] == BackendStatus.offline_soft
+    finally:
+        connection.close()
+
+    result = runner.invoke(main,
                            ['--config', config_file, 'galera', 'server', 'set_sync',
                             percona_xtradb_cluster_three_node[1]['ip'], '3306']
                            )
