@@ -64,7 +64,7 @@ def server_status(cfg):
             LOG.warning(err)
 
 
-def server_set_wsrep_desync(cfg, server_ip, port, wsrep_desync='ON'):
+def server_set_wsrep_status(cfg, server_ip, port, status):
     """
     Set MySQL server in desync state.
 
@@ -72,7 +72,7 @@ def server_set_wsrep_desync(cfg, server_ip, port, wsrep_desync='ON'):
     :type cfg: ConfigParser.ConfigParser
     :param server_ip: Server IP address
     :param port: Server port
-    :param wsrep_desync: Value for wsrep_desync
+    :param status: Value for wsrep_desync
     """
     kwargs = get_proxysql_options(cfg)
     proxysql = ProxySQL(**kwargs)
@@ -88,7 +88,7 @@ def server_set_wsrep_desync(cfg, server_ip, port, wsrep_desync='ON'):
                                     port=port,
                                     hostgroup_id=group_id)
             backend.connect(cluster_username, cluster_password)
-            backend.execute("SET GLOBAL wsrep_desync=%s", wsrep_desync)
+            backend.execute("SET GLOBAL wsrep_desync=%s", status)
         except ProxySQLBackendNotFound:
             pass
 

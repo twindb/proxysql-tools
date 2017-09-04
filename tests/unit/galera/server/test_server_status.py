@@ -1,6 +1,6 @@
 import mock
 
-from proxysql_tools.galera.server import server_status, server_set_wsrep_desync
+from proxysql_tools.galera.server import server_status, server_set_wsrep_status
 from proxysql_tools.proxysql.proxysql import ProxySQL
 
 

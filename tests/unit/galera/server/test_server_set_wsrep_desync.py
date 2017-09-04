@@ -3,7 +3,7 @@ import pytest
 
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound
 from proxysql_tools.proxysql.proxysql import ProxySQL
-from proxysql_tools.galera.server import server_set_wsrep_desync
+from proxysql_tools.galera.server import server_set_wsrep_status
 
 
 # @mock.patch.object(ProxySQL, 'find_backends')
