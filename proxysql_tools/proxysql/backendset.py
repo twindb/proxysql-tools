@@ -1,5 +1,4 @@
 """Class BackendSet implementation."""
-
 from abc import abstractmethod
 
 
@@ -41,6 +40,20 @@ class BackendSet(object):
     def __getitem__(self, key):
         if isinstance(key, int):
             return self._backend_list[key]
+
+    def __repr__(self):
+        set_repr = '['
+        comma = False
+
+        for backend in self._backend_list:
+            if comma:
+                set_repr += ', '
+
+            set_repr += repr(backend)
+            comma = True
+
+        set_repr += ']'
+        return set_repr
 
     def __getslice__(self, i, j):
         backend_set = BackendSet()

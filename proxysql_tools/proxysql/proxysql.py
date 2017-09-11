@@ -5,6 +5,7 @@ from contextlib import contextmanager
 import pymysql
 from pymysql.cursors import DictCursor
 
+from .backendrole import BackendRoleEncoder
 from proxysql_tools import LOG, execute
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, \
     ProxySQLUserNotFound
@@ -454,7 +455,7 @@ class ProxySQL(object):
             'role': backend.role,
             'admin_status': backend.admin_status
         }
-        return json.dumps(status, sort_keys=True)
+        return json.dumps(status, sort_keys=True, cls=BackendRoleEncoder)
 
     @contextmanager
     def _connect(self):

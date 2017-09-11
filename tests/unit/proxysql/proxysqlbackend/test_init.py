@@ -1,7 +1,8 @@
 import pytest
 
+from proxysql_tools.proxysql.backendrole import BackendRole
 from proxysql_tools.proxysql.proxysqlbackend import ProxySQLMySQLBackend, \
-    BackendStatus, BackendRole
+    BackendStatus
 
 
 @pytest.mark.parametrize('kwargs, hostgroup_id, admin_status, role', [
@@ -155,6 +156,7 @@ def test_init(kwargs, hostgroup_id, admin_status, role):
 def test_init_if_role_is_empty(kwargs, role):
     backend = ProxySQLMySQLBackend('foo', **kwargs)
     assert backend.role == role
+
 
 @pytest.mark.parametrize('kwargs, admin_status', [
     (

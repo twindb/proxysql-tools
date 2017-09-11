@@ -4,6 +4,7 @@ import json
 import pymysql
 from pymysql.cursors import DictCursor
 
+from .backendrole import BackendRole, BackendRoleEncoder
 from proxysql_tools import execute
 
 
@@ -13,12 +14,6 @@ class BackendStatus(object):  # pylint: disable=too-few-public-methods
     shunned = 'SHUNNED'
     offline_soft = 'OFFLINE_SOFT'
     offline_hard = 'OFFLINE_HARD'
-
-
-class BackendRole(object):  # pylint: disable=too-few-public-methods
-    """ProxySQL backend role"""
-    reader = 'Reader'
-    writer = 'Writer'
 
 
 # noinspection LongLine
@@ -68,15 +63,15 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
         self._admin_status = None
         try:
             if comment == 'Writer':
-                self.role = BackendRole.writer
+                self.role = BackendRole(writer=True)
             elif comment == 'Reader':
-                self.role = BackendRole.reader
+                self.role = BackendRole(reader=True)
             else:
                 self.role = json.loads(comment)['role']
                 if not self.role:
-                    self.role = None
+                    self.role = BackendRole()
         except (TypeError, KeyError, ValueError):
-            self.role = None
+            self.role = BackendRole()
 
         try:
             if comment == 'Writer':
@@ -106,7 +101,8 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
         return not self.__eq__(other)
 
     def __repr__(self):
-        return "%d__%s__%d" % (self.hostgroup_id, self.hostname, self.port)
+        return json.dumps(self.__dict__, cls=BackendRoleEncoder,
+                          sort_keys=True)
 
     def __str__(self):
         kwargs = {

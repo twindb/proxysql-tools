@@ -164,7 +164,8 @@ def test_register_backend(mock_execute, mock_reload_servers, proxysql):
                      "0, 'foo', 3306, " \
                      "'ONLINE', 1, 0, " \
                      "10000, 0, 0, " \
-                     "0, '{\"admin_status\": null, \"role\": null}'" \
+                     "0, '{\"admin_status\": null, " \
+                     "\"role\": {\"reader\": false, \"writer\": false}}'" \
                      ")"
     mock_execute.assert_called_once_with(expected_query)
     mock_reload_servers.assert_called_once_with()
