@@ -1,4 +1,5 @@
 """State class"""
+from copy import deepcopy
 from itertools import product
 
 from ..proxysqlbackendset import ProxySQLMySQLBackendSet
@@ -13,10 +14,10 @@ class ProxySQLState(object):
         :param backend_set: Backend set
         :type backend_set: ProxySQLMySQLBackendSet
         """
-        print('backends:')
-        print(backend_set)
+        # print('backends:')
+        # print(backend_set)
         self._backends = backend_set
-        # self._roles = BackendRole().roles()
+        self._roles = self._roles_map()
 
     @property
     def backends(self):
@@ -135,58 +136,63 @@ class ProxySQLState(object):
                 :return: All possible combinations of roles
                 :rtype: list(tuple(BackendRole))
                 """
-        roles = None
+        roles = []
 
         for _ in self._backends:
             if roles:
                 roles = product(BackendRole().roles(), roles)
             else:
-                roles = product(BackendRole().roles(), repeat=1)
-
+                cart_product = product(BackendRole().roles(), repeat=1)
+                for role in cart_product:
+                    roles.append(role)
         result = []
         for role in roles:
-            print(role)
-            result.append(role)
+            result.append(self._unpack_role(role))
+
         return result
 
+    def _unpack_role(self, roles_byte):
+        # noinspection LongLine
+        """Converts roles from form
+
+.. code-block:: json
+
+    ({"reader": true, "writer": false}, ({"reader": false, "writer": false}, ({"reader": false, "writer": false},)))
+
+    to form
+
+.. code-block:: json
+
+    ({"reader": true, "writer": false}, {"reader": false, "writer": false}, {"reader": false, "writer": false},)
+
+
+        return: tuple with roles. Number of items in the tuple equals to number of backends.
+        """
+        try:
+            return (roles_byte[0],) + self._unpack_role(roles_byte[1])
+        except IndexError:
+            return roles_byte[0],
+
     def states(self):
-        roles = None
 
-        for _ in self._backends:
-            if roles:
-                roles = product(BackendRole().roles(), roles)
-            else:
-                roles = product(BackendRole().roles(), repeat=1)
-
-        # print(roles)
-        l = 0
         all_states = []
-        for role in roles:
-            print(role)
-            role_unpacked = role[0]
-            # print(type(role[1]))
+
+        for role in self._roles:
 
             backend_set = ProxySQLMySQLBackendSet()
+            i = 0
             for backend in self._backends:
-                # print(role_unpacked)
-                if isinstance(role, tuple):
-                    backend.role = role[0]
-                else:
-                    backend.role = role
-                backend_set.add(backend)
-                try:
-                    role = role[1]
-                except IndexError:
-                    pass
+
+                new_be = deepcopy(backend)
+                new_be.role = role[i]
+
+                backend_set.add(new_be)
+
+                i += 1
 
             all_states.append(backend_set)
-            # print(backend_set)
-            l += 1
 
-        print(len(all_states))
-        # roles.
-        print(l)
-        return roles
+        return all_states
 
 
 

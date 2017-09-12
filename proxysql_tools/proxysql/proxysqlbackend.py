@@ -104,31 +104,33 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
         return json.dumps(self.__dict__, cls=BackendRoleEncoder,
                           sort_keys=True)
 
-    def __str__(self):
-        kwargs = {
-            'hostgroup_id': self.hostgroup_id,
-            'hostname': self.hostname,
-            'port': self.port,
-            'status': self.status,
-            'weight': self.weight,
-            'compression': self.compression,
-            'max_connections': self.max_connections,
-            'max_replication_lag': self.max_replication_lag,
-            'use_ssl': self.use_ssl,
-            'max_latency_ms': self.max_latency_ms,
-            'comment': self.comment
-        }
-        return "hostgroup_id={hostgroup_id}, " \
-               "hostname={hostname}, " \
-               "port={port}, " \
-               "status={status}, " \
-               "weight={weight}, " \
-               "compression={compression}, " \
-               "max_connections={max_connections}, " \
-               "max_replication_lag={max_replication_lag}, " \
-               "use_ssl={use_ssl}, " \
-               "max_latency_ms={max_latency_ms}, " \
-               "comment={comment}".format(**kwargs)
+    # def __str__(self):
+    #     kwargs = {
+    #         'hostgroup_id': self.hostgroup_id,
+    #         'hostname': self.hostname,
+    #         'port': self.port,
+    #         'status': self.status,
+    #         'weight': self.weight,
+    #         'compression': self.compression,
+    #         'max_connections': self.max_connections,
+    #         'max_replication_lag': self.max_replication_lag,
+    #         'use_ssl': self.use_ssl,
+    #         'max_latency_ms': self.max_latency_ms,
+    #         'comment': self.comment,
+    #         'role': self.role
+    #     }
+    #     return "hostgroup_id={hostgroup_id}, " \
+    #            "hostname={hostname}, " \
+    #            "port={port}, " \
+    #            "role={role}, " \
+    #            "status={status}, " \
+    #            "weight={weight}, " \
+    #            "compression={compression}, " \
+    #            "max_connections={max_connections}, " \
+    #            "max_replication_lag={max_replication_lag}, " \
+    #            "use_ssl={use_ssl}, " \
+    #            "max_latency_ms={max_latency_ms}, " \
+    #            "comment={comment}".format(**kwargs)
 
     def _get_admin_status(self):
         return self._admin_status

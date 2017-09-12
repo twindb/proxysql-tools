@@ -105,7 +105,7 @@ def test_init(kwargs, hostgroup_id, admin_status, role):
             'max_latency_ms': 400,
             'comment': '{"admin_status": "ONLINE"}'
         },
-        None
+        BackendRole(writer=False, reader=False)
     ),
     (
         {
@@ -120,7 +120,7 @@ def test_init(kwargs, hostgroup_id, admin_status, role):
             'max_latency_ms': 400,
             'comment': '{"admin_status": "OFFLINE_SOFT", "role": ""}'
         },
-        None
+        BackendRole(writer=False, reader=False)
     ),
     (
         {
@@ -135,7 +135,7 @@ def test_init(kwargs, hostgroup_id, admin_status, role):
             'max_latency_ms': 400,
             'comment': 'Writer'
         },
-        BackendRole.writer
+        BackendRole(writer=True, reader=False)
     ),
     (
         {
@@ -150,7 +150,7 @@ def test_init(kwargs, hostgroup_id, admin_status, role):
             'max_latency_ms': 400,
             'comment': 'Reader'
         },
-        BackendRole.reader
+        BackendRole(writer=False, reader=False)
     )
 ])
 def test_init_if_role_is_empty(kwargs, role):
