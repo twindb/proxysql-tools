@@ -119,6 +119,7 @@ def test_roles_map(n_nodes, roles_map):
 
     # noinspection PyProtectedMember
     possible_roles = ProxySQLState(bs)._roles_map()
+    assert len(possible_roles) == pow(4, n_nodes)
     assert possible_roles == roles_map
 
 

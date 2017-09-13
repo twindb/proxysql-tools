@@ -7,6 +7,8 @@ from ..backendrole import BackendRole
 
 
 class ProxySQLState(object):
+    """Class ProxySQLState() describes a state of finite state machine
+    ProxySQL. The state is a set of backends in particular roles."""
     def __init__(self, backend_set):
         """
         Create a state for a set of nodes declared in backend_set
@@ -21,9 +23,11 @@ class ProxySQLState(object):
 
     @property
     def backends(self):
+        """Returns list of backends in this state machine """
         return self._backends
 
     def _roles_map(self):
+        # pylint: disable=line-too-long
         # noinspection LongLine
         """
                 Depending on number of backends it returns a list of possible roles.
@@ -152,6 +156,7 @@ class ProxySQLState(object):
         return result
 
     def _unpack_role(self, roles_byte):
+        # pylint: disable=line-too-long
         # noinspection LongLine
         """Converts roles from form
 
@@ -174,6 +179,7 @@ class ProxySQLState(object):
             return roles_byte[0],
 
     def states(self):
+        """Generates list of all possible states of the state machine."""
 
         all_states = []
 
@@ -193,11 +199,3 @@ class ProxySQLState(object):
             all_states.append(backend_set)
 
         return all_states
-
-
-
-    # nodes = {n1, n2, n3}
-    # roles = {nr, nw, r, w}
-    #
-    # nr = 12
-

@@ -5,12 +5,12 @@ from contextlib import contextmanager
 import pymysql
 from pymysql.cursors import DictCursor
 
-from .backendrole import BackendRoleEncoder
-from proxysql_tools import LOG, execute
-from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, \
+from .. import LOG, execute
+from .exceptions import ProxySQLBackendNotFound, \
     ProxySQLUserNotFound
-from proxysql_tools.proxysql.proxysqlbackend import ProxySQLMySQLBackend
-from proxysql_tools.proxysql.proxysqlbackendset import ProxySQLMySQLBackendSet
+from .proxysqlbackend import ProxySQLMySQLBackend
+from .proxysqlbackendset import ProxySQLMySQLBackendSet
+from .backendrole import BackendRoleEncoder
 
 PROXYSQL_CONNECT_TIMEOUT = 20
 

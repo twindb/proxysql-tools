@@ -4,8 +4,8 @@ import json
 import pymysql
 from pymysql.cursors import DictCursor
 
+from .. import execute
 from .backendrole import BackendRole, BackendRoleEncoder
-from proxysql_tools import execute
 
 
 class BackendStatus(object):  # pylint: disable=too-few-public-methods
@@ -47,7 +47,7 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
                  status=BackendStatus.online,
                  weight=1, compression=0, max_connections=10000,
                  max_replication_lag=0, use_ssl=False,
-                 max_latency_ms=0, comment=None):
+                 max_latency_ms=0, comment=None, role=None):
         self.hostname = hostname
         self.hostgroup_id = int(hostgroup_id)
         self.port = int(port)
@@ -61,29 +61,33 @@ class ProxySQLMySQLBackend(object):  # pylint: disable=too-many-instance-attribu
         self._connection = None
         self.comment = comment
         self._admin_status = None
-        try:
-            if comment == 'Writer':
-                self.role = BackendRole(writer=True)
-            elif comment == 'Reader':
-                self.role = BackendRole(reader=True)
-            else:
-                self.role = json.loads(comment)['role']
-                if not self.role:
-                    self.role = BackendRole()
-        except (TypeError, KeyError, ValueError):
+        if role:
+            self.role = role
+        else:
             self.role = BackendRole()
+            try:
+                if comment == 'Writer':
+                    self.role = BackendRole(writer=True)
+                elif comment == 'Reader':
+                    self.role = BackendRole(reader=True)
+                else:
+                    self.role = json.loads(comment)['role']
+                    if not self.role:
+                        self.role = BackendRole()
+            except (TypeError, KeyError, ValueError):
+                self.role = BackendRole()
 
-        try:
-            if comment == 'Writer':
-                self._admin_status = status
-            elif comment == 'Reader':
-                self._admin_status = status
-            else:
-                self.admin_status = json.loads(comment)['admin_status']
-                if not self.admin_status:
-                    self.admin_status = None
-        except (TypeError, KeyError, ValueError):
-            self._admin_status = None
+            try:
+                if comment == 'Writer':
+                    self._admin_status = status
+                elif comment == 'Reader':
+                    self._admin_status = status
+                else:
+                    self.admin_status = json.loads(comment)['admin_status']
+                    if not self.admin_status:
+                        self.admin_status = None
+            except (TypeError, KeyError, ValueError):
+                self._admin_status = None
 
     def __eq__(self, other):
         try:

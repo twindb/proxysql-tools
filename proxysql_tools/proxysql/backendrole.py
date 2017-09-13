@@ -1,10 +1,13 @@
+"""Module to work with backend roles"""
 from json import JSONEncoder, dumps
 
 from .exceptions import ProxySQLError
 
 
 class BackendRoleEncoder(JSONEncoder):
-    def default(self, o):
+    """Class encodes BackendRole into json.
+    It's used with json.dumps(cls=BackendRoleEncoder)."""
+    def default(self, o):  # pylint: disable=method-hidden
         return {
             'writer': o.is_writer(),
             'reader': o.is_reader()
@@ -21,9 +24,11 @@ class BackendRole(object):  # pylint: disable=too-few-public-methods
         self._writer = writer
 
     def is_writer(self):
+        """Returns True if role is a Writer"""
         return self._writer
 
     def is_reader(self):
+        """Returns True if role is a Reader"""
         return self._reader
 
     @staticmethod
