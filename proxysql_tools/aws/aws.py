@@ -1,139 +1,18 @@
 # pylint: skip-file
 import os
-import time
 from ConfigParser import NoOptionError
-from subprocess import Popen
+from subprocess import CalledProcessError
 
-import netifaces
-import requests
-import boto3
-from botocore.exceptions import ClientError
+import time
 
 from proxysql_tools import LOG
-
-DEVICE_INDEX = 1
-
-
-def get_my_instance_id():
-    r = requests.get('http://169.254.169.254/latest/meta-data/instance-id')
-    r.raise_for_status()
-    return r.content
+from proxysql_tools.aws.notify_master import server_ready, eth1_present, restart_proxy, change_names_to, \
+    log_remaining_sessions, stop_proxy, start_proxy
 
 
-def get_network_interface(ip):
-    client = boto3.client('ec2')
-    response = client.describe_network_interfaces(
-        Filters=[
-            {
-                'Name': 'addresses.private-ip-address',
-                'Values': [
-                    ip,
-                ]
-            },
-        ]
-    )
-    network_interface_id = \
-        response['NetworkInterfaces'][0]['NetworkInterfaceId']
-    return network_interface_id
+def aws_notify_master(cfg, proxy_a, proxy_b, vip, dns,
+                      mysql_user, mysql_password, mysql_port):
 
-
-def ensure_local_interface_is_gone(local_interface):
-    while local_interface in netifaces.interfaces():
-        pass
-
-
-def get_network_interface_state(network_interface):
-    client = boto3.client('ec2')
-    response = client.describe_network_interfaces(
-        NetworkInterfaceIds=[network_interface]
-    )
-    status = response['NetworkInterfaces'][0]['Attachment']['Status']
-    LOG.debug('Interface %s, status = %s', network_interface, status)
-    return status
-
-
-def network_interface_attached(network_interface):
-    """
-    Check whether network interface is attached
-
-    :param network_interface: network interface id
-    :return: True or False
-    """
-    try:
-        status = get_network_interface_state(network_interface)
-        return status == 'attached'
-    except KeyError:
-        return False
-
-
-def detach_network_interface(network_interface):
-
-    def get_attachment_id(boto_client, interface):
-        response = boto_client.describe_network_interfaces(
-            NetworkInterfaceIds=[
-                interface
-            ]
-        )
-        return response['NetworkInterfaces'][0]['Attachment']['AttachmentId']
-
-    client = boto3.client('ec2')
-    client.detach_network_interface(
-        AttachmentId=get_attachment_id(client, network_interface)
-    )
-
-
-def ensure_network_interface_is_detached(network_interface):
-    try:
-        while get_network_interface_state(network_interface) != 'detached':
-            time.sleep(1)
-    except KeyError:
-        pass
-
-
-def attach_network_interface(network_interface, instance_id):
-    client = boto3.client('ec2')
-    for _ in xrange(10):
-        try:
-            client.attach_network_interface(
-                NetworkInterfaceId=network_interface,
-                InstanceId=instance_id,
-                DeviceIndex=DEVICE_INDEX
-            )
-        except ClientError:
-            time.sleep(1)
-
-
-def configure_local_interface(local_interface, ip, netmask):
-
-    cmd = [
-        'ifconfig',
-        local_interface,
-        'inet',
-        ip,
-        'netmask',
-        netmask
-    ]
-    for _ in xrange(10):
-        os.environ['PATH'] = "%s:/sbin" % os.environ['PATH']
-        env = os.environ
-        proc = Popen(cmd, env=env)
-        proc.communicate()
-        if proc.returncode:
-            time.sleep(1)
-        else:
-            return
-
-
-def aws_notify_master(cfg):
-    """The function moves network interface to local instance and brings it up.
-    Steps:
-
-    - Detach network interface if attached to anywhere.
-    - Attach the network interface to the local instance.
-    - Configure IP address on this instance
-
-    :param cfg: config object
-    """
     try:
         os.environ['AWS_ACCESS_KEY_ID'] = cfg.get('aws', 'aws_access_key_id')
         os.environ['AWS_SECRET_ACCESS_KEY'] = cfg.get('aws',
@@ -145,25 +24,85 @@ def aws_notify_master(cfg):
                   'aws section of the config file.')
         exit(-1)
 
-    instance_id = get_my_instance_id()
+    for host in [proxy_a, proxy_b, vip]:
+        if not server_ready(host,
+                            user=mysql_user,
+                            password=mysql_password,
+                            port=mysql_port):
+            LOG.error('Server %s must be up and running to do switchover',
+                      host)
+            exit(1)
+    if proxy_a == proxy_b:
+        LOG.error('Proxy A and Proxy B cannot be same')
+        exit(1)
+
+    if vip in [proxy_a, proxy_b]:
+        LOG.error('VIP address cannot be equal to proxy A or proxy B')
+        exit(1)
+
+    LOG.info("Switching active ProxySQL from %s to %s", proxy_a, proxy_b)
+    LOG.debug('DNS names: %s', ', '.join(dns))
+
+    if not eth1_present(proxy_a):
+        LOG.error('It looks like %s is not active proxy', proxy_a)
+        exit(1)
+
+    if eth1_present(proxy_b):
+        LOG.error('Interface eth1 is expected on %s, but found on %s. '
+                  'Exiting', proxy_a, proxy_b)
+        exit(1)
+
+    # Step 1. Restart ProxyB
     try:
-        ip = cfg.get('proxysql', 'virtual_ip')
-        netmask = cfg.get('proxysql', 'virtual_netmask')
-
-        network_interface = get_network_interface(ip)
-
-        if network_interface_attached(network_interface):
-            detach_network_interface(network_interface)
-
-        local_interface = "eth%d" % DEVICE_INDEX
-        ensure_local_interface_is_gone(local_interface)
-
-        ensure_network_interface_is_detached(network_interface)
-
-        attach_network_interface(network_interface, instance_id)
-
-        configure_local_interface(local_interface, ip, netmask)
-    except NoOptionError as err:
-        LOG.error('virtual_ip and virtual_netmask must be defined in '
-                  'proxysql section of the config file.')
+        restart_proxy(proxy_b)
+        pass
+    except CalledProcessError as err:
         LOG.error(err)
+        exit(1)
+
+    # Step 2, 3. Change DNS so dns points to Proxy B Private IP
+    change_names_to(dns, proxy_b)
+
+    # Step 4. Wait TTL * 2 time
+    wait_time = 30 * 60
+    timeout = time.time() + wait_time
+    n_conn = 0
+    while time.time() < timeout:
+        # Step 5. Check if any MySQL users are connected to Proxy A
+        #   (and log if any)
+        n_conn = log_remaining_sessions(proxy_a,
+                                        mysql_user,
+                                        mysql_password,
+                                        mysql_port)
+        if not n_conn:
+            LOG.info('All sessions disconnected from %s', proxy_a)
+            break
+        LOG.info('There are still %d open sessions on %s', n_conn, proxy_a)
+        time.sleep(3)
+    if n_conn > 0:
+        LOG.warning('Will kill existing sessions anyway')
+    # 6. Stop Proxy A
+    stop_proxy(proxy_a)
+
+    # 7. Wait until eth1 shows up on Proxy B. If not - log error and stop.
+    wait_time = 60
+    timeout = time.time() + wait_time
+    while time.time() < timeout:
+        if eth1_present(proxy_b) and server_ready(vip,
+                                                  user=mysql_user,
+                                                  password=mysql_password,
+                                                  port=mysql_port):
+            break
+        time.sleep(3)
+
+    if not eth1_present(proxy_b):
+        LOG.error('Keepalived failed to move VIP to %s', proxy_b)
+        exit(1)
+
+    # 8. Start Proxy A
+    start_proxy(proxy_a)
+
+    # 9. Change DNS so dns points to points to VIP
+    # 10. Change DNS so dns points to points to VIP
+    change_names_to(dns, vip)
+    LOG.info('Successfully done.')
