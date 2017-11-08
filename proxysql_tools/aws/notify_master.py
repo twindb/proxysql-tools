@@ -1,8 +1,11 @@
+"""
+Module that defines functions for notify_master
+"""
+from __future__ import print_function
 from contextlib import contextmanager
-
-import boto3
 from subprocess import check_call, CalledProcessError
 
+import boto3
 import pymysql
 from pymysql import MySQLError
 from pymysql.cursors import DictCursor
@@ -56,11 +59,15 @@ def restart_proxy(proxy):
 
 
 def change_names_to(names, ip_addr):
+    """
+    Change DNS name for ip_addr
+    :param names: DNS names
+    :param ip_addr: Ip Address
+    """
     client = boto3.client('route53')
     if names:
         for name in names:
             LOG.info('Updating A record of %s to %s', name, ip_addr)
-
             print(name)
             response = client.list_hosted_zones_by_name(
                 DNSName=domainname(name),
@@ -147,7 +154,6 @@ def eth1_present(proxy):
 @contextmanager
 def _connect(host, user='root', password='', port=3306):
     """Connect to ProxySQL admin interface."""
-    pass
     connect_args = {
         'host': host,
         'port': port,

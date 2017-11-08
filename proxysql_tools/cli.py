@@ -84,12 +84,12 @@ def aws():
 @click.option('--mysql-port', help='TCP port that open for MySQL connections.',
               default=3306, show_default=True)
 @PASS_CFG
-def notify_master(cfg, proxy_a, proxy_b, vip, dns,
+def notify_master(cfg, proxy_a, proxy_b, vip, dns,  # pylint: disable=too-many-arguments
                   mysql_user, mysql_password, mysql_port):
     """The notify_master script for keepalived."""
     LOG.debug('Switching to master role and executing keepalived '
               'notify_master script.')
-    aws_notify_master(proxy_a, proxy_b, vip, dns,
+    aws_notify_master(cfg, proxy_a, proxy_b, vip, dns,
                       mysql_user, mysql_password, mysql_port)
 
 
