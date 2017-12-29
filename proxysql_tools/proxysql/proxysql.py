@@ -181,7 +181,7 @@ class ProxySQL(object):
         Persists the MySQL users from the runtime data structures
         to the in-memory database.
         """
-        self.execute('SAVE MYSQL USERS FROM RUNTIME')
+        self.execute('SAVE MYSQL USERS TO DISK')
 
     def save_servers(self):
         """
@@ -305,6 +305,7 @@ class ProxySQL(object):
                 "".format(**kwargs)
         self.execute(query)
         self.reload_runtime()
+        self.save_user()
 
     def delete_user(self, username):
         """
@@ -316,6 +317,7 @@ class ProxySQL(object):
         self.execute("DELETE FROM mysql_users WHERE username='{username}'"
                      .format(username=username))
         self.reload_runtime()
+        self.save_user()
 
     def register_backend(self, backend):
         """Register Galera node in ProxySQL
