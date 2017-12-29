@@ -281,7 +281,6 @@ def test_delete_user(mock_reload, mock_save, mock_execute, proxysql):
     mock_reload.assert_called_once_with()
     mock_save.assert_called_once_with()
 
-
 # noinspection PyUnresolvedReferences
 @mock.patch.object(ProxySQL, 'execute')
 def test_get_user(mock_execute, proxysql):
