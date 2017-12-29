@@ -304,8 +304,8 @@ class ProxySQL(object):
                 "{backend}, {frontend}, {max_connections})" \
                 "".format(**kwargs)
         self.execute(query)
-        self.reload_runtime()
-        self.save_user()
+        self.reload_users()
+        self.save_users()
 
     def delete_user(self, username):
         """
@@ -316,8 +316,8 @@ class ProxySQL(object):
         """
         self.execute("DELETE FROM mysql_users WHERE username='{username}'"
                      .format(username=username))
-        self.reload_runtime()
-        self.save_user()
+        self.reload_users()
+        self.save_users()
 
     def register_backend(self, backend):
         """Register Galera node in ProxySQL
