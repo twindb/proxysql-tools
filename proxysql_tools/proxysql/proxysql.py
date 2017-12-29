@@ -267,6 +267,10 @@ class ProxySQL(object):
         self.execute('LOAD MYSQL USERS TO RUNTIME')
         self.execute('LOAD MYSQL VARIABLES TO RUNTIME')
 
+    def save_user(self):
+        """Save user to on-disk database"""
+        self.execute('SAVE MYSQL USERS TO DISK')
+
     def get_users(self):
         """
         Get mysql users
@@ -347,6 +351,7 @@ class ProxySQL(object):
                           frontend=int(user.frontend), max_connections=user.max_connections)
         self.execute(query)
         self.reload_runtime()
+        self.save_user()
 
     def delete_user(self, username):
         """
@@ -358,6 +363,7 @@ class ProxySQL(object):
         self.execute("DELETE FROM mysql_users WHERE username='{username}'"
                      .format(username=username))
         self.reload_runtime()
+        self.save_user()
 
     def register_backend(self, backend):
         """Register Galera node in ProxySQL
