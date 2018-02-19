@@ -281,7 +281,7 @@ def create(cfg, username, password, active, use_ssl,  # pylint: disable=too-many
 
 # noinspection PyUnusedLocal
 def validate_password(ctx, param, value):  # pylint: disable=unused-argument
-    """CHeck password value and confirm again if it's empty."""
+    """Check password value and confirm again if it's empty."""
     if not value:
         password = raw_input("Repeat for confirmation: ")
         if password == '':
