@@ -3,6 +3,7 @@ from __future__ import print_function
 
 from prettytable import PrettyTable
 
+from proxysql_tools.proxysql.exceptions import ProxySQLUserNotFound
 from proxysql_tools.proxysql.proxysqlbackend import BackendStatus
 from proxysql_tools.util import get_proxysql_options, get_hostgroups_id
 from proxysql_tools import LOG
@@ -59,11 +60,20 @@ def get_users(cfg):
 def create_user(cfg, kwargs):
     """Create user for MySQL backend"""
     args = get_proxysql_options(cfg)
+    proxysql = ProxySQL(**args)
     if kwargs['password']:
         kwargs['password'] = get_encrypred_password(cfg,
                                                     kwargs['password'])
     user = ProxySQLMySQLUser(**kwargs)
-    ProxySQL(**args).add_user(user)
+    try:
+        existed_user = proxysql.get_user(kwargs['username'])
+    except ProxySQLUserNotFound:
+        proxysql.add_user(user)
+        return
+    if existed_user == user:
+        LOG.info("User %s exist", existed_user.username)
+    else:
+        proxysql.add_user(user)
 
 
 def change_password(cfg, username, password):

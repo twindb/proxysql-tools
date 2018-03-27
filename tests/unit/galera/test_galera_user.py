@@ -11,9 +11,9 @@ def test_get_users(mock_users, config):
     mock_users.return_value = [ProxySQLMySQLUser()]
     get_users(config)
 
-
+@mock.patch.object(ProxySQL, 'get_user')
 @mock.patch.object(ProxySQL, 'add_user')
-def test_create_user(config):
+def test_create_user(mock_add, mock_get, config):
     kwargs = {
         'username': 'root',
         'password': ''
