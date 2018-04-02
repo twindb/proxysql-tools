@@ -10,7 +10,6 @@ from proxysql_tools.proxysql.proxysqlbackend import BackendStatus
 from tests.integration.library import wait_for_cluster_nodes_to_become_healthy, proxysql_tools_config_2, \
     shutdown_container
 
-
 def test__galera_register_command_set_nodes_online(percona_xtradb_cluster_three_node,
                                                    proxysql_instance,
                                                    tmpdir):
@@ -30,6 +29,92 @@ def test__galera_register_command_set_nodes_online(percona_xtradb_cluster_three_
             hostgroup_id=rw_map[i]
         )
         proxysql_instance.register_backend(backend)
+
+    blacklist = '{}:3306'.format(percona_xtradb_cluster_three_node[2]['ip'])
+    nodes = [
+        percona_xtradb_cluster_three_node[0]['ip'] + ':3306',
+        percona_xtradb_cluster_three_node[1]['ip'] + ':3306',
+        percona_xtradb_cluster_three_node[2]['ip'] + ':3306'
+    ]
+    config = proxysql_tools_config_2(proxysql_instance,
+                                     nodes,
+                                     'root', 'r00t', hostgroup_writer,
+                                     hostgroup_reader,
+                                     blacklist, 'monitor',
+                                     'monitor')
+    config_file = str(tmpdir.join('proxysql-tool.cfg'))
+    with open(config_file, 'w') as fh:
+        config.write(fh)
+        proxysql_tools.LOG.debug('proxysql-tools config: \n%s', config)
+    runner = CliRunner()
+    result = runner.invoke(main,
+                           ['--config', config_file, 'galera', 'register']
+                           )
+    assert result.exit_code == 0
+
+    connection = pymysql.connect(
+        host=proxysql_instance.host,
+        port=proxysql_instance.port,
+        user=proxysql_instance.user,
+        passwd=proxysql_instance.password,
+        connect_timeout=20,
+        cursorclass=DictCursor)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT `hostgroup_id`, `hostname`, '
+                           '`port`, `status`, `weight`, `compression`, '
+                           '`max_connections`, `max_replication_lag`, '
+                           '`use_ssl`, `max_latency_ms`, `comment`'
+                           ' FROM `mysql_servers`'
+                           ' WHERE hostgroup_id = %s', hostgroup_writer)
+            for row in cursor.fetchall():
+                backend = ProxySQLMySQLBackend(row['hostname'],
+                                               hostgroup_id=row['hostgroup_id'],
+                                               port=row['port'],
+                                               status=row['status'],
+                                               weight=row['weight'],
+                                               compression=row['compression'],
+                                               max_connections=
+                                               row['max_connections'],
+                                               max_replication_lag=
+                                               row['max_replication_lag'],
+                                               use_ssl=row['use_ssl'],
+                                               max_latency_ms=
+                                               row['max_latency_ms'])
+                assert backend.status == BackendStatus.online
+
+            cursor.execute('SELECT `hostgroup_id`, `hostname`, '
+                           '`port`, `status`, `weight`, `compression`, '
+                           '`max_connections`, `max_replication_lag`, '
+                           '`use_ssl`, `max_latency_ms`, `comment`'
+                           ' FROM `mysql_servers`'
+                           ' WHERE hostgroup_id = %s', hostgroup_reader)
+            for row in cursor.fetchall():
+                backend = ProxySQLMySQLBackend(row['hostname'],
+                                               hostgroup_id=row['hostgroup_id'],
+                                               port=row['port'],
+                                               status=row['status'],
+                                               weight=row['weight'],
+                                               compression=row['compression'],
+                                               max_connections=
+                                               row['max_connections'],
+                                               max_replication_lag=
+                                               row['max_replication_lag'],
+                                               use_ssl=row['use_ssl'],
+                                               max_latency_ms=
+                                               row['max_latency_ms'])
+                assert backend.status == BackendStatus.online
+
+    finally:
+        connection.close()
+
+
+def test__galera_register_command_set_nodes_online_with_empty_mysql_servers(percona_xtradb_cluster_three_node,
+                                                                            proxysql_instance,
+                                                                            tmpdir):
+    wait_for_cluster_nodes_to_become_healthy(percona_xtradb_cluster_three_node)
+    hostgroup_writer = 10
+    hostgroup_reader = 11
 
     blacklist = '{}:3306'.format(percona_xtradb_cluster_three_node[2]['ip'])
     nodes = [
@@ -187,6 +272,68 @@ def test__galera_register_shutdowned_reader_is_degistered(percona_xtradb_cluster
     finally:
         connection.close()
 
+def test__galera_register_shutdowned_reader_is_degistered_with_empty_mysql_servers(percona_xtradb_cluster_three_node,
+                                                                                   proxysql_instance,
+                                                                                   tmpdir):
+    wait_for_cluster_nodes_to_become_healthy(percona_xtradb_cluster_three_node)
+    hostgroup_writer = 10
+    hostgroup_reader = 11
+
+
+    backend_unreg = ProxySQLMySQLBackend(
+        hostname=percona_xtradb_cluster_three_node[1]['ip'],
+        port=percona_xtradb_cluster_three_node[1]['mysql_port'],
+        hostgroup_id=hostgroup_reader
+    )
+    blacklist = '{}:3306'.format(percona_xtradb_cluster_three_node[2]['ip'])
+    nodes = [
+        percona_xtradb_cluster_three_node[0]['ip'] + ':3306',
+        percona_xtradb_cluster_three_node[1]['ip'] + ':3306',
+        percona_xtradb_cluster_three_node[2]['ip'] + ':3306'
+    ]
+
+    shutdown_container(percona_xtradb_cluster_three_node[1]['id'])
+    config = proxysql_tools_config_2(proxysql_instance,
+                                     nodes,
+                                     'root', 'r00t', hostgroup_writer,
+                                     hostgroup_reader,
+                                     blacklist, 'monitor',
+                                     'monitor')
+    config_file = str(tmpdir.join('proxysql-tool.cfg'))
+    with open(config_file, 'w') as fh:
+        config.write(fh)
+        proxysql_tools.LOG.debug('proxysql-tools config: \n%s', config)
+    runner = CliRunner()
+    result = runner.invoke(main,
+                           ['--config', config_file, 'galera', 'register']
+                           )
+    assert result.exit_code == 0
+
+    connection = pymysql.connect(
+        host=proxysql_instance.host,
+        port=proxysql_instance.port,
+        user=proxysql_instance.user,
+        passwd=proxysql_instance.password,
+        connect_timeout=20,
+        cursorclass=DictCursor)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT `hostgroup_id`, `hostname`, '
+                           '`port`, `status`'
+                           ' FROM `mysql_servers`'
+                           ' WHERE hostgroup_id = %s '
+                           ' AND `hostname` = %s '
+                           ' AND `port` = %s',
+                           (
+                               backend_unreg.hostgroup_id,
+                               backend_unreg.hostname,
+                               backend_unreg.port
+                           )
+                           )
+            assert cursor.fetchall()[0]['status'] == BackendStatus.offline_hard
+
+    finally:
+        connection.close()
 
 def test__galera_register_shutdowned_writer_is_deregistered(percona_xtradb_cluster_three_node,
                                                             proxysql_instance,
@@ -277,6 +424,78 @@ def test__galera_register_shutdowned_writer_is_deregistered(percona_xtradb_clust
     finally:
         connection.close()
 
+def test__galera_register_shutdowned_writer_is_deregistered_with_empty_mysql_servers(percona_xtradb_cluster_three_node,
+                                                                                     proxysql_instance,
+                                                                                     tmpdir):
+    wait_for_cluster_nodes_to_become_healthy(percona_xtradb_cluster_three_node)
+    hostgroup_writer = 10
+    hostgroup_reader = 11
+
+    backend_unreg = ProxySQLMySQLBackend(
+        hostname=percona_xtradb_cluster_three_node[0]['ip'],
+        port=percona_xtradb_cluster_three_node[0]['mysql_port'],
+        hostgroup_id=hostgroup_writer
+    )
+    blacklist = '{}:3306'.format(percona_xtradb_cluster_three_node[2]['ip'])
+    nodes = [
+        percona_xtradb_cluster_three_node[0]['ip'] + ':3306',
+        percona_xtradb_cluster_three_node[1]['ip'] + ':3306',
+        percona_xtradb_cluster_three_node[2]['ip'] + ':3306'
+    ]
+
+    shutdown_container(percona_xtradb_cluster_three_node[0]['id'])
+    config = proxysql_tools_config_2(proxysql_instance,
+                                     nodes,
+                                     'root', 'r00t', hostgroup_writer,
+                                     hostgroup_reader,
+                                     blacklist, 'monitor',
+                                     'monitor')
+    config_file = str(tmpdir.join('proxysql-tool.cfg'))
+    with open(config_file, 'w') as fh:
+        config.write(fh)
+        proxysql_tools.LOG.debug('proxysql-tools config: \n%s', config)
+    runner = CliRunner()
+    result = runner.invoke(main,
+                           ['--config', config_file, 'galera', 'register']
+                           )
+    assert result.exit_code == 0
+
+    connection = pymysql.connect(
+        host=proxysql_instance.host,
+        port=proxysql_instance.port,
+        user=proxysql_instance.user,
+        passwd=proxysql_instance.password,
+        connect_timeout=20,
+        cursorclass=DictCursor
+    )
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT `hostgroup_id`, `hostname`, '
+                           '`port`, `status`'
+                           ' FROM `mysql_servers`'
+                           ' WHERE hostgroup_id = %s '
+                           ' AND `hostname` = %s '
+                           ' AND `port` = %s',
+                           (
+                               hostgroup_reader,
+                               backend_unreg.hostname,
+                               backend_unreg.port
+                           )
+                           )
+            assert cursor.fetchall()[0]['status'] == BackendStatus.offline_hard
+
+            cursor.execute('SELECT `hostgroup_id`, `hostname`, '
+                           '`port`'
+                           ' FROM `mysql_servers`'
+                           ' WHERE hostgroup_id = %s ',
+                           (
+                               backend_unreg.hostgroup_id,
+                           )
+                           )
+            assert cursor.fetchall() != ()
+
+    finally:
+        connection.close()
 
 def test__galera_register_sync_desync_state(percona_xtradb_cluster_three_node,
                                                    proxysql_instance,
@@ -384,10 +603,101 @@ def test__galera_register_sync_desync_state(percona_xtradb_cluster_three_node,
     finally:
         connection.close()
 
+def test__galera_register_sync_desync_state_with_empty_mysql_servers(percona_xtradb_cluster_three_node,
+                                                                     proxysql_instance,
+                                                                     tmpdir):
+    wait_for_cluster_nodes_to_become_healthy(percona_xtradb_cluster_three_node)
+    hostgroup_writer = 10
+    hostgroup_reader = 11
+
+    desync_node = GaleraNode(
+        host=percona_xtradb_cluster_three_node[1]['ip'],
+        port=percona_xtradb_cluster_three_node[1]['mysql_port'],
+        user='root',password='r00t'
+    )
+    desync_node.execute('set global wsrep_desync=ON;')
+
+    blacklist = '{}:3306'.format(percona_xtradb_cluster_three_node[2]['ip'])
+    nodes = [
+        percona_xtradb_cluster_three_node[0]['ip'] + ':3306',
+        percona_xtradb_cluster_three_node[1]['ip'] + ':3306',
+        percona_xtradb_cluster_three_node[2]['ip'] + ':3306'
+    ]
+    config = proxysql_tools_config_2(proxysql_instance,
+                                     nodes,
+                                     'root', 'r00t', hostgroup_writer,
+                                     hostgroup_reader,
+                                     blacklist, 'monitor',
+                                     'monitor')
+    config_file = str(tmpdir.join('proxysql-tool.cfg'))
+    with open(config_file, 'w') as fh:
+        config.write(fh)
+        proxysql_tools.LOG.debug('proxysql-tools config: \n%s', config)
+    runner = CliRunner()
+    result = runner.invoke(main,
+                           ['--config', config_file, 'galera', 'register'])
+    assert result.exit_code == 0
+
+    connection = pymysql.connect(
+        host=proxysql_instance.host,
+        port=proxysql_instance.port,
+        user=proxysql_instance.user,
+        passwd=proxysql_instance.password,
+        connect_timeout=20,
+        cursorclass=DictCursor)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT `hostgroup_id`, `hostname`, '
+                           '`port`, `status`, `weight`, `compression`, '
+                           '`max_connections`, `max_replication_lag`, '
+                           '`use_ssl`, `max_latency_ms`, `comment`'
+                           ' FROM `mysql_servers`'
+                           ' WHERE hostgroup_id = %s'
+                           ' AND hostname = %s',
+                           (
+                               hostgroup_reader,
+                               percona_xtradb_cluster_three_node[1]['ip']
+                           )
+                           )
+            row = cursor.fetchall()[0]
+            assert row['status'] == BackendStatus.offline_soft
+    finally:
+        connection.close()
+
+    desync_node.execute('set global wsrep_desync=OFF;')
+    runner = CliRunner()
+    result = runner.invoke(main,
+                           ['--config', config_file, 'galera', 'register'])
+    assert result.exit_code == 0
+    connection = pymysql.connect(
+        host=proxysql_instance.host,
+        port=proxysql_instance.port,
+        user=proxysql_instance.user,
+        passwd=proxysql_instance.password,
+        connect_timeout=20,
+        cursorclass=DictCursor)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT `hostgroup_id`, `hostname`, '
+                           '`port`, `status`, `weight`, `compression`, '
+                           '`max_connections`, `max_replication_lag`, '
+                           '`use_ssl`, `max_latency_ms`, `comment`'
+                           ' FROM `mysql_servers`'
+                           ' WHERE hostgroup_id = %s'
+                           ' AND hostname = %s',
+                           (
+                               hostgroup_reader,
+                               percona_xtradb_cluster_three_node[1]['ip']
+                           )
+                           )
+            row = cursor.fetchall()[0]
+            assert row['status'] == BackendStatus.online
+    finally:
+        connection.close()
 
 def test__galera_register_writer_node_is_reader_when_readers_list_is_empty(percona_xtradb_cluster_three_node,
-                                                   proxysql_instance,
-                                                   tmpdir):
+                                                                           proxysql_instance,
+                                                                           tmpdir):
 
     wait_for_cluster_nodes_to_become_healthy(percona_xtradb_cluster_three_node)
     hostgroup_writer = 10
@@ -406,6 +716,105 @@ def test__galera_register_writer_node_is_reader_when_readers_list_is_empty(perco
         )
         proxysql_instance.register_backend(backend)
 
+
+    desync_node = GaleraNode(
+        host=percona_xtradb_cluster_three_node[1]['ip'],
+        port=percona_xtradb_cluster_three_node[1]['mysql_port'],
+        user='root',password='r00t'
+    )
+    desync_node.execute('set global wsrep_desync=ON;')
+
+    desync_node = GaleraNode(
+        host=percona_xtradb_cluster_three_node[2]['ip'],
+        port=percona_xtradb_cluster_three_node[2]['mysql_port'],
+        user='root',password='r00t'
+    )
+    desync_node.execute('set global wsrep_desync=ON;')
+
+    blacklist = '{}:3306'.format(percona_xtradb_cluster_three_node[2]['ip'])
+    nodes = [
+        percona_xtradb_cluster_three_node[0]['ip'] + ':3306',
+        percona_xtradb_cluster_three_node[1]['ip'] + ':3306',
+        percona_xtradb_cluster_three_node[2]['ip'] + ':3306'
+    ]
+    config = proxysql_tools_config_2(proxysql_instance,
+                                     nodes,
+                                     'root', 'r00t', hostgroup_writer,
+                                     hostgroup_reader,
+                                     blacklist, 'monitor',
+                                     'monitor')
+    config_file = str(tmpdir.join('proxysql-tool.cfg'))
+    with open(config_file, 'w') as fh:
+        config.write(fh)
+        proxysql_tools.LOG.debug('proxysql-tools config: \n%s', config)
+    runner = CliRunner()
+    result = runner.invoke(main,
+                           ['--config', config_file, 'galera', 'register'])
+    assert result.exit_code == 0
+
+    connection = pymysql.connect(
+        host=proxysql_instance.host,
+        port=proxysql_instance.port,
+        user=proxysql_instance.user,
+        passwd=proxysql_instance.password,
+        connect_timeout=20,
+        cursorclass=DictCursor)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT `hostgroup_id`, `hostname`, '
+                           '`port`, `status`, `weight`, `compression`, '
+                           '`max_connections`, `max_replication_lag`, '
+                           '`use_ssl`, `max_latency_ms`, `comment`'
+                           ' FROM `mysql_servers`'
+                           ' WHERE hostgroup_id = %s'
+                           ' AND hostname = %s',
+                           (
+                               hostgroup_reader,
+                               percona_xtradb_cluster_three_node[1]['ip']
+                           )
+                           )
+            row = cursor.fetchall()[0]
+            assert row['status'] == BackendStatus.offline_soft
+            cursor.execute('SELECT `hostgroup_id`, `hostname`, '
+                           '`port`, `status`, `weight`, `compression`, '
+                           '`max_connections`, `max_replication_lag`, '
+                           '`use_ssl`, `max_latency_ms`, `comment`'
+                           ' FROM `mysql_servers`'
+                           ' WHERE hostgroup_id = %s'
+                           ' AND hostname = %s',
+                           (
+                               hostgroup_reader,
+                               percona_xtradb_cluster_three_node[2]['ip']
+                           )
+                           )
+            row = cursor.fetchall()[0]
+            assert row['status'] == BackendStatus.offline_soft
+
+            cursor.execute('SELECT `hostgroup_id`, `hostname`, '
+                           '`port`, `status`, `weight`, `compression`, '
+                           '`max_connections`, `max_replication_lag`, '
+                           '`use_ssl`, `max_latency_ms`, `comment`'
+                           ' FROM `mysql_servers`'
+                           ' WHERE hostgroup_id = %s'
+                           ' AND hostname = %s',
+                           (
+                               hostgroup_reader,
+                               percona_xtradb_cluster_three_node[0]['ip']
+                           )
+                           )
+            assert cursor.fetchall() != ()
+
+    finally:
+        connection.close()
+
+
+def test__galera_register_writer_node_is_reader_when_readers_list_is_empty_with_empty_mysql_servers(percona_xtradb_cluster_three_node,
+                                                                                                    proxysql_instance,
+                                                                                                    tmpdir):
+
+    wait_for_cluster_nodes_to_become_healthy(percona_xtradb_cluster_three_node)
+    hostgroup_writer = 10
+    hostgroup_reader = 11
 
     desync_node = GaleraNode(
         host=percona_xtradb_cluster_three_node[1]['ip'],

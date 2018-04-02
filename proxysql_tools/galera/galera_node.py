@@ -2,6 +2,7 @@
 from contextlib import contextmanager
 
 import pymysql
+from pymysql import OperationalError
 from pymysql.cursors import DictCursor
 
 from proxysql_tools import execute
@@ -49,7 +50,10 @@ class GaleraNode(object):
     @property
     def wsrep_local_state(self):
         """Internal Galera Cluster FSM state number."""
-        return int(self._status('wsrep_local_state'))
+        try:
+            return int(self._status('wsrep_local_state'))
+        except TypeError:
+            return None
 
     @property
     def wsrep_cluster_name(self):
@@ -88,7 +92,10 @@ class GaleraNode(object):
 
     def _status(self, status_variable):
         """Return value of a variable from SHOW GLOBAL STATUS"""
-        result = self.execute('SHOW GLOBAL STATUS LIKE %s', status_variable)
+        try:
+            result = self.execute('SHOW GLOBAL STATUS LIKE %s', status_variable)
+        except OperationalError:
+            return None
         return result[0]['Value']
 
     def __eq__(self, other):
