@@ -10,7 +10,7 @@ from proxysql_tools import setup_logging, LOG, __version__
 from proxysql_tools.aws.aws import aws_notify_master
 from proxysql_tools.cli_entrypoint.galera import galera_register
 from proxysql_tools.galera.server import server_status, \
-    server_set_wsrep_desync, server_set_admin_status
+    server_set_wsrep_status, server_set_admin_status
 from proxysql_tools.galera.user import get_users, create_user, delete_user, \
     change_password, modify_user
 from proxysql_tools.proxysql.exceptions import ProxySQLBackendNotFound, \
@@ -154,7 +154,7 @@ def set_desync(cfg, ip_address, port):
     """Set server to desync state."""
 
     try:
-        server_set_wsrep_desync(cfg, ip_address, port, wsrep_desync='ON')
+        server_set_wsrep_status(cfg, ip_address, port, 'ON')
     except NotImplementedError as err:
         LOG.error(err)
         exit(1)
@@ -176,7 +176,7 @@ def set_sync(cfg, ip_address, port):
     """Set server to sync state."""
 
     try:
-        server_set_wsrep_desync(cfg, ip_address, port, wsrep_desync='OFF')
+        server_set_wsrep_status(cfg, ip_address, port, 'OFF')
     except NotImplementedError as err:
         LOG.error(err)
         exit(1)
