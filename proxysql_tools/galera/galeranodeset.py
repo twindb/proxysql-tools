@@ -17,7 +17,6 @@ class GaleraNodeSet(BackendSet):
     def find(self, host=None, port=3306, state=None):
         """
         Find node by host and port or state
-
         :param host: Hostname of backend
         :param port: Port of backend
         :param state: State of node
@@ -45,7 +44,6 @@ class GaleraNodeSet(BackendSet):
 
     def remove(self, backend):
         """Remove node from the set
-
         :param backend: Node to remove.
         :type backend: GaleraNode
         :raise GaleraClusterNodeNotFound: if node is not in the set

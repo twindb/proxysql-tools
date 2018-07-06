@@ -51,7 +51,6 @@ class BackendSet(object):
     def add_set(self, backend_set):
         """
         Add iterable object to list
-
         :param backend_set:
         :type backend_set:
         """
@@ -61,7 +60,6 @@ class BackendSet(object):
     def add(self, backend):
         """
         Add backend
-
         :param backend: Backend
         """
         self._backend_list.append(backend)

@@ -74,10 +74,12 @@ def singlewriter(galera_cluster, proxy,
         is_readers_offline = all(x.status == BackendStatus.offline_soft
                                  for x in readers_without_writer)
 
-    if len(readers) > 2 \
-            and proxy.backend_registered(writer_as_reader) \
-            and not is_readers_offline:
+    if all((len(readers) > 2,
+            proxy.backend_registered(writer_as_reader),
+            not is_readers_offline)):
         proxy.deregister_backend(writer_as_reader)
+
+    check_sst(proxy, galera_cluster, readers, writer)
 
 
 def register_writer(galera_cluster, proxysql, writer_hostgroup_id,
@@ -350,3 +352,40 @@ def register_synced_backends(galera_cluster, proxysql,  # pylint: disable=too-ma
 
     except GaleraClusterSyncedNodeNotFound as err:
         LOG.error(err)
+
+
+def check_sst(proxy, galera_cluster, readers, writer):
+    """
+    Check sst runned, and make donor node available,
+    if there are no other nodes.
+
+    :param proxy: ProxySQL instance
+    :type proxy: proxysql.ProxySQL
+    :param galera_cluster: GaleraCluster instance.
+    :type galera_cluster: GaleraCluster
+    :param readers: List of readers in cluster
+    :type readers: list(ProxySQLMySQLBackend)
+    :param writer: Writer in cluster
+    :type writer: ProxySQLMySQLBackend
+    """
+    try:
+        nodes = galera_cluster.nodes
+        donor = nodes.find(state=GaleraNodeState.DONOR)[0]
+    except GaleraClusterNodeNotFound:
+        return
+    active_backends = readers + [writer]
+    try:
+        offline_nodes = proxy.find_backends(
+            status=BackendStatus.offline_hard
+        )
+        active_backends -= offline_nodes
+    except ProxySQLBackendNotFound:
+        pass
+    i = 0
+    while len(active_backends) == 2:
+        if active_backends[i].hostname == donor.host and \
+                active_backends[i].port == donor.port:
+            active_backends[i].status = BackendStatus.online
+            proxy.register_backend(active_backends[i])
+            break
+        i += 1
