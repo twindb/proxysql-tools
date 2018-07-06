@@ -71,12 +71,26 @@ def aws():
 
 
 @aws.command()
+@click.argument('vip')
+@click.argument('proxy_a')
+@click.argument('proxy_b')
+@click.argument('vip')
+@click.option('--dns', multiple=True,
+              help='Update given DNS names.')
+@click.option('--mysql-user', help='MySQL user to connect to proxies.',
+              default='root', show_default=True)
+@click.option('--mysql-password', help='Password for MySQL user.',
+              default='', show_default=True)
+@click.option('--mysql-port', help='TCP port that open for MySQL connections.',
+              default=3306, show_default=True)
 @PASS_CFG
-def notify_master(cfg):
+def notify_master(cfg, proxy_a, proxy_b, vip, dns,  # pylint: disable=too-many-arguments
+                  mysql_user, mysql_password, mysql_port):
     """The notify_master script for keepalived."""
     LOG.debug('Switching to master role and executing keepalived '
               'notify_master script.')
-    aws_notify_master(cfg)
+    aws_notify_master(cfg, proxy_a, proxy_b, vip, dns,
+                      mysql_user, mysql_password, mysql_port)
 
 
 @main.group()
